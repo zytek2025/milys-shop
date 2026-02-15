@@ -28,6 +28,8 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
+    const pathname = usePathname();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const isLoginPage = pathname === '/admin/login';
     const { isAdmin, isAuthenticated, user } = useAuth();
     const router = useRouter();
