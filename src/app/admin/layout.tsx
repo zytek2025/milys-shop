@@ -19,7 +19,7 @@ import {
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/store/cart-store';
+import { useAuth, useCartStore } from '@/store/cart-store';
 import { redirect, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
