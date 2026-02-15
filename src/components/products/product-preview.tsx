@@ -15,6 +15,7 @@ interface ProductPreviewProps {
     }>;
     customText: string;
     customTextSize: 'small' | 'large';
+    customTextLocation: string;
     garmentImage?: string; // Optional custom base image
 }
 
@@ -24,6 +25,7 @@ export function ProductPreview({
     designs,
     customText,
     customTextSize,
+    customTextLocation,
     garmentImage
 }: ProductPreviewProps) {
 
@@ -120,12 +122,17 @@ export function ProductPreview({
                         </AnimatePresence>
                     </div>
 
-                    {/* Text Layer - Simple Overlay */}
+    // Text Layer - Positioned
                     {customText && (
                         <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="absolute inset-x-0 top-[60%] flex justify-center z-20 pointer-events-none"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="absolute z-20 pointer-events-none whitespace-nowrap"
+                            style={{
+                                top: locationConfig[customTextLocation]?.top || '50%',
+                                left: locationConfig[customTextLocation]?.left || '50%',
+                                transform: `translateX(-50%) translateY(-50%) rotate(${locationConfig[customTextLocation]?.rotate || 0}deg)`
+                            }}
                         >
                             <div
                                 className={cn(
