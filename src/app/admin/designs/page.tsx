@@ -541,31 +541,29 @@ export default function AdminDesignsPage() {
                                     </div>
                                 </div>
                             </div>
+                        </ScrollArea>
 
-                        </div>
-                    </ScrollArea>
-
-                    <DialogFooter className="px-8 py-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 sm:justify-end gap-3 rounded-b-[2rem] shrink-0">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => setIsDialogOpen(false)}
-                            className="rounded-2xl h-12 px-6 font-semibold"
-                        >
-                            Cancelar
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={saving || uploading}
-                            className="rounded-2xl h-12 px-8 font-bold gap-2 shadow-xl shadow-primary/20 bg-gradient-to-r from-primary to-primary/90 hover:scale-[1.02] transition-transform"
-                        >
-                            {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save size={20} />}
-                            {editingDesign ? 'Guardar Cambios' : 'Publicar Arte'}
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
-    </div >
+                        <DialogFooter className="px-8 py-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 sm:justify-end gap-3 rounded-b-[2rem] shrink-0">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setIsDialogOpen(false)}
+                                className="rounded-2xl h-12 px-6 font-semibold"
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={saving || uploading}
+                                className="rounded-2xl h-12 px-8 font-bold gap-2 shadow-xl shadow-primary/20 bg-gradient-to-r from-primary to-primary/90 hover:scale-[1.02] transition-transform"
+                            >
+                                {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save size={20} />}
+                                {editingDesign ? 'Guardar Cambios' : 'Publicar Arte'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </div >
     );
 }
