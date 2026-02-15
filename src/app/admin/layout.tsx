@@ -32,9 +32,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     const { isAdmin, isAuthenticated } = useAuth();
 
     // Guard: if not admin, redirect or show error
-    // Note: In real production, this should also be done in middleware for better security
     if (!isAuthenticated || !isAdmin) {
-        // redirect('/'); // Or show an unauthorized page
+        redirect('/');
     }
 
     const navItems = [
