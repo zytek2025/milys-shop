@@ -8,9 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAddToCart } from '@/hooks/use-cart';
 import { toast } from 'sonner';
-import { ShoppingCart, ExternalLink } from 'lucide-react';
+import { ShoppingCart, ExternalLink, Tag as TagIcon } from 'lucide-react';
 import Link from 'next/link';
-import type { Product } from '@/types';
+import type { Product, Promotion } from '@/types';
+import { usePromotions } from '@/hooks/use-cart';
 
 interface ProductCardProps {
   product: Product;
@@ -57,10 +58,41 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
             <Badge
               variant="secondary"
-              className="absolute top-3 left-3 bg-background/90 backdrop-blur-md shadow-sm border-0 font-medium"
+              className="absolute top-3 left-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-sm border-0 font-bold text-[10px] uppercase tracking-tighter"
             >
               {product.category}
             </Badge>
+
+            {/* Promotion Badge */}
+            {(() => {
+              const { data: promotions } = usePromotions();
+              const activePromo = promotions?.find(p =>
+                p.is_active &&
+                (p.target_type === 'all' ||
+                  (p.target_type === 'category' && p.target_id === product.category) ||
+                  (p.target_type === 'product' && p.target_id === product.id))
+              );
+
+              if (!activePromo) return null;
+
+              const promoLabels: Record<string, string> = {
+                bogo: '2x1',
+                second_unit_50: '50% 2da Ud.',
+                percentage: `-${activePromo.value}%`,
+                fixed: `-$${activePromo.value}`
+              };
+
+              return (
+                <div className="absolute top-3 right-3 animate-bounce">
+                  <Badge
+                    className="bg-primary text-white border-0 font-black text-[10px] uppercase tracking-tighter px-2 py-1 shadow-lg shadow-primary/30 flex items-center gap-1 italic"
+                  >
+                    <TagIcon size={10} className="fill-white" />
+                    {promoLabels[activePromo.type]}
+                  </Badge>
+                </div>
+              );
+            })()}
 
             {/* Quick Add Overlay (Desktop) */}
             <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 hidden lg:block bg-gradient-to-t from-black/60 to-transparent">

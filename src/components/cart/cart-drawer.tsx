@@ -34,7 +34,7 @@ interface CartDrawerProps {
 
 export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerProps) {
   const { data: cart, isLoading } = useCart();
-  const { total, itemCount } = useCartTotals();
+  const { subtotal, totalDiscount, total, itemCount } = useCartTotals();
   const { isAuthenticated } = useAuth();
 
   const updateCartItem = useUpdateCartItem();
@@ -154,16 +154,22 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span className="font-medium">${subtotal.toFixed(2)}</span>
                 </div>
+                {totalDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-emerald-600 font-bold italic">
+                    <span className="flex items-center gap-1">✨ Ahorro Especial</span>
+                    <span>-${totalDiscount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Envío</span>
-                  <span className="text-emerald-600">Gratis</span>
+                  <span className="text-emerald-600 font-bold italic tracking-tighter">GRATIS</span>
                 </div>
-                <Separator />
-                <div className="flex justify-between font-semibold text-lg">
-                  <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                <Separator className="bg-slate-100 dark:bg-slate-800" />
+                <div className="flex justify-between items-center pt-2">
+                  <span className="font-black uppercase italic tracking-tighter text-lg">Total Neto</span>
+                  <span className="font-black text-2xl tracking-tighter text-primary">${total.toFixed(2)}</span>
                 </div>
               </div>
 

@@ -164,6 +164,22 @@ export interface SearchResult {
   total: number;
 }
 
+// Promotion types
+export interface Promotion {
+  id: string;
+  name: string;
+  description: string | null;
+  type: 'bogo' | 'second_unit_50' | 'percentage' | 'fixed';
+  target_type: 'all' | 'category' | 'product';
+  target_id: string | null;
+  value: number;
+  min_quantity: number;
+  start_date: string;
+  end_date: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
 // API Response types
 export interface ApiResponse<T> {
   data?: T;

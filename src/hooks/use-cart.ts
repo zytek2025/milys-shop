@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCartSession } from '@/store/cart-store';
-import type { CartWithItems, CartItem, Product, ApiResponse } from '@/types';
+import type { CartWithItems, CartItem, Product, ApiResponse, Promotion } from '@/types';
 
 const API_BASE = '/api';
 
@@ -179,35 +179,77 @@ export function useClearCart() {
   });
 }
 
+// Fetch active promotions
+export function usePromotions() {
+  return useQuery<Promotion[]>({
+    queryKey: ['promotions', 'active'],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/admin/promotions`); // Should probably have a public endpoint too, but using admin for now as they are checked for is_active
+      if (!response.ok) throw new Error('Failed to fetch promotions');
+      return response.json();
+    },
+  });
+}
+
 // Calculate cart totals
 export function useCartTotals() {
   const { data: cart } = useCart();
+  const { data: promotions } = usePromotions();
 
   const itemCount = cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
-  const total = cart?.items.reduce((sum, item) => {
-    // Precio base del producto o el override de la variante si existe
-    const basePrice = item.variant?.price_override ?? item.product?.price ?? 0;
 
-    // Sumar precio de logos y personalización en custom_metadata
+  const subtotal = cart?.items.reduce((sum, item) => {
+    const basePrice = item.variant?.price_override ?? item.product?.price ?? 0;
     let extraPrice = 0;
     const metadata = item.custom_metadata;
 
     if (Array.isArray(metadata)) {
-      // Formato antiguo: Array de logos
       extraPrice = metadata.reduce((lSum: number, design: any) => lSum + (design.price || 0), 0);
     } else if (metadata && typeof metadata === 'object') {
-      // Nuevo formato: { designs: [], personalization: {} }
       const designs = (metadata as any).designs || [];
       const personalization = (metadata as any).personalization;
-
       const designsTotal = designs.reduce((lSum: number, d: any) => lSum + (d.price || 0), 0);
       const personalizationTotal = personalization?.price || 0;
-
       extraPrice = designsTotal + personalizationTotal;
     }
 
     return sum + (basePrice + extraPrice) * item.quantity;
   }, 0) ?? 0;
 
-  return { itemCount, total };
+  // Apply discounts
+  let totalDiscount = 0;
+  const activePromos = promotions?.filter(p => p.is_active) || [];
+
+  cart?.items.forEach(item => {
+    const itemPrice = (item.variant?.price_override ?? item.product?.price ?? 0);
+    // Customizations usually don't have discounts unless specified, but let's calculate per unit price
+    const unitPrice = itemPrice + (item.custom_metadata?.designs?.reduce((s: number, d: any) => s + (d.price || 0), 0) || 0) + (item.custom_metadata?.personalization?.price || 0);
+
+    activePromos.forEach(promo => {
+      let applies = false;
+      if (promo.target_type === 'all') applies = true;
+      else if (promo.target_type === 'category' && item.product?.category === promo.target_id) applies = true;
+      else if (promo.target_type === 'product' && item.product_id === promo.target_id) applies = true;
+
+      if (applies && item.quantity >= promo.min_quantity) {
+        if (promo.type === 'bogo') {
+          // Buy One Get One (2x1)
+          const freeUnits = Math.floor(item.quantity / 2);
+          totalDiscount += freeUnits * unitPrice;
+        } else if (promo.type === 'second_unit_50') {
+          // 50% off on second unit
+          const discountedUnits = Math.floor(item.quantity / 2);
+          totalDiscount += discountedUnits * (unitPrice * 0.5);
+        } else if (promo.type === 'percentage') {
+          totalDiscount += (unitPrice * item.quantity) * (promo.value / 100);
+        } else if (promo.type === 'fixed') {
+          totalDiscount += promo.value * Math.floor(item.quantity / promo.min_quantity);
+        }
+      }
+    });
+  });
+
+  const total = Math.max(0, subtotal - totalDiscount);
+
+  return { itemCount, subtotal, totalDiscount, total };
 }

@@ -14,7 +14,8 @@ import {
     Layers,
     ArrowLeft,
     Menu,
-    Settings as SettingsIcon
+    Settings as SettingsIcon,
+    Tag
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -65,6 +66,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { label: 'Tipos de Logos', icon: Tags, href: '/admin/design-categories' },
         { label: 'Categorías', icon: Layers, href: '/admin/categories' },
         { label: 'Pedidos', icon: ShoppingBag, href: '/admin/orders' },
+        { label: 'Promociones', icon: Tag, href: '/admin/promotions' },
         { label: 'Clientes', icon: Users, href: '/admin/customers' },
         { label: 'Ajustes', icon: SettingsIcon, href: '/admin/settings' },
     ];
