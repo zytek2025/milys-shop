@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { Header } from '@/components/header';
 import { CartDrawer } from '@/components/cart/cart-drawer';
@@ -46,8 +47,11 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                 />
 
                 <footer className="border-t py-8 bg-muted/30 mt-auto">
-                    <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+                    <div className="container mx-auto px-4 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
                         <p>© 2024 Mily's. Tu Estilo, Tu Tienda.</p>
+                        <Link href="/admin" className="text-xs hover:text-primary transition-colors opacity-50 hover:opacity-100">
+                            Acceso Admin
+                        </Link>
                     </div>
                 </footer>
 
