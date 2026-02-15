@@ -6,11 +6,11 @@ import type { OrderWithItems, ApiResponse } from '@/types';
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
+
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Missing Supabase environment variables');
   }
-  
+
   return createClient(supabaseUrl, supabaseKey);
 }
 
@@ -22,21 +22,24 @@ export async function GET(
   try {
     const { id } = await params;
     const supabase = await createServerClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { data: { user } } = await supabase.auth.getUser();
 
     const publicClient = getSupabaseClient();
 
     // Get order
-    const { data: order, error: orderError } = await publicClient
+    // Importante: No restringimos por user_id aquí para permitir el guest checkout (Invitados).
+    // El conocimiento del UUID del pedido actúa como autorización.
+    let query = publicClient
       .from('orders')
       .select('*')
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .single();
+      .eq('id', id);
+
+    if (user) {
+      // Podríamos filtrar por user_id si queremos ser más estrictos con usuarios logueados,
+      // pero para invitados el user_id puede ser nulo o diferente.
+    }
+
+    const { data: order, error: orderError } = await query.single();
 
     if (orderError || !order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });

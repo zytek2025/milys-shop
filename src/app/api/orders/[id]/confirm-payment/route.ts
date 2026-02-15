@@ -12,10 +12,6 @@ export async function POST(
         data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
     try {
         const body = await request.json();
         const { reference, amount, screenshot_url } = body;
@@ -24,12 +20,11 @@ export async function POST(
             return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
         }
 
-        // 1. Verificar que el pedido existe y pertenece al usuario
+        // 1. Verificar que el pedido existe
         const { data: order, error: orderError } = await supabase
             .from('orders')
-            .select('id')
+            .select('id, user_id')
             .eq('id', orderId)
-            .eq('user_id', user.id)
             .single();
 
         if (orderError || !order) {
@@ -41,7 +36,7 @@ export async function POST(
             .from('payment_confirmations')
             .insert({
                 order_id: orderId,
-                user_id: user.id,
+                user_id: user?.id || null, // Opcional para invitados
                 reference_number: reference,
                 amount_paid: amount,
                 screenshot_url,
@@ -51,9 +46,6 @@ export async function POST(
             .single();
 
         if (confError) throw confError;
-
-        // 3. Opcional: Podríamos actualizar el estado del pedido a 'evaluating' o similar
-        // Pero por ahora lo dejamos en pending hasta que el admin apruebe.
 
         return NextResponse.json({ success: true, data: confirmation });
     } catch (error: any) {
@@ -73,17 +65,17 @@ export async function GET(
         data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
     try {
-        const { data, error } = await supabase
+        let query = supabase
             .from('payment_confirmations')
             .select('*')
-            .eq('order_id', orderId)
-            .eq('user_id', user.id)
-            .maybeSingle();
+            .eq('order_id', orderId);
+
+        if (user) {
+            query = query.eq('user_id', user.id);
+        }
+
+        const { data, error } = await query.maybeSingle();
 
         if (error) throw error;
 
