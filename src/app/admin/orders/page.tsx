@@ -11,8 +11,10 @@ import {
     MessageCircle,
     Eye,
     Printer,
-    Loader2
+    Loader2,
+    Info
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import {
     Table,
     TableBody,
@@ -158,6 +160,9 @@ export default function AdminOrdersPage() {
                                         const personalizationPrice = personalization?.price || 0;
 
                                         const status = statusMap[order.status] || statusMap.pending;
+                                        const hasOnDemand = order.order_items?.some((item: any) =>
+                                            item.custom_metadata?.on_request === true
+                                        );
                                         return (
                                             <TableRow key={order.id} className="border-slate-100 dark:border-slate-800 group">
                                                 <TableCell className="font-mono text-xs text-muted-foreground">
@@ -201,6 +206,11 @@ export default function AdminOrdersPage() {
                                                         {order.crm_synced && (
                                                             <span className="text-[9px] font-black uppercase text-emerald-500 flex items-center gap-1">
                                                                 <CheckCircle2 size={10} /> Sincronizado CRM
+                                                            </span>
+                                                        )}
+                                                        {hasOnDemand && (
+                                                            <span className="text-[9px] font-black uppercase text-amber-500 flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-full w-fit">
+                                                                <Info size={10} /> Bajo Pedido
                                                             </span>
                                                         )}
                                                     </div>
@@ -431,6 +441,11 @@ export default function AdminOrdersPage() {
                                                         <p className="text-[10px] uppercase font-bold text-slate-400">
                                                             {item.product_variants ? `Talla: ${item.product_variants.size} | Color: ${item.product_variants.color}` : 'Sin variantes'}
                                                         </p>
+                                                        {metadata.on_request && (
+                                                            <Badge variant="warning" className="mt-1 bg-amber-100 text-amber-700 border-amber-200 text-[8px] font-black uppercase py-0 px-1.5 h-4">
+                                                                Bajo Pedido
+                                                            </Badge>
+                                                        )}
                                                     </div>
                                                     <p className="font-bold text-primary">qty: {item.quantity}</p>
                                                 </div>
