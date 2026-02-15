@@ -29,11 +29,17 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
     const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const isLoginPage = pathname === '/admin/login';
     const { isAdmin, isAuthenticated } = useAuth();
 
-    // Guard: if not admin, redirect or show error
-    if (!isAuthenticated || !isAdmin) {
-        redirect('/');
+    // Guard: if not admin, redirect or show error (unless already on login page)
+    if (!isLoginPage && (!isAuthenticated || !isAdmin)) {
+        redirect('/admin/login');
+    }
+
+    // Special case for login page: return clean layout without sidebar
+    if (isLoginPage) {
+        return <div className="min-h-screen bg-slate-50 dark:bg-slate-950">{children}</div>;
     }
 
     const navItems = [

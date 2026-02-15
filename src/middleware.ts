@@ -32,10 +32,15 @@ export async function middleware(request: NextRequest) {
 
     // Protected routes handling
     if (request.nextUrl.pathname.startsWith('/admin')) {
+        // Skip current login page to avoid infinite loop
+        if (request.nextUrl.pathname === '/admin/login') {
+            return response
+        }
+
         if (!user) {
-            // No session, redirect to home and let the UI handle the login modal
+            // No session, redirect to admin login
             const url = request.nextUrl.clone()
-            url.pathname = '/'
+            url.pathname = '/admin/login'
             return NextResponse.redirect(url)
         }
     }
