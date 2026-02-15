@@ -176,11 +176,13 @@ export interface CartState {
   user: UserProfile | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  hasHydrated: boolean;
   setSessionId: (id: string) => void;
   clearSessionId: () => void;
   setUserId: (id: string | null) => void;
   setUser: (user: UserProfile | null) => void;
   setAuthenticated: (auth: boolean) => void;
   setAdmin: (isAdmin: boolean) => void;
+  setHasHydrated: (val: boolean) => void;
   clearAuth: () => void;
 }

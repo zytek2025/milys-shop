@@ -31,25 +31,31 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const isLoginPage = pathname === '/admin/login';
-    const { isAdmin, isAuthenticated, user } = useAuth();
+    const { isAdmin, isAuthenticated, user, hasHydrated } = useCartStore();
     const router = useRouter();
 
     // Guard: if not admin, redirect or show error (unless already on login page)
     // We do this in useEffect to ensure client-side state is stable
     useEffect(() => {
-        if (!isLoginPage && (!isAuthenticated || !isAdmin)) {
+        // Wait for hydration to avoid redirecting during initial render after reload
+        if (hasHydrated && !isLoginPage && (!isAuthenticated || !isAdmin)) {
             router.replace('/admin/login');
         }
-    }, [isLoginPage, isAuthenticated, isAdmin, router]);
+    }, [isLoginPage, isAuthenticated, isAdmin, router, hasHydrated]);
 
     // Special case for login page: return clean layout without sidebar
     if (isLoginPage) {
         return <div className="min-h-screen bg-slate-50 dark:bg-slate-950">{children}</div>;
     }
 
-    // While checking auth, show nothing or a loader to prevent flicker
-    if (!isAuthenticated || !isAdmin) {
-        return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-serif">Verificando acceso...</div>;
+    // While checking auth or hydrating, show nothing or a loader to prevent flicker
+    if (!hasHydrated || !isAuthenticated || !isAdmin) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center font-serif">
+                <div className="h-10 w-10 rounded-xl bg-primary animate-pulse mb-4" />
+                <p className="text-muted-foreground animate-pulse text-sm">Verificando acceso...</p>
+            </div>
+        );
     }
 
     const navItems = [
