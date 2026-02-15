@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
 interface DesignCategory {
@@ -222,39 +223,59 @@ export default function AdminDesignCategoriesPage() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[425px] rounded-3xl">
-                    <DialogHeader>
-                        <DialogTitle>{editingCategory ? 'Editar Tipo' : 'Nuevo Tipo'}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="cat-name">Nombre del Grupo</Label>
-                            <Input
-                                id="cat-name"
-                                placeholder="Ej: Superhéroes, Logos Minimalistas..."
-                                value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                required
-                                className="rounded-xl h-11"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="cat-desc">Descripción (Opcional)</Label>
-                            <Textarea
-                                id="cat-desc"
-                                value={formData.description}
-                                onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                className="rounded-xl min-h-[100px]"
-                            />
-                        </div>
+                <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl max-h-[95vh] flex flex-col">
+                    <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+                        <DialogHeader className="px-8 pt-8 pb-4 shrink-0">
+                            <DialogTitle className="text-2xl font-black italic uppercase tracking-tight flex items-center gap-3">
+                                <div className="p-2 rounded-2xl bg-primary/10 text-primary">
+                                    <Tags size={24} />
+                                </div>
+                                {editingCategory ? 'Editar Tipo' : 'Nuevo Tipo'}
+                            </DialogTitle>
+                        </DialogHeader>
 
-                        <DialogFooter className="pt-4">
-                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
+                        <ScrollArea className="flex-1 px-8 min-h-0">
+                            <div className="space-y-6 py-4 pb-8">
+                                <div className="space-y-2">
+                                    <Label htmlFor="cat-name">Nombre del Grupo</Label>
+                                    <Input
+                                        id="cat-name"
+                                        placeholder="Ej: Superhéroes, Logos Minimalistas..."
+                                        value={formData.name}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                        className="rounded-xl h-11"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="cat-desc">Descripción (Opcional)</Label>
+                                    <Textarea
+                                        id="cat-desc"
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                        className="rounded-xl min-h-[100px]"
+                                    />
+                                </div>
+
+                            </div>
+                        </ScrollArea>
+
+                        <DialogFooter className="px-8 py-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 sm:justify-end gap-3 rounded-b-[2rem] shrink-0">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setIsDialogOpen(false)}
+                                className="rounded-2xl h-12 px-6 font-semibold"
+                            >
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={saving} className="rounded-xl gap-2 shadow-lg shadow-primary/20">
-                                {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                                {editingCategory ? 'Actualizar' : 'Crear Grupo'}
+                            <Button
+                                type="submit"
+                                disabled={saving}
+                                className="rounded-2xl h-12 px-8 font-bold gap-2 shadow-xl shadow-primary/20 bg-gradient-to-r from-primary to-primary/90 hover:scale-[1.02] transition-transform"
+                            >
+                                {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save size={20} />}
+                                {editingCategory ? 'Guardar Cambios' : 'Crear Grupo'}
                             </Button>
                         </DialogFooter>
                     </form>

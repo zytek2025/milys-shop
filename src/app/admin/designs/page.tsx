@@ -40,6 +40,7 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 
@@ -421,140 +422,150 @@ export default function AdminDesignsPage() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[450px] rounded-3xl">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Palette className="text-primary" />
-                            {editingDesign ? 'Editar Diseño' : 'Nuevo Diseño para Sublimación'}
-                        </DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2 col-span-2">
-                                <Label>Nombre del Arte</Label>
-                                <Input
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    required
-                                    className="rounded-xl h-11"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Tipo/Colección</Label>
-                                <Select
-                                    value={formData.category_id}
-                                    onValueChange={val => setFormData({ ...formData, category_id: val })}
-                                >
-                                    <SelectTrigger className="rounded-xl h-11">
-                                        <SelectValue placeholder="Selecciona..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">Sin Categoría</SelectItem>
-                                        {Array.isArray(categories) && categories.map(c => (
-                                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Precio Base</Label>
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={formData.price}
-                                    onChange={e => setFormData({ ...formData, price: e.target.value })}
-                                    className="rounded-xl h-11"
-                                />
-                            </div>
-                            <div className="col-span-2 grid grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] uppercase font-bold text-blue-500">Peq. (S)</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={formData.price_small}
-                                        onChange={e => setFormData({ ...formData, price_small: e.target.value })}
-                                        className="rounded-xl h-10 text-xs"
-                                    />
+                <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl max-h-[95vh] flex flex-col">
+                    <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+                        <DialogHeader className="px-8 pt-8 pb-4 shrink-0">
+                            <DialogTitle className="text-2xl font-black italic uppercase tracking-tight flex items-center gap-3">
+                                <div className="p-2 rounded-2xl bg-primary/10 text-primary">
+                                    <Palette size={24} />
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] uppercase font-bold text-purple-500">Med. (M)</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={formData.price_medium}
-                                        onChange={e => setFormData({ ...formData, price_medium: e.target.value })}
-                                        className="rounded-xl h-10 text-xs"
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] uppercase font-bold text-orange-500">Grd. (L)</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={formData.price_large}
-                                        onChange={e => setFormData({ ...formData, price_large: e.target.value })}
-                                        className="rounded-xl h-10 text-xs"
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                                {editingDesign ? 'Editar Diseño' : 'Nuevo Diseño'}
+                            </DialogTitle>
+                        </DialogHeader>
 
-                        <div className="space-y-2">
-                            <Label>Imagen del Diseño (PNG sugerido)</Label>
-                            <div className="flex gap-4">
-                                <div className="h-24 w-24 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 dark:bg-slate-900/50 dark:border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
-                                    {formData.image_url ? (
-                                        <img src={formData.image_url} className="w-full h-full object-contain" alt="" />
-                                    ) : (
-                                        <ImageIcon className="text-slate-300" size={32} />
-                                    )}
+                        <ScrollArea className="flex-1 px-8 min-h-0">
+                            <div className="space-y-6 py-4 pb-8">
+                                <div className="space-y-2 col-span-2">
+                                    <Label>Nombre del Arte</Label>
+                                    <Input
+                                        value={formData.name}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                        className="rounded-xl h-11"
+                                    />
                                 </div>
-                                <div className="flex-1 flex flex-col justify-center gap-2">
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        className="rounded-xl h-10 gap-2 relative overflow-hidden"
-                                        disabled={uploading}
+                                <div className="space-y-2">
+                                    <Label>Tipo/Colección</Label>
+                                    <Select
+                                        value={formData.category_id}
+                                        onValueChange={val => setFormData({ ...formData, category_id: val })}
                                     >
-                                        {uploading ? (
-                                            <Loader2 className="animate-spin" size={16} />
-                                        ) : (
-                                            <>
-                                                <Upload size={16} />
-                                                Elegir Archivo
-                                            </>
-                                        )}
-                                        <input
-                                            type="file"
-                                            className="absolute inset-0 opacity-0 cursor-pointer"
-                                            onChange={handleImageUpload}
-                                            accept="image/*"
+                                        <SelectTrigger className="rounded-xl h-11">
+                                            <SelectValue placeholder="Selecciona..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">Sin Categoría</SelectItem>
+                                            {Array.isArray(categories) && categories.map(c => (
+                                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Precio Base</Label>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.price}
+                                        onChange={e => setFormData({ ...formData, price: e.target.value })}
+                                        className="rounded-xl h-11"
+                                    />
+                                </div>
+                                <div className="col-span-2 grid grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] uppercase font-bold text-blue-500">Peq. (S)</Label>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            value={formData.price_small}
+                                            onChange={e => setFormData({ ...formData, price_small: e.target.value })}
+                                            className="rounded-xl h-10 text-xs"
                                         />
-                                    </Button>
-                                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest px-1">PNG o JPG máx 5MB</p>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] uppercase font-bold text-purple-500">Med. (M)</Label>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            value={formData.price_medium}
+                                            onChange={e => setFormData({ ...formData, price_medium: e.target.value })}
+                                            className="rounded-xl h-10 text-xs"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] uppercase font-bold text-orange-500">Grd. (L)</Label>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            value={formData.price_large}
+                                            onChange={e => setFormData({ ...formData, price_large: e.target.value })}
+                                            className="rounded-xl h-10 text-xs"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="space-y-2">
-                            <Label>Descripción (Opcional)</Label>
-                            <Textarea
-                                value={formData.description}
-                                onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                className="rounded-xl min-h-[80px]"
-                            />
-                        </div>
+                            <div className="space-y-2">
+                                <Label>Imagen del Diseño (PNG sugerido)</Label>
+                                <div className="flex gap-4">
+                                    <div className="h-24 w-24 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 dark:bg-slate-900/50 dark:border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                                        {formData.image_url ? (
+                                            <img src={formData.image_url} className="w-full h-full object-contain" alt="" />
+                                        ) : (
+                                            <ImageIcon className="text-slate-300" size={32} />
+                                        )}
+                                    </div>
+                                    <div className="flex-1 flex flex-col justify-center gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            className="rounded-xl h-10 gap-2 relative overflow-hidden"
+                                            disabled={uploading}
+                                        >
+                                            {uploading ? (
+                                                <Loader2 className="animate-spin" size={16} />
+                                            ) : (
+                                                <>
+                                                    <Upload size={16} />
+                                                    Elegir Archivo
+                                                </>
+                                            )}
+                                            <input
+                                                type="file"
+                                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                                onChange={handleImageUpload}
+                                                accept="image/*"
+                                            />
+                                        </Button>
+                                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest px-1">PNG o JPG máx 5MB</p>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <DialogFooter className="pt-4">
-                            <Button type="submit" disabled={saving || uploading} className="rounded-xl w-full h-12 text-lg font-bold shadow-lg shadow-primary/20">
-                                {saving ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" />}
-                                {editingDesign ? 'Guardar Cambios' : 'Publicar en Galería'}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-        </div>
+                        </div>
+                    </ScrollArea>
+
+                    <DialogFooter className="px-8 py-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 sm:justify-end gap-3 rounded-b-[2rem] shrink-0">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => setIsDialogOpen(false)}
+                            className="rounded-2xl h-12 px-6 font-semibold"
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={saving || uploading}
+                            className="rounded-2xl h-12 px-8 font-bold gap-2 shadow-xl shadow-primary/20 bg-gradient-to-r from-primary to-primary/90 hover:scale-[1.02] transition-transform"
+                        >
+                            {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save size={20} />}
+                            {editingDesign ? 'Guardar Cambios' : 'Publicar Arte'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    </div >
     );
 }

@@ -175,9 +175,9 @@ export function ProductForm({ product, isOpen, onClose, onSuccess }: ProductForm
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl">
+            <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl max-h-[95vh] flex flex-col">
                 <form onSubmit={handleSubmit}>
-                    <DialogHeader className="px-8 pt-8 pb-4">
+                    <DialogHeader className="px-8 pt-8 pb-4 shrink-0">
                         <DialogTitle className="text-2xl font-bold">
                             {product ? 'Editar Producto' : 'Nuevo Producto'}
                         </DialogTitle>
@@ -186,7 +186,7 @@ export function ProductForm({ product, isOpen, onClose, onSuccess }: ProductForm
                         </p>
                     </DialogHeader>
 
-                    <ScrollArea className="max-h-[65vh] px-8">
+                    <ScrollArea className="flex-1 px-8 min-h-0">
                         <div className="grid gap-6 py-4 pb-8">
                             <div className="space-y-2">
                                 <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-slate-400">Nombre del Producto</Label>

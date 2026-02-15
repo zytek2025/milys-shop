@@ -19,7 +19,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { ProductPreview } from './product-preview';
 
 interface Design {
     id: string;
@@ -73,6 +72,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     // State for garment options
     const [selectedColor, setSelectedColor] = useState<string | null>(null);
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
+    const [quantity, setQuantity] = useState(1);
     const [isAdding, setIsAdding] = useState(false);
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
@@ -184,13 +184,6 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
         return activeVariant.stock <= 0;
     }, [activeVariant, selectedColor, selectedSize]);
 
-    // Find hex for preview
-    const activeColorHex = useMemo(() => {
-        if (!selectedColor) return '#f1f5f9';
-        const variant = variants.find(v => v.color === selectedColor);
-        return variant?.color_hex || '#f1f5f9';
-    }, [selectedColor, variants]);
-
     // Price Calculation helper
     const getDesignPrice = (size: 'small' | 'medium' | 'large') => {
         const catPrices: Record<string, number | undefined> = {
@@ -198,13 +191,8 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
             medium: product.category_data?.design_price_medium,
             large: product.category_data?.design_price_large
         };
-        const globalPrices: Record<string, number | undefined> = {
-            small: storeSettings?.design_price_small,
-            medium: storeSettings?.design_price_medium,
-            large: storeSettings?.design_price_large
-        };
 
-        const price = catPrices[size] || globalPrices[size];
+        const price = catPrices[size];
         return price || (size === 'small' ? 2.00 : size === 'medium' ? 5.00 : 10.00);
     };
 
@@ -213,12 +201,8 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
             small: product.category_data?.text_price_small,
             large: product.category_data?.text_price_large
         };
-        const globalPrices: Record<string, number | undefined> = {
-            small: storeSettings?.personalization_price_small,
-            large: storeSettings?.personalization_price_large
-        };
 
-        const price = catPrices[size] || globalPrices[size];
+        const price = catPrices[size];
         return price || (size === 'small' ? 1.00 : 3.00);
     };
 
@@ -226,7 +210,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     const designsPrice = isCustomizable ? selectedDesigns.reduce((sum, d) => sum + getDesignPrice(d.selectedSize), 0) : 0;
     const personalizationPrice = customText ? getPersonalizationPrice(customTextSize) : 0;
 
-    const totalPrice = garmentPrice + designsPrice + personalizationPrice;
+    const totalPrice = (garmentPrice + designsPrice + personalizationPrice) * quantity;
 
     const toggleDesign = (design: Design) => {
         setSelectedDesigns(prev => {
@@ -256,7 +240,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
         try {
             await addToCart.mutateAsync({
                 productId: product.id,
-                quantity: 1,
+                quantity: quantity,
                 // @ts-ignore
                 variantId: activeVariant?.id || null,
                 // @ts-ignore
@@ -292,20 +276,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     });
 
     return (
-        <div className="space-y-8">
-            {/* Visual Preview */}
-            <div className="w-full max-w-md mx-auto mb-8 animate-in fade-in zoom-in duration-500">
-                <ProductPreview
-                    color={selectedColor || 'Blanco'}
-                    colorHex={activeColorHex}
-                    designs={selectedDesigns}
-                    customText={customText}
-                    customTextSize={customTextSize}
-                    customTextLocation={customTextLocation}
-                    garmentImage={product.image_url}
-                />
-            </div>
-
+        <div className="space-y-8 max-w-2xl mx-auto">
             {/* Price Header */}
             <div className="flex flex-col gap-1 border-b border-lavanda/30 pb-6">
                 <div className="flex items-baseline gap-3">
@@ -325,11 +296,106 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 )}
             </div>
 
-            {/* Step 1: Designs Selection */}
-            {isCustomizable && (
-                <div className="space-y-4">
+            {/* Step 1: Color */}
+            {hasVariants && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-500">
                     <div className="flex items-center justify-between">
-                        <SectionLabel label="Paso 1: Añade tus diseños (Máx 3)" />
+                        <SectionLabel label="Paso 1: Elige el color de prenda" />
+                        {selectedColor && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">{selectedColor}</span>}
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                        {availableColors.map(color => (
+                            <button
+                                key={color.name}
+                                onClick={() => {
+                                    setSelectedColor(color.name);
+                                    setSelectedSize(null);
+                                }}
+                                title={color.name}
+                                className={cn(
+                                    "group relative w-12 h-12 rounded-full border-2 transition-all p-0.5",
+                                    selectedColor === color.name
+                                        ? "border-primary scale-110 shadow-lg"
+                                        : "border-slate-100 hover:border-slate-300 dark:border-slate-800"
+                                )}
+                            >
+                                <div
+                                    className="w-full h-full rounded-full border border-black/5"
+                                    style={{ backgroundColor: color.hex }}
+                                />
+                                {selectedColor === color.name && (
+                                    <div className="absolute -top-1 -right-1 bg-primary text-white p-0.5 rounded-full shadow-sm">
+                                        <Check size={10} strokeWidth={4} />
+                                    </div>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Step 2: Size */}
+            {hasVariants && (
+                <AnimatePresence>
+                    {selectedColor && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="space-y-4"
+                        >
+                            <div className="flex items-center justify-between">
+                                <SectionLabel label="Paso 2: Elige tu talla" />
+                                {selectedSize && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">Talla {selectedSize}</span>}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {availableSizes.map(s => {
+                                    const isOutOfStock = s.stock <= 0;
+                                    const isSelected = selectedSize === s.size;
+
+                                    return (
+                                        <button
+                                            key={s.size}
+                                            onClick={() => setSelectedSize(s.size)}
+                                            className={cn(
+                                                "min-w-[65px] h-14 rounded-2xl text-sm font-bold transition-all border-2 relative overflow-hidden flex flex-col items-center justify-center gap-0.5",
+                                                isSelected
+                                                    ? "border-primary bg-primary text-white shadow-lg shadow-primary/20"
+                                                    : "border-slate-100 hover:border-slate-300 dark:border-slate-800",
+                                                isOutOfStock ? "bg-slate-50/50" : ""
+                                            )}
+                                        >
+                                            <span className="text-lg">{s.size}</span>
+                                            <span className={cn(
+                                                "text-[8px] uppercase tracking-tighter",
+                                                isSelected ? "text-white/80" : "text-muted-foreground"
+                                            )}>
+                                                {isOutOfStock ? 'Bajo Pedido' : `${s.stock} disp.`}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {isOnDemand && (
+                                <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-900/20 dark:border-amber-900/30 flex gap-3 animate-in fade-in slide-in-from-top duration-300">
+                                    <Info className="w-5 h-5 text-amber-600 shrink-0" />
+                                    <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-tight">
+                                        <span className="font-bold block mb-1">Nota sobre disponibilidad:</span>
+                                        Esta combinación se fabricará bajo pedido especialmente para ti.
+                                        Tu pedido será confirmado manualmente por nuestro equipo.
+                                    </p>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            )}
+
+            {/* Step 3: Designs Selection */}
+            {isCustomizable && (
+                <div className="space-y-4 pt-4 border-t border-lavanda/20">
+                    <div className="flex items-center justify-between">
+                        <SectionLabel label="Paso 3: Personaliza con Logotipos (Opcional)" />
                         <Badge variant="secondary" className="rounded-full bg-primary/10 text-primary border-none">
                             {selectedDesigns.length} / 3 Seleccionados
                         </Badge>
@@ -353,9 +419,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                                         <div className="flex justify-between items-start">
                                             <div className="font-bold text-sm uppercase truncate max-w-[150px]">{design.name}</div>
                                             <div className="text-primary font-black text-xs">
-                                                ${(design.selectedSize === 'small' ? (storeSettings?.design_price_small ?? 2.00) :
-                                                    design.selectedSize === 'medium' ? (storeSettings?.design_price_medium ?? 5.00) :
-                                                        (storeSettings?.design_price_large ?? 10.00)).toFixed(2)}
+                                                ${getDesignPrice(design.selectedSize).toFixed(2)}
                                             </div>
                                         </div>
 
@@ -392,7 +456,6 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                     </div>
 
                     <div className="flex flex-wrap gap-3">
-
                         {selectedDesigns.length < 3 && (
                             <Dialog open={isGalleryOpen} onOpenChange={setIsGalleryOpen}>
                                 <DialogTrigger asChild>
@@ -482,155 +545,85 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                             </Dialog>
                         )}
                     </div>
-                </div>
-            )}
 
-            {/* Step 1.5: Personalization Text */}
-            {isCustomizable && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-500 delay-200">
-                    <SectionLabel label="Paso Adicional: Personalización de Texto" />
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="relative flex-1">
-                            <Input
-                                placeholder="Ej: Nombre o mensaje especial..."
-                                maxLength={80}
-                                value={customText}
-                                onChange={(e) => setCustomText(e.target.value)}
-                                className="rounded-2xl h-14 bg-slate-50 dark:bg-slate-900 border-none pl-4 pr-16 text-sm font-medium"
-                            />
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                                {customText.length}/80
-                            </div>
-                        </div>
-                        <div className="w-full sm:w-48 space-y-1">
-                            <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Tamaño de Texto</Label>
-                            <select
-                                value={customTextSize}
-                                onChange={(e) => setCustomTextSize(e.target.value as 'small' | 'large')}
-                                className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
-                            >
-                                <option value="small">Pequeño (+${storeSettings?.personalization_price_small ?? '1.00'})</option>
-                                <option value="large">Grande (+${storeSettings?.personalization_price_large ?? '3.00'})</option>
-                            </select>
-                        </div>
-                        <div className="w-full sm:w-48 space-y-1">
-                            <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Ubicación de Texto</Label>
-                            <select
-                                value={customTextLocation}
-                                onChange={(e) => setCustomTextLocation(e.target.value)}
-                                className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
-                            >
-                                {designLocations.map(loc => (
-                                    <option key={loc} value={loc}>{loc}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground italic px-2">
-                        Puedes añadir un nombre o mensaje corto que será incluido en la prenda (bordado o vinil según disponibilidad).
-                    </p>
-                </div>
-            )}
-
-            {/* Step 2: Color */}
-            {hasVariants && (
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <SectionLabel label="Paso 2: Elige el color de prenda" />
-                        {selectedColor && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">{selectedColor}</span>}
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                        {availableColors.map(color => (
-                            <button
-                                key={color.name}
-                                onClick={() => {
-                                    setSelectedColor(color.name);
-                                    setSelectedSize(null);
-                                }}
-                                title={color.name}
-                                className={cn(
-                                    "group relative w-12 h-12 rounded-full border-2 transition-all p-0.5",
-                                    selectedColor === color.name
-                                        ? "border-primary scale-110 shadow-lg"
-                                        : "border-slate-100 hover:border-slate-300 dark:border-slate-800"
-                                )}
-                            >
-                                <div
-                                    className="w-full h-full rounded-full border border-black/5"
-                                    style={{ backgroundColor: color.hex }}
+                    {/* Personalization Text */}
+                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-500 delay-200 mt-6">
+                        <Label className="text-[10px] uppercase font-bold text-slate-400 tracking-[0.2em] ml-2">Personalización de Texto</Label>
+                        <div className="flex flex-col gap-4">
+                            <div className="relative flex-1">
+                                <Input
+                                    placeholder="Ej: Nombre o mensaje especial..."
+                                    maxLength={80}
+                                    value={customText}
+                                    onChange={(e) => setCustomText(e.target.value)}
+                                    className="rounded-2xl h-14 bg-slate-50 dark:bg-slate-900 border-none pl-4 pr-16 text-sm font-medium"
                                 />
-                                {selectedColor === color.name && (
-                                    <div className="absolute -top-1 -right-1 bg-primary text-white p-0.5 rounded-full shadow-sm">
-                                        <Check size={10} strokeWidth={4} />
-                                    </div>
-                                )}
-                            </button>
-                        ))}
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                                    {customText.length}/80
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Tamaño de Texto</Label>
+                                    <select
+                                        value={customTextSize}
+                                        onChange={(e) => setCustomTextSize(e.target.value as 'small' | 'large')}
+                                        className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
+                                    >
+                                        <option value="small">Pequeño (+${storeSettings?.personalization_price_small ?? '1.00'})</option>
+                                        <option value="large">Grande (+${storeSettings?.personalization_price_large ?? '3.00'})</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Ubicación de Texto</Label>
+                                    <select
+                                        value={customTextLocation}
+                                        onChange={(e) => setCustomTextLocation(e.target.value)}
+                                        className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
+                                    >
+                                        {designLocations.map(loc => (
+                                            <option key={loc} value={loc}>{loc}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* Step 3: Size */}
-            {hasVariants && (
-                <AnimatePresence>
-                    {selectedColor && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="space-y-4"
+            {/* Step 4: Quantity and Final Action */}
+            <div className="pt-8 border-t border-lavanda/30 space-y-6">
+                <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900 p-4 rounded-3xl">
+                    <div className="space-y-0.5">
+                        <Label className="text-[10px] uppercase font-bold text-slate-400 tracking-[0.2em] ml-1">Cantidad</Label>
+                        <p className="text-[10px] text-muted-foreground italic ml-1">¿Cuántas unidades deseas?</p>
+                    </div>
+                    <div className="flex items-center gap-4 bg-white dark:bg-black/20 p-2 rounded-2xl border shadow-sm">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={quantity <= 1}
+                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                            className="w-10 h-10 rounded-xl hover:bg-primary/10 hover:text-primary"
                         >
-                            <div className="flex items-center justify-between">
-                                <SectionLabel label="Paso 3: Elige tu talla" />
-                                {selectedSize && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">Talla {selectedSize}</span>}
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {availableSizes.map(s => {
-                                    const isOutOfStock = s.stock <= 0;
-                                    const isSelected = selectedSize === s.size;
+                            <X size={16} className="rotate-45" />
+                        </Button>
+                        <span className="text-xl font-black w-8 text-center">{quantity}</span>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setQuantity(q => q + 1)}
+                            className="w-10 h-10 rounded-xl hover:bg-primary/10 hover:text-primary"
+                        >
+                            <Plus size={16} />
+                        </Button>
+                    </div>
+                </div>
 
-                                    return (
-                                        <button
-                                            key={s.size}
-                                            onClick={() => setSelectedSize(s.size)}
-                                            className={cn(
-                                                "min-w-[65px] h-12 rounded-2xl text-sm font-bold transition-all border-2 relative overflow-hidden",
-                                                isSelected
-                                                    ? "border-primary bg-primary text-white shadow-lg shadow-primary/20"
-                                                    : "border-slate-100 hover:border-slate-300 dark:border-slate-800",
-                                                isOutOfStock ? "bg-slate-50/50" : ""
-                                            )}
-                                        >
-                                            {s.size}
-                                            {isOutOfStock && (
-                                                <div className="absolute inset-x-0 bottom-0 bg-amber-500/10 text-amber-600 text-[7px] font-black uppercase text-center py-0.5 leading-none">
-                                                    Bajo Pedido
-                                                </div>
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            {isOnDemand && (
-                                <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-900/20 dark:border-amber-900/30 flex gap-3 animate-in fade-in slide-in-from-top duration-300">
-                                    <Info className="w-5 h-5 text-amber-600 shrink-0" />
-                                    <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-tight">
-                                        <span className="font-bold block mb-1">Nota sobre disponibilidad:</span>
-                                        Esta combinación se fabricará bajo pedido especialmente para ti.
-                                        Tu pedido será confirmado manualmente por nuestro equipo.
-                                    </p>
-                                </div>
-                            )}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            )}
-
-            {/* Final Action */}
-            <div className="pt-6 border-t border-slate-100 dark:border-slate-900">
                 <Button
-                    className="w-full h-16 rounded-2xl text-xl font-black italic shadow-2xl shadow-primary/30 gap-4 uppercase tracking-tighter hover:scale-[1.02] active:scale-95 transition-all"
-                    disabled={isAdding || (hasVariants && (!activeVariant || activeVariant.stock <= 0))}
+                    className="w-full h-16 rounded-2xl text-xl font-black italic shadow-2xl shadow-primary/30 gap-4 uppercase tracking-tighter hover:scale-[1.02] active:scale-95 transition-all bg-gradient-to-r from-primary to-primary/90"
+                    disabled={isAdding || (hasVariants && (!activeVariant || (activeVariant.stock <= 0 && !isOnDemand)))}
                     onClick={handleAddToCart}
                 >
                     {isAdding ? (
@@ -648,7 +641,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                         'Añadir al Carrito'
                     )}
                 </Button>
-                <p className="text-center mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center justify-center gap-2">
+                <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center justify-center gap-2">
                     <Check size={12} className="text-emerald-500" /> Garantía de Satisfacción 100%
                 </p>
             </div>

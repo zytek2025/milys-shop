@@ -10,11 +10,6 @@ import { toast } from 'sonner';
 import { Save, Loader2, Landmark, Smartphone, MessageSquareQuote, Type, Palette } from 'lucide-react';
 
 interface StoreSettings {
-    personalization_price_small: number;
-    personalization_price_large: number;
-    design_price_small: number;
-    design_price_medium: number;
-    design_price_large: number;
     pago_movil_info: string;
     zelle_info: string;
     crm_webhook_url: string;
@@ -24,11 +19,6 @@ export default function AdminSettingsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [settings, setSettings] = useState<StoreSettings>({
-        personalization_price_small: 1.00,
-        personalization_price_large: 3.00,
-        design_price_small: 2.00,
-        design_price_medium: 5.00,
-        design_price_large: 10.00,
         pago_movil_info: '',
         zelle_info: '',
         crm_webhook_url: ''
@@ -44,11 +34,6 @@ export default function AdminSettingsPage() {
             const data = await res.json();
             if (res.ok) {
                 setSettings({
-                    personalization_price_small: Number(data.personalization_price_small ?? 1.00),
-                    personalization_price_large: Number(data.personalization_price_large ?? 3.00),
-                    design_price_small: Number(data.design_price_small ?? 2.00),
-                    design_price_medium: Number(data.design_price_medium ?? 5.00),
-                    design_price_large: Number(data.design_price_large ?? 10.00),
                     pago_movil_info: data.pago_movil_info || '',
                     zelle_info: data.zelle_info || '',
                     crm_webhook_url: data.crm_webhook_url || ''
@@ -100,93 +85,14 @@ export default function AdminSettingsPage() {
         <div className="space-y-6 max-w-4xl mx-auto p-4">
             <div>
                 <h1 className="text-3xl font-black italic uppercase tracking-tighter">Ajustes de la Tienda</h1>
-                <p className="text-muted-foreground">Configura los precios globales, métodos de pago e integraciones.</p>
+                <p className="text-muted-foreground">Configura los métodos de pago e integraciones.</p>
             </div>
 
             <div className="grid gap-6">
-                {/* Precios Globales de Diseños */}
-                <Card className="border-2 border-primary/20 shadow-lg shadow-primary/5 bg-slate-50/50 dark:bg-slate-900/50">
+                {/* Pago Móvil */}
+                <Card className="border-2 shadow-lg shadow-primary/5 bg-slate-50/50 dark:bg-slate-900/50">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 italic">
-                            <Palette className="text-primary h-5 w-5" /> Precios Globales de Logos / Diseños
-                        </CardTitle>
-                        <CardDescription>Estos precios se aplicarán a TODOS los diseños que el cliente elija.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid sm:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="design_small">Logo Pequeño ($)</Label>
-                            <Input
-                                id="design_small"
-                                type="number"
-                                step="0.01"
-                                value={settings.design_price_small}
-                                onChange={(e) => handleUpdateField('design_price_small', e.target.value)}
-                                className="h-12 bg-white dark:bg-slate-950 border-2 font-black text-lg"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="design_medium">Logo Mediano ($)</Label>
-                            <Input
-                                id="design_medium"
-                                type="number"
-                                step="0.01"
-                                value={settings.design_price_medium}
-                                onChange={(e) => handleUpdateField('design_price_medium', e.target.value)}
-                                className="h-12 bg-white dark:bg-slate-950 border-2 font-black text-lg"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="design_large">Logo Grande ($)</Label>
-                            <Input
-                                id="design_large"
-                                type="number"
-                                step="0.01"
-                                value={settings.design_price_large}
-                                onChange={(e) => handleUpdateField('design_price_large', e.target.value)}
-                                className="h-12 bg-white dark:bg-slate-950 border-2 font-black text-lg"
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Precios de Personalización */}
-                <Card className="border-2">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Type className="text-primary h-5 w-5" /> Precios de Personalización de Texto
-                        </CardTitle>
-                        <CardDescription>Configura cuánto cuesta añadir nombres o mensajes a las prendas.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="price_small">Precio Tamaño Pequeño ($)</Label>
-                            <Input
-                                id="price_small"
-                                type="number"
-                                step="0.01"
-                                value={settings.personalization_price_small}
-                                onChange={(e) => handleUpdateField('personalization_price_small', e.target.value)}
-                                className="h-12 bg-slate-50 dark:bg-slate-900 border-none font-bold"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="price_large">Precio Tamaño Grande ($)</Label>
-                            <Input
-                                id="price_large"
-                                type="number"
-                                step="0.01"
-                                value={settings.personalization_price_large}
-                                onChange={(e) => handleUpdateField('personalization_price_large', e.target.value)}
-                                className="h-12 bg-slate-50 dark:bg-slate-900 border-none font-bold"
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Pago Móvil */}
-                <Card className="border-2">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
                             <Smartphone className="text-primary h-5 w-5" /> Pago Móvil
                         </CardTitle>
                         <CardDescription>Información que verá el cliente para realizar el pago móvil.</CardDescription>
@@ -196,7 +102,7 @@ export default function AdminSettingsPage() {
                             placeholder="Ej: Banco Mercantil, Cedula: V-1234567, Tlf: 0412..."
                             value={settings.pago_movil_info}
                             onChange={(e) => handleUpdateField('pago_movil_info', e.target.value)}
-                            className="min-h-[100px] font-mono text-sm bg-slate-50 dark:bg-slate-900 border-none"
+                            className="min-h-[100px] font-mono text-sm bg-white dark:bg-slate-950 border-2"
                         />
                     </CardContent>
                 </Card>

@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = getSupabaseClient();
     const body = await request.json();
-    const { sessionId, productId, variantId, quantity = 1, customMetadata = [] } = body;
+    const { sessionId, productId, variantId, quantity = 1, customMetadata = null } = body;
 
     if (!productId) {
       return NextResponse.json({ error: 'Product ID required' }, { status: 400 });
