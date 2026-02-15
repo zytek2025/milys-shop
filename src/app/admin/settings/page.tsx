@@ -267,38 +267,54 @@ export default function AdminSettingsPage() {
                     </div>
                 </div>
 
-            </Card>
+                <Separator />
 
-            <Separator />
-
-            {/* Canva Integration */}
-            <Card className="border-2 shadow-sm bg-blue-50/30 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/20">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 italic uppercase tracking-tighter text-lg font-black text-blue-600 dark:text-blue-400">
-                        <Plus className="h-5 w-5" /> Integración Canva Pro
-                    </CardTitle>
-                    <CardDescription className="text-xs font-bold uppercase opacity-60 italic">
-                        Configura tu Canva API Key para diseñar artes directamente desde la tienda.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase italic">API Key de Canva</Label>
+                {/* CRM Webhook */}
+                <Card className="border-2 shadow-sm bg-slate-50/50 dark:bg-slate-900/50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 italic uppercase tracking-tighter text-lg font-black">
+                            <MessageSquareQuote className="text-primary h-5 w-5" /> Integración CRM (n8n)
+                        </CardTitle>
+                        <CardDescription className="text-xs font-bold uppercase opacity-60 italic">URL del Webhook para notificar pedidos pagados.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
                         <Input
-                            type="password"
-                            placeholder="Pega aquí tu API Key de Canva..."
-                            value={settings.canva_api_key}
-                            onChange={(e) => handleUpdateField('canva_api_key', e.target.value)}
+                            placeholder="https://n8n.tuempresa.com/webhook/..."
+                            value={settings.crm_webhook_url}
+                            onChange={(e) => handleUpdateField('crm_webhook_url', e.target.value)}
                             className="font-mono text-sm bg-white dark:bg-slate-950 border-2 h-12 rounded-xl"
                         />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground italic flex items-center gap-2">
-                        <CheckCircle2 size={12} className="text-blue-500" />
-                        Solo disponible para administradores en la sección de Biblioteca de Diseños.
-                    </p>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+
+                {/* Canva Integration */}
+                <Card className="border-2 shadow-sm bg-blue-50/30 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/20">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 italic uppercase tracking-tighter text-lg font-black text-blue-600 dark:text-blue-400">
+                            <Plus className="h-5 w-5" /> Integración Canva Pro
+                        </CardTitle>
+                        <CardDescription className="text-xs font-bold uppercase opacity-60 italic">
+                            Configura tu Canva API Key para diseñar artes directamente desde la tienda.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase italic">API Key de Canva</Label>
+                            <Input
+                                type="password"
+                                placeholder="Pega aquí tu API Key de Canva..."
+                                value={settings.canva_api_key}
+                                onChange={(e) => handleUpdateField('canva_api_key', e.target.value)}
+                                className="font-mono text-sm bg-white dark:bg-slate-950 border-2 h-12 rounded-xl"
+                            />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground italic flex items-center gap-2">
+                            <CheckCircle2 size={12} className="text-blue-500" />
+                            Solo disponible para administradores en la sección de Biblioteca de Diseños.
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
-        </div >
     );
 }
