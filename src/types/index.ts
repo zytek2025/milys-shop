@@ -32,6 +32,8 @@ export interface Category {
   description?: string;
   has_variants?: boolean;
   is_customizable?: boolean;
+  available_sizes?: string[];
+  available_colors?: { name: string; hex: string }[];
   created_at?: string;
   updated_at: string;
 }

@@ -34,7 +34,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { name, description, has_variants, is_customizable } = body;
+        const { name, description, has_variants, is_customizable, available_sizes, available_colors } = body;
 
         if (!name) {
             return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -54,7 +54,9 @@ export async function POST(req: Request) {
                 slug,
                 description,
                 has_variants: !!has_variants,
-                is_customizable: is_customizable !== undefined ? !!is_customizable : true
+                is_customizable: is_customizable !== undefined ? !!is_customizable : true,
+                available_sizes: available_sizes || [],
+                available_colors: available_colors || []
             })
             .select()
             .single();

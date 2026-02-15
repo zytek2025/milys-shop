@@ -8,8 +8,10 @@ import {
     Edit2,
     Trash2,
     Loader2,
-    Save
+    Save,
+    X
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import {
     Table,
     TableBody,
@@ -21,6 +23,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
     Dialog,
@@ -40,7 +43,17 @@ export default function AdminCategoriesPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-    const [formData, setFormData] = useState({ name: '', description: '', has_variants: false, is_customizable: true });
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        has_variants: false,
+        is_customizable: true,
+        available_sizes: [] as string[],
+        available_colors: [] as { name: string; hex: string }[]
+    });
+    const [newSize, setNewSize] = useState('');
+    const [newColorName, setNewColorName] = useState('');
+    const [newColorHex, setNewColorHex] = useState('#000000');
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -67,11 +80,20 @@ export default function AdminCategoriesPage() {
                 name: category.name,
                 description: category.description || '',
                 has_variants: !!category.has_variants,
-                is_customizable: category.is_customizable !== false
+                is_customizable: category.is_customizable !== false,
+                available_sizes: category.available_sizes || [],
+                available_colors: category.available_colors || []
             });
         } else {
             setEditingCategory(null);
-            setFormData({ name: '', description: '', has_variants: false, is_customizable: true });
+            setFormData({
+                name: '',
+                description: '',
+                has_variants: false,
+                is_customizable: true,
+                available_sizes: [],
+                available_colors: []
+            });
         }
         setIsDialogOpen(true);
     };
@@ -290,6 +312,88 @@ export default function AdminCategoriesPage() {
                                 onCheckedChange={checked => setFormData({ ...formData, is_customizable: checked })}
                             />
                         </div>
+
+                        {formData.has_variants && (
+                            <div className="space-y-4 animate-in fade-in slide-in-from-top duration-300">
+                                <Separator />
+                                <div className="space-y-3">
+                                    <Label className="text-sm font-bold uppercase tracking-wider text-slate-400">Tallas Globales</Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            placeholder="Ej: XL"
+                                            value={newSize}
+                                            onChange={e => setNewSize(e.target.value.toUpperCase())}
+                                            className="h-9 rounded-lg"
+                                        />
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            onClick={() => {
+                                                if (newSize && !formData.available_sizes.includes(newSize)) {
+                                                    setFormData({ ...formData, available_sizes: [...formData.available_sizes, newSize] });
+                                                    setNewSize('');
+                                                }
+                                            }}
+                                        >
+                                            <Plus size={16} />
+                                        </Button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {formData.available_sizes.map(size => (
+                                            <Badge key={size} variant="secondary" className="gap-1 rounded-lg px-2 py-1">
+                                                {size}
+                                                <X size={12} className="cursor-pointer" onClick={() => setFormData({ ...formData, available_sizes: formData.available_sizes.filter(s => s !== size) })} />
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <Label className="text-sm font-bold uppercase tracking-wider text-slate-400">Colores Globales</Label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Input
+                                            placeholder="Nombre: Azul"
+                                            value={newColorName}
+                                            onChange={e => setNewColorName(e.target.value)}
+                                            className="h-9 rounded-lg"
+                                        />
+                                        <div className="flex gap-2">
+                                            <Input
+                                                type="color"
+                                                value={newColorHex}
+                                                onChange={e => setNewColorHex(e.target.value)}
+                                                className="h-9 w-12 p-1 rounded-lg"
+                                            />
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                className="flex-1"
+                                                onClick={() => {
+                                                    if (newColorName) {
+                                                        setFormData({
+                                                            ...formData,
+                                                            available_colors: [...formData.available_colors, { name: newColorName, hex: newColorHex }]
+                                                        });
+                                                        setNewColorName('');
+                                                    }
+                                                }}
+                                            >
+                                                <Plus size={16} />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {formData.available_colors.map((color, i) => (
+                                            <div key={i} className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-lg px-2 py-1 group">
+                                                <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: color.hex }} />
+                                                <span className="text-xs font-medium">{color.name}</span>
+                                                <X size={12} className="cursor-pointer text-slate-400 hover:text-destructive" onClick={() => setFormData({ ...formData, available_colors: formData.available_colors.filter((_, idx) => idx !== i) })} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         <DialogFooter className="pt-4">
                             <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
                                 Cancelar

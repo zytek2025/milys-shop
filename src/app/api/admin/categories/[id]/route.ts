@@ -11,7 +11,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
         const { id } = await params;
         const body = await req.json();
-        const { name, description, has_variants, is_customizable } = body;
+        const { name, description, has_variants, is_customizable, available_sizes, available_colors } = body;
 
         if (!name) {
             return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -31,6 +31,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
                 description,
                 has_variants: !!has_variants,
                 is_customizable: is_customizable !== undefined ? !!is_customizable : true,
+                available_sizes: available_sizes || [],
+                available_colors: available_colors || [],
                 updated_at: new Date().toISOString()
             })
             .eq('id', id)

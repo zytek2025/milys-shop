@@ -109,22 +109,60 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
 
     // Step 2: Available Colors
     const availableColors = useMemo(() => {
-        const unique = new Map();
+        // 1. Get colors defined in category (Global Matrix)
+        const categoryColors = product.category_data?.available_colors || [];
+
+        // 2. Get colors present in variants
+        const variantColors = new Map();
         variants.forEach(v => {
-            if (!unique.has(v.color)) {
-                unique.set(v.color, { name: v.color, hex: v.color_hex });
+            if (!variantColors.has(v.color)) {
+                variantColors.set(v.color, { name: v.color, hex: v.color_hex });
             }
         });
-        return Array.from(unique.values());
-    }, [variants]);
+
+        // 3. Merge: Category colors first, then any extra in variants
+        const combined = new Map();
+        categoryColors.forEach((c: any) => combined.set(c.name, c));
+        variantColors.forEach((c, name) => {
+            if (!combined.has(name)) combined.set(name, c);
+        });
+
+        return Array.from(combined.values());
+    }, [variants, product.category_data]);
 
     // Step 3: Available Sizes for selected color
     const availableSizes = useMemo(() => {
         if (!selectedColor) return [];
-        return variants
-            .filter(v => v.color === selectedColor)
-            .map(v => ({ size: v.size, stock: v.stock, id: v.id }));
-    }, [selectedColor, variants]);
+
+        // 1. Get sizes defined in category (Global Matrix)
+        const categorySizes = product.category_data?.available_sizes || [];
+
+        // 2. Get sizes present in variants for this color
+        const colorVariants = variants.filter(v => v.color === selectedColor);
+        const variantSizes = colorVariants.map(v => ({
+            size: v.size,
+            stock: v.stock,
+            id: v.id,
+            onDemand: false
+        }));
+
+        // 3. Merge: Ensure all category sizes are shown
+        const combined = [...variantSizes];
+        categorySizes.forEach((size: string) => {
+            if (!combined.find(s => s.size === size)) {
+                combined.push({ size, stock: 0, id: `ondemand-${size}`, onDemand: true });
+            }
+        });
+
+        // Simple sort for sizes (S, M, L, XL style)
+        const order = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
+        return combined.sort((a, b) => {
+            const indexA = order.indexOf(a.size || '');
+            const indexB = order.indexOf(b.size || '');
+            if (indexA === -1 || indexB === -1) return (a.size || '').localeCompare(b.size || '');
+            return indexA - indexB;
+        });
+    }, [selectedColor, variants, product.category_data]);
 
     const isPrenda = variants.length > 0;
     const hasVariants = isPrenda && (product.category_data?.has_variants ?? true);
@@ -133,11 +171,18 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     // Find active variant
     const activeVariant = useMemo(() => {
         if (!hasVariants) return null;
-        return variants.find(v =>
+        const v = variants.find(v =>
             v.color === selectedColor &&
             v.size === selectedSize
         );
+        return v || null;
     }, [selectedColor, selectedSize, variants, hasVariants]);
+
+    const isOnDemand = useMemo(() => {
+        if (!selectedColor || !selectedSize) return false;
+        if (!activeVariant) return true; // Selected from matrix but no variant exists
+        return activeVariant.stock <= 0;
+    }, [activeVariant, selectedColor, selectedSize]);
 
     // Find hex for preview
     const activeColorHex = useMemo(() => {
@@ -196,6 +241,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 variantId: activeVariant?.id || null,
                 // @ts-ignore
                 customMetadata: {
+                    on_request: isOnDemand,
                     designs: selectedDesigns.map(d => ({
                         id: d.id,
                         name: d.name,
@@ -522,27 +568,41 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                             <div className="flex flex-wrap gap-2">
                                 {availableSizes.map(s => {
                                     const isOutOfStock = s.stock <= 0;
+                                    const isSelected = selectedSize === s.size;
+
                                     return (
                                         <button
                                             key={s.size}
-                                            disabled={isOutOfStock}
                                             onClick={() => setSelectedSize(s.size)}
                                             className={cn(
                                                 "min-w-[65px] h-12 rounded-2xl text-sm font-bold transition-all border-2 relative overflow-hidden",
-                                                isOutOfStock ? "opacity-40 cursor-not-allowed bg-slate-50 grayscale" : "",
-                                                selectedSize === s.size
+                                                isSelected
                                                     ? "border-primary bg-primary text-white shadow-lg shadow-primary/20"
-                                                    : "border-slate-100 hover:border-slate-300 dark:border-slate-800"
+                                                    : "border-slate-100 hover:border-slate-300 dark:border-slate-800",
+                                                isOutOfStock ? "bg-slate-50/50" : ""
                                             )}
                                         >
                                             {s.size}
                                             {isOutOfStock && (
-                                                <div className="absolute inset-x-0 bottom-0 bg-destructive/10 text-destructive text-[8px] font-black uppercase text-center py-0.5">Agotado</div>
+                                                <div className="absolute inset-x-0 bottom-0 bg-amber-500/10 text-amber-600 text-[7px] font-black uppercase text-center py-0.5 leading-none">
+                                                    Bajo Pedido
+                                                </div>
                                             )}
                                         </button>
                                     );
                                 })}
                             </div>
+
+                            {isOnDemand && (
+                                <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-900/20 dark:border-amber-900/30 flex gap-3 animate-in fade-in slide-in-from-top duration-300">
+                                    <Info className="w-5 h-5 text-amber-600 shrink-0" />
+                                    <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-tight">
+                                        <span className="font-bold block mb-1">Nota sobre disponibilidad:</span>
+                                        Esta combinación se fabricará bajo pedido especialmente para ti.
+                                        Tu pedido será confirmado manualmente por nuestro equipo.
+                                    </p>
+                                </div>
+                            )}
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -561,10 +621,10 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                         <ShoppingCart className="w-7 h-7" />
                     )}
                     {hasVariants ? (
-                        !activeVariant
-                            ? 'Completa los pasos'
-                            : activeVariant.stock <= 0
-                                ? 'Combinación Agotada'
+                        !selectedColor || !selectedSize
+                            ? 'Elige Talla y Color'
+                            : isOnDemand
+                                ? 'Pedir por Confirmar'
                                 : 'Personalizar y Comprar'
                     ) : (
                         'Añadir al Carrito'
