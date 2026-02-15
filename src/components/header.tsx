@@ -95,6 +95,14 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-2">
+            {/* Admin Link */}
+            <Link
+              href="/admin"
+              className="hidden sm:flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors border border-muted px-3 py-1.5 rounded-full hover:border-primary/50"
+            >
+              Admin
+            </Link>
+
             {/* User Menu or Login Button - Guarded by isMounted to avoid hydration flash */}
             {isMounted && (
               isAuthenticated ? (
