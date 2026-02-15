@@ -64,8 +64,8 @@ export function ProductPreview({
                         className="absolute inset-0 w-full h-full transition-colors duration-500 ease-in-out"
                         style={{
                             backgroundColor: '#fff',
-                            maskImage: 'url(/images/shirt-mask.png)', // Placeholder for mask
-                            WebkitMaskImage: 'url(/images/shirt-mask.png)'
+                            // maskImage: 'url(/images/shirt-mask.png)', // Removed: causing invisibility
+                            // WebkitMaskImage: 'url(/images/shirt-mask.png)'
                         }}
                     >
                         {/* If we don't have a real image yet, use an SVG placeholder */}
