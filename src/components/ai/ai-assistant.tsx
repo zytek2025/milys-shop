@@ -35,10 +35,6 @@ export function AIAssistant() {
         setInput('');
         setIsLoading(true);
 
-        // Add empty assistant message that will be filled with streaming content
-        const assistantMessageIndex = messages.length + 1;
-        setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
-
         try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
@@ -46,38 +42,13 @@ export function AIAssistant() {
                 body: JSON.stringify({ messages: [...messages, userMessage] }),
             });
 
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-
-            // Handle streaming response
-            const reader = response.body?.getReader();
-            const decoder = new TextDecoder();
-
-            if (reader) {
-                let accumulatedText = '';
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value, { stream: true });
-                    accumulatedText += chunk;
-
-                    // Update the assistant message in real-time
-                    setMessages(prev => {
-                        const newMessages = [...prev];
-                        newMessages[assistantMessageIndex] = { role: 'assistant', content: accumulatedText };
-                        return newMessages;
-                    });
-                }
+            const data = await response.json();
+            if (data.role) {
+                setMessages(prev => [...prev, data]);
             }
         } catch (error) {
             console.error('Chat error:', error);
-            setMessages(prev => {
-                const newMessages = [...prev];
-                newMessages[assistantMessageIndex] = { role: 'assistant', content: 'Lo siento, tuve un pequeño problema técnico. 🌸' };
-                return newMessages;
-            });
+            setMessages(prev => [...prev, { role: 'assistant', content: 'Lo siento, tuve un pequeño problema técnico. 🌸' }]);
         } finally {
             setIsLoading(false);
         }
