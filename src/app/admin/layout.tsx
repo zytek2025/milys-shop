@@ -20,26 +20,34 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/store/cart-store';
-import { redirect } from 'next/navigation';
+import { redirect, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 interface AdminLayoutProps {
     children: ReactNode;
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-    const pathname = usePathname();
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const isLoginPage = pathname === '/admin/login';
-    const { isAdmin, isAuthenticated } = useAuth();
+    const { isAdmin, isAuthenticated, user } = useAuth();
+    const router = useRouter();
 
     // Guard: if not admin, redirect or show error (unless already on login page)
-    if (!isLoginPage && (!isAuthenticated || !isAdmin)) {
-        redirect('/admin/login');
-    }
+    // We do this in useEffect to ensure client-side state is stable
+    useEffect(() => {
+        if (!isLoginPage && (!isAuthenticated || !isAdmin)) {
+            router.replace('/admin/login');
+        }
+    }, [isLoginPage, isAuthenticated, isAdmin, router]);
 
     // Special case for login page: return clean layout without sidebar
     if (isLoginPage) {
         return <div className="min-h-screen bg-slate-50 dark:bg-slate-950">{children}</div>;
+    }
+
+    // While checking auth, show nothing or a loader to prevent flicker
+    if (!isAuthenticated || !isAdmin) {
+        return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-serif">Verificando acceso...</div>;
     }
 
     const navItems = [

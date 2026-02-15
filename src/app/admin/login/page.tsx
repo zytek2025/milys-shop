@@ -16,7 +16,7 @@ export default function AdminLoginPage() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const login = useLogin();
-    const router = useRouter();
+    // const router = useRouter(); // This hook is no longer needed
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,10 +27,11 @@ export default function AdminLoginPage() {
 
             if (result.data?.role === 'admin') {
                 toast.success('Acceso concedido. Bienvenido al panel.');
-                router.push('/admin');
+                // Use hard reload to ensure all middleware and layouts pick up the new session
+                window.location.href = '/admin';
             } else {
                 toast.error('No tienes permisos de administrador.');
-                router.push('/');
+                window.location.href = '/';
             }
         } catch (error: any) {
             toast.error(error.message || 'Error al iniciar sesión');
