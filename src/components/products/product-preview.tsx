@@ -72,17 +72,15 @@ export function ProductPreview({
                                 <path d="M40 15 Q50 25 60 15" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="1" />
                             </svg>
                         ) : (
-                            <div className="relative w-full h-full">
-                                {/* Base Image */}
+                            <div className="absolute inset-0 w-full h-full">
                                 <img
                                     src={garmentImage}
                                     alt="Base"
-                                    className="absolute inset-0 w-full h-full object-contain z-0"
+                                    className="w-full h-full object-contain z-0"
                                 />
-                                {/* Color Tint Overlay - Only if color is NOT white and we want to tint */}
                                 {colorHex !== '#ffffff' && colorHex !== '#FFFFFF' && (
                                     <div
-                                        className="absolute inset-0 w-full h-full mix-blend-multiply opacity-50 transition-colors duration-300 z-10"
+                                        className="absolute inset-0 w-full h-full mix-blend-multiply opacity-60 transition-colors duration-300 z-10 pointer-events-none"
                                         style={{
                                             backgroundColor: colorHex,
                                             WebkitMaskImage: `url(${garmentImage})`,
@@ -101,17 +99,17 @@ export function ProductPreview({
                     </div>
 
                     {/* Design Layers */}
-                    <div className="absolute inset-0 w-full h-full pointer-events-none">
+                    <div className="absolute inset-0 w-full h-full pointer-events-none z-20">
                         <AnimatePresence>
-                            {designs.map((design) => {
+                            {designs.map((design, idx) => {
                                 const pos = locationConfig[design.selectedLocation] || locationConfig['Frente Centro'];
                                 return (
                                     <motion.div
-                                        key={design.id + design.selectedLocation}
+                                        key={`${design.id}-${design.selectedLocation}-${idx}`}
                                         initial={{ opacity: 0, scale: 0.5 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.5 }}
-                                        className="absolute z-10"
+                                        className="absolute transition-all duration-300 transform -translate-x-1/2 -translate-y-1/2"
                                         style={{
                                             top: pos.top,
                                             left: pos.left,
@@ -119,33 +117,37 @@ export function ProductPreview({
                                             rotate: `${pos.rotate}deg`
                                         }}
                                     >
-                                        <img src={design.image_url} alt="design" className="w-full h-full object-contain drop-shadow-sm filter brightness-95" />
+                                        <img
+                                            src={design.image_url}
+                                            alt="design"
+                                            className="w-full h-full object-contain drop-shadow-lg"
+                                        />
                                     </motion.div>
                                 );
                             })}
                         </AnimatePresence>
-                    </div>
 
-                    {/* Text Layer - Simple Overlay */}
-                    {customText && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="absolute inset-x-0 top-[60%] flex justify-center z-20 pointer-events-none"
-                        >
-                            <div
-                                className={cn(
-                                    "font-serif font-black italic text-center text-slate-800 drop-shadow-sm px-4",
-                                )}
-                                style={{
-                                    fontSize: customTextSize === 'small' ? '12px' : '18px',
-                                    color: colorHex === '#000000' ? 'white' : '#1e293b' // Auto-contrast
-                                }}
+                        {/* Text Layer - Simple Overlay */}
+                        {customText && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="absolute inset-x-0 top-[65%] flex justify-center z-30 pointer-events-none"
                             >
-                                "{customText}"
-                            </div>
-                        </motion.div>
-                    )}
+                                <div
+                                    className={cn(
+                                        "font-serif font-black italic text-center drop-shadow-md px-4 py-1 rounded bg-white/5 backdrop-blur-[1px]",
+                                    )}
+                                    style={{
+                                        fontSize: customTextSize === 'small' ? '14px' : '22px',
+                                        color: colorHex === '#000000' || colorHex === '#1a1a1b' ? 'white' : '#1e293b'
+                                    }}
+                                >
+                                    "{customText}"
+                                </div>
+                            </motion.div>
+                        )}
+                    </div>
 
                 </div>
             </div>
@@ -161,6 +163,6 @@ export function ProductPreview({
                     </span>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
