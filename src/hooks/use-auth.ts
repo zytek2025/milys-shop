@@ -5,6 +5,9 @@ import { useCartStore } from '@/store/cart-store';
 import type { UserProfile, ApiResponse } from '@/types';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect } from 'react';
+import * as z from 'zod';
+
+const passwordSchema = z.string().min(6);
 
 const API_BASE = '/api';
 
@@ -150,6 +153,38 @@ export function useLogout() {
     onSuccess: () => {
       clearAuth();
       queryClient.removeQueries();
+    },
+  });
+}
+
+// Request password reset mutation
+export function useRequestPasswordReset() {
+  return useMutation<void, Error, { email: string }>({
+    mutationFn: async ({ email }) => {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+  });
+}
+
+// Update password mutation
+export function useUpdatePassword() {
+  return useMutation<void, Error, { password: z.infer<typeof passwordSchema> }>({
+    mutationFn: async ({ password }) => {
+      const supabase = createClient();
+      const { error } = await supabase.auth.updateUser({
+        password: password
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
     },
   });
 }

@@ -28,9 +28,10 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 interface LoginFormProps {
   onSuccess?: () => void;
   onSwitchToRegister?: () => void;
+  onForgotPassword?: () => void;
 }
 
-export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
+export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const login = useLogin();
 
@@ -82,7 +83,16 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Contraseña</FormLabel>
+              <div className="flex items-center justify-between">
+                <FormLabel>Contraseña</FormLabel>
+                <button
+                  type="button"
+                  onClick={onForgotPassword}
+                  className="text-xs text-muted-foreground hover:text-emerald-600 transition-colors"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
               <FormControl>
                 <Input
                   type="password"
