@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { items, total, shipping_address } = body;
+    const { items, total, shipping_address, payment_method_id, payment_discount_amount } = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'No items in order' }, { status: 400 });
@@ -73,6 +73,8 @@ export async function POST(request: NextRequest) {
         total,
         status: 'pending',
         shipping_address,
+        payment_method_id,
+        payment_discount_amount,
       })
       .select()
       .single();

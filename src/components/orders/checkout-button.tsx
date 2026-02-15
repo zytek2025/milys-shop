@@ -11,9 +11,16 @@ import { toast } from 'sonner';
 interface CheckoutButtonProps {
   onLoginRequired?: () => void;
   onOrderComplete?: () => void;
+  paymentMethodId?: string;
+  discountAmount?: number;
 }
 
-export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutButtonProps) {
+export function CheckoutButton({
+  onLoginRequired,
+  onOrderComplete,
+  paymentMethodId,
+  discountAmount = 0
+}: CheckoutButtonProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const { data: cart } = useCart();
   const { sessionId, clearSessionId } = useCartSession();
@@ -50,7 +57,7 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
       const basePrice = item.variant?.price_override ?? item.product?.price ?? 0;
       const extraPrice = calculateExtraPrice(item.custom_metadata);
       return sum + (basePrice + extraPrice) * item.quantity;
-    }, 0);
+    }, 0) - (discountAmount || 0);
 
     setIsProcessing(true);
     try {
@@ -71,7 +78,9 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
               custom_metadata: item.custom_metadata || {},
             };
           }),
-          total,
+          total: Math.max(0, total),
+          payment_method_id: paymentMethodId,
+          payment_discount_amount: discountAmount
         }),
       });
 

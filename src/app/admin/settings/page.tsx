@@ -7,20 +7,40 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Save, Loader2, Landmark, Smartphone, MessageSquareQuote, Type, Palette } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { Save, Loader2, Landmark, Smartphone, MessageSquareQuote, Plus, Trash2, Percent, Wallet, CreditCard, Zap, Bitcoin, DollarSign, CheckCircle2, Circle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+
+interface PaymentMethod {
+    id: string;
+    name: string;
+    instructions: string;
+    icon: string;
+    discount_percentage: number;
+    is_discount_active: boolean;
+}
 
 interface StoreSettings {
-    pago_movil_info: string;
-    zelle_info: string;
+    payment_methods: PaymentMethod[];
     crm_webhook_url: string;
 }
+
+const AVAILABLE_ICONS = [
+    { id: 'Smartphone', icon: Smartphone, label: 'Pago Móvil' },
+    { id: 'Landmark', icon: Landmark, label: 'Banco' },
+    { id: 'Wallet', icon: Wallet, label: 'Billetera' },
+    { id: 'Bitcoin', icon: Bitcoin, label: 'Binance / Crypto' },
+    { id: 'Zap', icon: Zap, label: 'Apollo / Rápido' },
+    { id: 'CreditCard', icon: CreditCard, label: 'Tarjeta' },
+    { id: 'DollarSign', icon: DollarSign, label: 'Efectivo / Divisas' }
+];
 
 export default function AdminSettingsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [settings, setSettings] = useState<StoreSettings>({
-        pago_movil_info: '',
-        zelle_info: '',
+        payment_methods: [],
         crm_webhook_url: ''
     });
 
@@ -34,8 +54,7 @@ export default function AdminSettingsPage() {
             const data = await res.json();
             if (res.ok) {
                 setSettings({
-                    pago_movil_info: data.pago_movil_info || '',
-                    zelle_info: data.zelle_info || '',
+                    payment_methods: Array.isArray(data.payment_methods) ? data.payment_methods : [],
                     crm_webhook_url: data.crm_webhook_url || ''
                 });
             } else {
@@ -50,6 +69,29 @@ export default function AdminSettingsPage() {
 
     const handleUpdateField = (field: keyof StoreSettings, value: any) => {
         setSettings(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleAddPaymentMethod = () => {
+        const newMethod: PaymentMethod = {
+            id: `pay-${Date.now()}`,
+            name: 'Nuevo Método',
+            instructions: '',
+            icon: 'Landmark',
+            discount_percentage: 0,
+            is_discount_active: false
+        };
+        handleUpdateField('payment_methods', [...settings.payment_methods, newMethod]);
+    };
+
+    const handleRemovePaymentMethod = (id: string) => {
+        handleUpdateField('payment_methods', settings.payment_methods.filter(m => m.id !== id));
+    };
+
+    const handleUpdatePaymentMethod = (id: string, updates: Partial<PaymentMethod>) => {
+        const updated = settings.payment_methods.map(m =>
+            m.id === id ? { ...m, ...updates } : m
+        );
+        handleUpdateField('payment_methods', updated);
     };
 
     const handleSave = async () => {
@@ -82,77 +124,165 @@ export default function AdminSettingsPage() {
     }
 
     return (
-        <div className="space-y-6 max-w-4xl mx-auto p-4">
-            <div>
-                <h1 className="text-3xl font-black italic uppercase tracking-tighter">Ajustes de la Tienda</h1>
-                <p className="text-muted-foreground">Configura los métodos de pago e integraciones.</p>
+        <div className="space-y-6 max-w-5xl mx-auto p-4">
+            <div className="flex justify-between items-end">
+                <div>
+                    <h1 className="text-3xl font-black italic uppercase tracking-tighter">Ajustes de la Tienda</h1>
+                    <p className="text-muted-foreground">Gestiona métodos de pago, descuentos e integraciones.</p>
+                </div>
+                <Button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="h-14 rounded-2xl px-8 text-lg font-black italic uppercase shadow-xl shadow-primary/20 gap-3"
+                >
+                    {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
+                    Guardar Cambios
+                </Button>
             </div>
 
             <div className="grid gap-6">
-                {/* Pago Móvil */}
-                <Card className="border-2 shadow-lg shadow-primary/5 bg-slate-50/50 dark:bg-slate-900/50">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 italic">
-                            <Smartphone className="text-primary h-5 w-5" /> Pago Móvil
-                        </CardTitle>
-                        <CardDescription>Información que verá el cliente para realizar el pago móvil.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Textarea
-                            placeholder="Ej: Banco Mercantil, Cedula: V-1234567, Tlf: 0412..."
-                            value={settings.pago_movil_info}
-                            onChange={(e) => handleUpdateField('pago_movil_info', e.target.value)}
-                            className="min-h-[100px] font-mono text-sm bg-white dark:bg-slate-950 border-2"
-                        />
-                    </CardContent>
-                </Card>
+                {/* Payment Methods Section */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-black italic uppercase tracking-tighter flex items-center gap-2">
+                            <CreditCard className="text-primary" /> Métodos de Pago y Descuentos
+                        </h2>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleAddPaymentMethod}
+                            className="rounded-xl border-2 border-primary/20 hover:bg-primary/5 font-bold italic uppercase text-xs"
+                        >
+                            <Plus className="mr-2 h-4 w-4" /> Añadir Método
+                        </Button>
+                    </div>
 
-                {/* Zelle */}
-                <Card className="border-2">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Landmark className="text-primary h-5 w-5" /> Zelle
-                        </CardTitle>
-                        <CardDescription>Correo electrónico y titular para transferencias vía Zelle.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Textarea
-                            placeholder="Ej: Correo: ventas@tienda.com, Titular: ShopHub Inc."
-                            value={settings.zelle_info}
-                            onChange={(e) => handleUpdateField('zelle_info', e.target.value)}
-                            className="min-h-[100px] font-mono text-sm bg-slate-50 dark:bg-slate-900 border-none"
-                        />
-                    </CardContent>
-                </Card>
+                    <div className="grid gap-4">
+                        {settings.payment_methods.map((method) => {
+                            const IconComponent = AVAILABLE_ICONS.find(i => i.id === method.icon)?.icon || Landmark;
+
+                            return (
+                                <Card key={method.id} className="border-2 shadow-sm relative group overflow-hidden bg-white dark:bg-slate-950">
+                                    <CardContent className="p-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                                            {/* Left side: Icon and Basic Info */}
+                                            <div className="md:col-span-4 space-y-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-black uppercase text-muted-foreground italic">Nombre del Método</Label>
+                                                    <Input
+                                                        value={method.name}
+                                                        onChange={(e) => handleUpdatePaymentMethod(method.id, { name: e.target.value })}
+                                                        placeholder="Ej: Binance Pay"
+                                                        className="font-bold rounded-xl border-2"
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-black uppercase text-muted-foreground italic">Icono Visual</Label>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {AVAILABLE_ICONS.map((iconItem) => (
+                                                            <button
+                                                                key={iconItem.id}
+                                                                onClick={() => handleUpdatePaymentMethod(method.id, { icon: iconItem.id })}
+                                                                className={cn(
+                                                                    "p-2.5 rounded-xl border-2 transition-all",
+                                                                    method.icon === iconItem.id
+                                                                        ? "border-primary bg-primary/10 text-primary"
+                                                                        : "border-slate-100 hover:border-slate-300 text-slate-400"
+                                                                )}
+                                                                title={iconItem.label}
+                                                            >
+                                                                <iconItem.icon size={18} />
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Center: Instructions */}
+                                            <div className="md:col-span-5 space-y-2">
+                                                <Label className="text-[10px] font-black uppercase text-muted-foreground italic">Instrucciones / Datos de Pago</Label>
+                                                <Textarea
+                                                    value={method.instructions}
+                                                    onChange={(e) => handleUpdatePaymentMethod(method.id, { instructions: e.target.value })}
+                                                    placeholder="Ej: Binance ID: 1234567, Red: BSC..."
+                                                    className="min-h-[140px] font-mono text-xs rounded-xl border-2 bg-slate-50/50 dark:bg-slate-900/50"
+                                                />
+                                            </div>
+
+                                            {/* Right side: Discount and Status */}
+                                            <div className="md:col-span-3 space-y-4 flex flex-col justify-between">
+                                                <div className="space-y-4">
+                                                    <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border-2 border-emerald-100 dark:border-emerald-900/30 space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <Label className="text-[10px] font-black uppercase text-emerald-600 flex items-center gap-1 italic">
+                                                                <Percent size={12} /> Descuento Especial
+                                                            </Label>
+                                                            <Switch
+                                                                checked={method.is_discount_active}
+                                                                onCheckedChange={(checked) => handleUpdatePaymentMethod(method.id, { is_discount_active: checked })}
+                                                            />
+                                                        </div>
+                                                        <div className="relative">
+                                                            <Input
+                                                                type="number"
+                                                                value={method.discount_percentage}
+                                                                onChange={(e) => handleUpdatePaymentMethod(method.id, { discount_percentage: Number(e.target.value) })}
+                                                                className="pl-8 font-black rounded-xl border-2 text-emerald-600"
+                                                                placeholder="5"
+                                                            />
+                                                            <Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-400" />
+                                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-400 uppercase italic">% de ahorro</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <Button
+                                                    variant="ghost"
+                                                    onClick={() => handleRemovePaymentMethod(method.id)}
+                                                    className="w-full text-destructive hover:bg-destructive/10 rounded-xl font-bold uppercase italic text-xs h-10"
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar Método
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+
+                        {settings.payment_methods.length === 0 && (
+                            <div className="p-12 border-2 border-dashed rounded-3xl text-center space-y-4 bg-slate-50/30">
+                                <CreditCard size={48} className="mx-auto text-slate-200" />
+                                <div className="space-y-1">
+                                    <p className="font-bold text-slate-500 uppercase italic tracking-tighter">No hay métodos de pago configurados</p>
+                                    <p className="text-xs text-slate-400">Añade uno para que tus clientes puedan completar sus compras.</p>
+                                </div>
+                                <Button onClick={handleAddPaymentMethod} className="rounded-2xl">Crear Primer Método</Button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <Separator />
 
                 {/* CRM Webhook */}
-                <Card className="border-2">
+                <Card className="border-2 shadow-sm bg-slate-50/50 dark:bg-slate-900/50">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <MessageSquareQuote className="text-primary h-5 w-5" /> Integración CRM
+                        <CardTitle className="flex items-center gap-2 italic uppercase tracking-tighter text-lg font-black">
+                            <MessageSquareQuote className="text-primary h-5 w-5" /> Integración CRM (n8n)
                         </CardTitle>
-                        <CardDescription>URL del Webhook (n8n/Make) para notificar pedidos pagados.</CardDescription>
+                        <CardDescription className="text-xs font-bold uppercase opacity-60 italic">URL del Webhook para notificar pedidos pagados.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Input
                             placeholder="https://n8n.tuempresa.com/webhook/..."
                             value={settings.crm_webhook_url}
                             onChange={(e) => handleUpdateField('crm_webhook_url', e.target.value)}
-                            className="font-mono text-sm bg-slate-50 dark:bg-slate-900 border-none h-12"
+                            className="font-mono text-sm bg-white dark:bg-slate-950 border-2 h-12 rounded-xl"
                         />
                     </CardContent>
                 </Card>
-            </div>
-
-            <div className="flex justify-end pt-4">
-                <Button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="h-16 rounded-2xl px-12 text-xl font-black italic uppercase shadow-xl shadow-primary/20 gap-3"
-                >
-                    {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
-                    Guardar Ajustes Globales
-                </Button>
             </div>
         </div>
     );
