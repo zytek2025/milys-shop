@@ -116,6 +116,22 @@ export default function AdminDesignsPage() {
         setStoreSettings(prev => ({ ...prev, [field]: parseFloat(value) || 0 }));
     };
 
+    const [canvaApiKey, setCanvaApiKey] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchDesigns();
+        fetchCategories();
+        fetchCanvaConfig();
+    }, []);
+
+    const fetchCanvaConfig = async () => {
+        try {
+            const res = await fetch('/api/admin/settings');
+            const data = await res.json();
+            if (data.canva_api_key) setCanvaApiKey(data.canva_api_key);
+        } catch (error) { }
+    };
+
     const fetchDesigns = async () => {
         try {
             const res = await fetch('/api/admin/designs');
@@ -231,6 +247,16 @@ export default function AdminDesignsPage() {
         } catch (error) {
             toast.error('Error');
         }
+    };
+
+    const handleCanvaDesign = async () => {
+        if (!canvaApiKey) {
+            toast.error('Configura tu API Key de Canva en Ajustes primero');
+            return;
+        }
+
+        toast.info('Abriendo Canva para diseñar...');
+        window.open('https://www.canva.com/design/play', '_blank');
     };
 
     const filteredDesigns = designs.filter(d =>
@@ -475,6 +501,17 @@ export default function AdminDesignsPage() {
                                             />
                                         </Button>
                                         <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest px-1">PNG o JPG máx 5MB</p>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={handleCanvaDesign}
+                                            className="rounded-xl h-10 gap-2 border-blue-200 hover:bg-blue-50 text-blue-600 dark:border-blue-900 border-2"
+                                        >
+                                            <Palette size={16} />
+                                            Diseñar en Canva
+                                        </Button>
                                     </div>
                                 </div>
                             </div>

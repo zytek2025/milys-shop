@@ -434,17 +434,24 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-2">
-                                                <div className="space-y-1">
-                                                    <Label className="text-[9px] uppercase font-bold text-muted-foreground">Tamaño</Label>
-                                                    <select
-                                                        value={design.selectedSize}
-                                                        onChange={(e) => updateDesignOption(design.instanceId, 'selectedSize', e.target.value)}
-                                                        className="w-full h-8 rounded-lg bg-white dark:bg-slate-800 border text-[10px] font-bold px-2 focus:ring-1 focus:ring-primary outline-none"
-                                                    >
-                                                        <option value="small">Pequeño</option>
-                                                        <option value="medium">Mediano</option>
-                                                        <option value="large">Grande</option>
-                                                    </select>
+                                                <div className="space-y-1.5 col-span-2">
+                                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Tamaño del Logo</Label>
+                                                    <div className="grid grid-cols-3 gap-2">
+                                                        {(['small', 'medium', 'large'] as const).map((sz) => (
+                                                            <button
+                                                                key={sz}
+                                                                onClick={() => updateDesignOption(design.instanceId, 'selectedSize', sz)}
+                                                                className={cn(
+                                                                    "h-10 rounded-xl text-[10px] font-bold uppercase transition-all border-2",
+                                                                    design.selectedSize === sz
+                                                                        ? "border-primary bg-primary/5 text-primary shadow-sm"
+                                                                        : "border-slate-100 hover:border-slate-200 text-slate-500"
+                                                                )}
+                                                            >
+                                                                {sz === 'small' ? 'Peq (S)' : sz === 'medium' ? 'Med (M)' : 'Grd (L)'}
+                                                            </button>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                                 <div className="space-y-1">
                                                     <Label className="text-[9px] uppercase font-bold text-muted-foreground">Ubicación</Label>
