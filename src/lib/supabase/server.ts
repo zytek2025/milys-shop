@@ -4,18 +4,9 @@ import { cookies } from 'next/headers'
 export async function createClient() {
   const cookieStore = await cookies()
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    // Return a dummy client or throw a more graceful error that won't kill the build if caught
-    console.error('Missing Supabase environment variables');
-    // We return a proxy or something, but better to just handle it in the caller
-  }
-
   return createServerClient(
-    supabaseUrl || '',
-    supabaseAnonKey || '',
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {

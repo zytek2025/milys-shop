@@ -67,7 +67,6 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     const [designSearch, setDesignSearch] = useState('');
     const [customText, setCustomText] = useState('');
     const [customTextSize, setCustomTextSize] = useState<'small' | 'large'>('small');
-    const [customTextLocation, setCustomTextLocation] = useState('Frente Centro');
     const [storeSettings, setStoreSettings] = useState<any>(null);
 
     // State for garment options
@@ -208,7 +207,6 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                     personalization: customText ? {
                         text: customText,
                         size: customTextSize,
-                        location: customTextLocation,
                         price: personalizationPrice
                     } : null
                 }
@@ -237,7 +235,6 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                     designs={selectedDesigns}
                     customText={customText}
                     customTextSize={customTextSize}
-                    customTextLocation={customTextLocation}
                     garmentImage={product.image_url}
                 />
             </div>
@@ -447,18 +444,6 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                             >
                                 <option value="small">Pequeño (+${storeSettings?.personalization_price_small ?? '1.00'})</option>
                                 <option value="large">Grande (+${storeSettings?.personalization_price_large ?? '3.00'})</option>
-                            </select>
-                        </div>
-                        <div className="w-full sm:w-48 space-y-1">
-                            <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Ubicación</Label>
-                            <select
-                                value={customTextLocation}
-                                onChange={(e) => setCustomTextLocation(e.target.value)}
-                                className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
-                            >
-                                {designLocations.map(loc => (
-                                    <option key={loc} value={loc}>{loc}</option>
-                                ))}
                             </select>
                         </div>
                     </div>

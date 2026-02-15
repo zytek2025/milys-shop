@@ -15,7 +15,6 @@ interface ProductPreviewProps {
     }>;
     customText: string;
     customTextSize: 'small' | 'large';
-    customTextLocation: string;
     garmentImage?: string; // Optional custom base image
 }
 
@@ -25,7 +24,6 @@ export function ProductPreview({
     designs,
     customText,
     customTextSize,
-    customTextLocation,
     garmentImage
 }: ProductPreviewProps) {
 
@@ -66,8 +64,8 @@ export function ProductPreview({
                         className="absolute inset-0 w-full h-full transition-colors duration-500 ease-in-out"
                         style={{
                             backgroundColor: '#fff',
-                            // maskImage: 'url(/images/shirt-mask.png)', // Removed: causing invisibility
-                            // WebkitMaskImage: 'url(/images/shirt-mask.png)'
+                            maskImage: 'url(/images/shirt-mask.png)', // Placeholder for mask
+                            WebkitMaskImage: 'url(/images/shirt-mask.png)'
                         }}
                     >
                         {/* If we don't have a real image yet, use an SVG placeholder */}
@@ -122,17 +120,12 @@ export function ProductPreview({
                         </AnimatePresence>
                     </div>
 
-    // Text Layer - Positioned
+                    {/* Text Layer - Simple Overlay */}
                     {customText && (
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="absolute z-20 pointer-events-none whitespace-nowrap"
-                            style={{
-                                top: locationConfig[customTextLocation]?.top || '50%',
-                                left: locationConfig[customTextLocation]?.left || '50%',
-                                transform: `translateX(-50%) translateY(-50%) rotate(${locationConfig[customTextLocation]?.rotate || 0}deg)`
-                            }}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="absolute inset-x-0 top-[60%] flex justify-center z-20 pointer-events-none"
                         >
                             <div
                                 className={cn(
