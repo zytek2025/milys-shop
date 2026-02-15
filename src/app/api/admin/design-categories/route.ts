@@ -38,11 +38,11 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { name, description } = body;
+        const { name, description, price, price_small, price_medium, price_large } = body;
 
         const { data, error } = await supabase
             .from('design_categories')
-            .insert({ name, description })
+            .insert({ name, description, price, price_small, price_medium, price_large })
             .select()
             .single();
 

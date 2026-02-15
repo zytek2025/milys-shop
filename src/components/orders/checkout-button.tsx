@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CreditCard, Loader2, LogIn } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useCart, useClearCart } from '@/hooks/use-cart';
 import { useAuth, useCartSession } from '@/store/cart-store';
@@ -21,6 +22,7 @@ export function CheckoutButton({
   paymentMethodId,
   discountAmount = 0
 }: CheckoutButtonProps) {
+  const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const { data: cart } = useCart();
   const { sessionId, clearSessionId } = useCartSession();
@@ -89,11 +91,17 @@ export function CheckoutButton({
         throw new Error(error.error || 'Failed to create order');
       }
 
+      const { data: orderData } = await orderResponse.json();
+
       // Clear cart
       await clearCart.mutateAsync();
 
-      toast.success('Order placed successfully!');
+      toast.success('¡Pedido realizado con éxito!');
       onOrderComplete?.();
+
+      if (orderData?.id) {
+        router.push(`/orders/${orderData.id}`);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Checkout failed';
       toast.error(message);

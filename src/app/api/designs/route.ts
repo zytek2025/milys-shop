@@ -12,7 +12,10 @@ export async function GET() {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase
             .from('designs')
-            .select('*')
+            .select(`
+                *,
+                category:design_categories(*)
+            `)
             .eq('is_active', true)
             .order('created_at', { ascending: false });
 

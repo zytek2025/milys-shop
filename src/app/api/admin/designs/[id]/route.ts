@@ -22,7 +22,7 @@ export async function PUT(
 
         const { id } = await params;
         const body = await request.json();
-        const { name, description, image_url, price, price_small, price_medium, price_large, category_id, is_active } = body;
+        const { name, description, image_url, category_id, is_active } = body;
 
         const { data, error } = await supabase
             .from('designs')
@@ -30,10 +30,6 @@ export async function PUT(
                 name,
                 description,
                 image_url,
-                price,
-                price_small,
-                price_medium,
-                price_large,
                 category_id,
                 is_active,
                 updated_at: new Date().toISOString()

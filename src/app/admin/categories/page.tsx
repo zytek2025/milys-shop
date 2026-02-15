@@ -193,6 +193,7 @@ export default function AdminCategoriesPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
+                                    <TableHead className="w-[80px]">ID</TableHead>
                                     <TableHead>Nombre</TableHead>
                                     <TableHead>Descripción</TableHead>
                                     <TableHead>Variantes</TableHead>

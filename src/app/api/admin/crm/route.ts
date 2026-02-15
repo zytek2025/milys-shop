@@ -21,6 +21,7 @@ export async function GET() {
                 avatar_url,
                 role,
                 crm_status,
+                friendly_id,
                 notes,
                 created_at,
                 orders (
@@ -44,6 +45,7 @@ export async function GET() {
                 full_name: p.full_name,
                 avatar_url: p.avatar_url,
                 crm_status: p.crm_status || 'lead',
+                friendly_id: p.friendly_id,
                 notes: p.notes,
                 ltv,
                 orderCount: p.orders?.length || 0,

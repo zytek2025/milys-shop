@@ -24,11 +24,15 @@ interface Design {
     id: string;
     name: string;
     image_url: string;
-    price: number;
-    price_small?: number;
-    price_medium?: number;
-    price_large?: number;
     category_id: string;
+    category?: {
+        id: string;
+        name: string;
+        price: number;
+        price_small: number;
+        price_medium: number;
+        price_large: number;
+    };
 }
 
 interface DesignCategory {
@@ -185,15 +189,16 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     }, [activeVariant, selectedColor, selectedSize]);
 
     // Price Calculation helper
-    const getDesignPrice = (size: 'small' | 'medium' | 'large') => {
-        const catPrices: Record<string, number | undefined> = {
-            small: product.category_data?.design_price_small,
-            medium: product.category_data?.design_price_medium,
-            large: product.category_data?.design_price_large
-        };
+    const getDesignPrice = (design: SelectedDesign) => {
+        const cat = design.category;
+        if (!cat) return 0;
 
-        const price = catPrices[size];
-        return price || (size === 'small' ? 2.00 : size === 'medium' ? 5.00 : 10.00);
+        const size = design.selectedSize;
+        if (size === 'small') return cat.price_small ?? cat.price ?? 0;
+        if (size === 'medium') return cat.price_medium ?? cat.price ?? 0;
+        if (size === 'large') return cat.price_large ?? cat.price ?? 0;
+
+        return cat.price ?? 0;
     };
 
     const getPersonalizationPrice = (size: 'small' | 'large') => {
@@ -207,7 +212,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     };
 
     const garmentPrice = hasVariants ? (activeVariant?.price_override || product.price) : product.price;
-    const designsPrice = isCustomizable ? selectedDesigns.reduce((sum, d) => sum + getDesignPrice(d.selectedSize), 0) : 0;
+    const designsPrice = isCustomizable ? selectedDesigns.reduce((sum, d) => sum + getDesignPrice(d), 0) : 0;
     const personalizationPrice = customText ? getPersonalizationPrice(customTextSize) : 0;
 
     const totalPrice = (garmentPrice + designsPrice + personalizationPrice) * quantity;
@@ -251,7 +256,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                         name: d.name,
                         size: d.selectedSize,
                         location: d.selectedLocation,
-                        price: getDesignPrice(d.selectedSize)
+                        price: getDesignPrice(d)
                     })),
                     personalization: customText ? {
                         text: customText,
@@ -297,300 +302,306 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
             </div>
 
             {/* Step 1: Color */}
-            {hasVariants && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-500">
-                    <div className="flex items-center justify-between">
-                        <SectionLabel label="Paso 1: Elige el color de prenda" />
-                        {selectedColor && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">{selectedColor}</span>}
+            {
+                hasVariants && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-500">
+                        <div className="flex items-center justify-between">
+                            <SectionLabel label="Paso 1: Elige el color de prenda" />
+                            {selectedColor && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">{selectedColor}</span>}
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                            {availableColors.map(color => (
+                                <button
+                                    key={color.name}
+                                    onClick={() => {
+                                        setSelectedColor(color.name);
+                                        setSelectedSize(null);
+                                    }}
+                                    title={color.name}
+                                    className={cn(
+                                        "group relative w-12 h-12 rounded-full border-2 transition-all p-0.5",
+                                        selectedColor === color.name
+                                            ? "border-primary scale-110 shadow-lg"
+                                            : "border-slate-100 hover:border-slate-300 dark:border-slate-800"
+                                    )}
+                                >
+                                    <div
+                                        className="w-full h-full rounded-full border border-black/5"
+                                        style={{ backgroundColor: color.hex }}
+                                    />
+                                    {selectedColor === color.name && (
+                                        <div className="absolute -top-1 -right-1 bg-primary text-white p-0.5 rounded-full shadow-sm">
+                                            <Check size={10} strokeWidth={4} />
+                                        </div>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                    <div className="flex flex-wrap gap-3">
-                        {availableColors.map(color => (
-                            <button
-                                key={color.name}
-                                onClick={() => {
-                                    setSelectedColor(color.name);
-                                    setSelectedSize(null);
-                                }}
-                                title={color.name}
-                                className={cn(
-                                    "group relative w-12 h-12 rounded-full border-2 transition-all p-0.5",
-                                    selectedColor === color.name
-                                        ? "border-primary scale-110 shadow-lg"
-                                        : "border-slate-100 hover:border-slate-300 dark:border-slate-800"
-                                )}
-                            >
-                                <div
-                                    className="w-full h-full rounded-full border border-black/5"
-                                    style={{ backgroundColor: color.hex }}
-                                />
-                                {selectedColor === color.name && (
-                                    <div className="absolute -top-1 -right-1 bg-primary text-white p-0.5 rounded-full shadow-sm">
-                                        <Check size={10} strokeWidth={4} />
-                                    </div>
-                                )}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Step 2: Size */}
-            {hasVariants && (
-                <AnimatePresence>
-                    {selectedColor && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="space-y-4"
-                        >
-                            <div className="flex items-center justify-between">
-                                <SectionLabel label="Paso 2: Elige tu talla" />
-                                {selectedSize && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">Talla {selectedSize}</span>}
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {availableSizes.map(s => {
-                                    const isOutOfStock = s.stock <= 0;
-                                    const isSelected = selectedSize === s.size;
-
-                                    return (
-                                        <button
-                                            key={s.size}
-                                            onClick={() => setSelectedSize(s.size)}
-                                            className={cn(
-                                                "min-w-[65px] h-14 rounded-2xl text-sm font-bold transition-all border-2 relative overflow-hidden flex flex-col items-center justify-center gap-0.5",
-                                                isSelected
-                                                    ? "border-primary bg-primary text-white shadow-lg shadow-primary/20"
-                                                    : "border-slate-100 hover:border-slate-300 dark:border-slate-800",
-                                                isOutOfStock ? "bg-slate-50/50" : ""
-                                            )}
-                                        >
-                                            <span className="text-lg">{s.size}</span>
-                                            <span className={cn(
-                                                "text-[8px] uppercase tracking-tighter",
-                                                isSelected ? "text-white/80" : "text-muted-foreground"
-                                            )}>
-                                                {isOutOfStock ? 'Bajo Pedido' : `${s.stock} disp.`}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            {isOnDemand && (
-                                <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-900/20 dark:border-amber-900/30 flex gap-3 animate-in fade-in slide-in-from-top duration-300">
-                                    <Info className="w-5 h-5 text-amber-600 shrink-0" />
-                                    <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-tight">
-                                        <span className="font-bold block mb-1">Nota sobre disponibilidad:</span>
-                                        Esta combinación se fabricará bajo pedido especialmente para ti.
-                                        Tu pedido será confirmado manualmente por nuestro equipo.
-                                    </p>
+            {
+                hasVariants && (
+                    <AnimatePresence>
+                        {selectedColor && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="space-y-4"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <SectionLabel label="Paso 2: Elige tu talla" />
+                                    {selectedSize && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">Talla {selectedSize}</span>}
                                 </div>
-                            )}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            )}
+                                <div className="flex flex-wrap gap-2">
+                                    {availableSizes.map(s => {
+                                        const isOutOfStock = s.stock <= 0;
+                                        const isSelected = selectedSize === s.size;
+
+                                        return (
+                                            <button
+                                                key={s.size}
+                                                onClick={() => setSelectedSize(s.size)}
+                                                className={cn(
+                                                    "min-w-[65px] h-14 rounded-2xl text-sm font-bold transition-all border-2 relative overflow-hidden flex flex-col items-center justify-center gap-0.5",
+                                                    isSelected
+                                                        ? "border-primary bg-primary text-white shadow-lg shadow-primary/20"
+                                                        : "border-slate-100 hover:border-slate-300 dark:border-slate-800",
+                                                    isOutOfStock ? "bg-slate-50/50" : ""
+                                                )}
+                                            >
+                                                <span className="text-lg">{s.size}</span>
+                                                <span className={cn(
+                                                    "text-[8px] uppercase tracking-tighter",
+                                                    isSelected ? "text-white/80" : "text-muted-foreground"
+                                                )}>
+                                                    {isOutOfStock ? 'Bajo Pedido' : `${s.stock} disp.`}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {isOnDemand && (
+                                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-900/20 dark:border-amber-900/30 flex gap-3 animate-in fade-in slide-in-from-top duration-300">
+                                        <Info className="w-5 h-5 text-amber-600 shrink-0" />
+                                        <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-tight">
+                                            <span className="font-bold block mb-1">Nota sobre disponibilidad:</span>
+                                            Esta combinación se fabricará bajo pedido especialmente para ti.
+                                            Tu pedido será confirmado manualmente por nuestro equipo.
+                                        </p>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                )
+            }
 
             {/* Step 3: Designs Selection */}
-            {isCustomizable && (
-                <div className="space-y-4 pt-4 border-t border-lavanda/20">
-                    <div className="flex items-center justify-between">
-                        <SectionLabel label="Paso 3: Personaliza con Logotipos (Opcional)" />
-                        <Badge variant="secondary" className="rounded-full bg-primary/10 text-primary border-none">
-                            {selectedDesigns.length} / 3 Seleccionados
-                        </Badge>
-                    </div>
+            {
+                isCustomizable && (
+                    <div className="space-y-4 pt-4 border-t border-lavanda/20">
+                        <div className="flex items-center justify-between">
+                            <SectionLabel label="Paso 3: Personaliza con Logotipos (Opcional)" />
+                            <Badge variant="secondary" className="rounded-full bg-primary/10 text-primary border-none">
+                                {selectedDesigns.length} / 3 Seleccionados
+                            </Badge>
+                        </div>
 
-                    <div className="flex flex-col gap-4">
-                        {selectedDesigns.map(design => (
-                            <div key={design.instanceId} className="group relative rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 shadow-sm animate-in fade-in slide-in-from-left duration-300">
-                                <div className="flex gap-4">
-                                    <div className="relative aspect-square w-20 rounded-xl bg-white dark:bg-black/20 overflow-hidden border">
-                                        <img src={design.image_url} alt={design.name} className="w-full h-full object-contain p-2" />
-                                        <button
-                                            onClick={() => setSelectedDesigns(prev => prev.filter(d => d.instanceId !== design.instanceId))}
-                                            className="absolute -top-1 -right-1 bg-destructive text-white p-1 rounded-full shadow-md hover:scale-110 transition-transform"
-                                        >
-                                            <X size={10} strokeWidth={4} />
-                                        </button>
-                                    </div>
-
-                                    <div className="flex-1 space-y-3">
-                                        <div className="flex justify-between items-start">
-                                            <div className="font-bold text-sm uppercase truncate max-w-[150px]">{design.name}</div>
-                                            <div className="text-primary font-black text-xs">
-                                                ${getDesignPrice(design.selectedSize).toFixed(2)}
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div className="space-y-1">
-                                                <Label className="text-[9px] uppercase font-bold text-muted-foreground">Tamaño</Label>
-                                                <select
-                                                    value={design.selectedSize}
-                                                    onChange={(e) => updateDesignOption(design.instanceId, 'selectedSize', e.target.value)}
-                                                    className="w-full h-8 rounded-lg bg-white dark:bg-slate-800 border text-[10px] font-bold px-2 focus:ring-1 focus:ring-primary outline-none"
-                                                >
-                                                    <option value="small">Pequeño</option>
-                                                    <option value="medium">Mediano</option>
-                                                    <option value="large">Grande</option>
-                                                </select>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-[9px] uppercase font-bold text-muted-foreground">Ubicación</Label>
-                                                <select
-                                                    value={design.selectedLocation}
-                                                    onChange={(e) => updateDesignOption(design.instanceId, 'selectedLocation', e.target.value)}
-                                                    className="w-full h-8 rounded-lg bg-white dark:bg-slate-800 border text-[10px] font-bold px-2 focus:ring-1 focus:ring-primary outline-none"
-                                                >
-                                                    {designLocations.map(loc => (
-                                                        <option key={loc} value={loc}>{loc}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="flex flex-wrap gap-3">
-                        {selectedDesigns.length < 3 && (
-                            <Dialog open={isGalleryOpen} onOpenChange={setIsGalleryOpen}>
-                                <DialogTrigger asChild>
-                                    <button className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-primary hover:bg-primary/5 transition-all flex flex-col items-center justify-center gap-2 group">
-                                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-primary group-hover:text-white transition-colors flex items-center justify-center">
-                                            <Plus size={18} />
-                                        </div>
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Añadir Logo</span>
-                                    </button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col rounded-3xl p-0 overflow-hidden">
-                                    <DialogHeader className="p-6 pb-0">
-                                        <DialogTitle className="flex items-center gap-2 text-2xl font-black italic uppercase tracking-tighter">
-                                            <Palette className="text-primary" /> Galería de Diseños Disponibles
-                                        </DialogTitle>
-                                        <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                                            <div className="relative flex-1">
-                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                                                <Input
-                                                    placeholder="Busca un logo..."
-                                                    className="pl-10 rounded-xl h-11 bg-slate-50 dark:bg-slate-900 border-none"
-                                                    value={designSearch}
-                                                    onChange={e => setDesignSearch(e.target.value)}
-                                                />
-                                            </div>
-                                            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                                                <Button
-                                                    variant={activeDesignCategory === null ? 'default' : 'ghost'}
-                                                    className="rounded-xl h-11 shrink-0 font-bold"
-                                                    onClick={() => setActiveDesignCategory(null)}
-                                                >
-                                                    Todos
-                                                </Button>
-                                                {categories.map(cat => (
-                                                    <Button
-                                                        key={cat.id}
-                                                        variant={activeDesignCategory === cat.id ? 'default' : 'ghost'}
-                                                        className="rounded-xl h-11 shrink-0 font-bold"
-                                                        onClick={() => setActiveDesignCategory(cat.id)}
-                                                    >
-                                                        {cat.name}
-                                                    </Button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </DialogHeader>
-                                    <Separator className="mt-6" />
-                                    <ScrollArea className="flex-1 p-6">
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                            {filteredDesigns.map(design => {
-                                                const count = selectedDesigns.filter(d => d.id === design.id).length;
-                                                return (
-                                                    <button
-                                                        key={design.id}
-                                                        onClick={() => toggleDesign(design)}
-                                                        className={cn(
-                                                            "group relative aspect-square rounded-2xl border-2 transition-all overflow-hidden flex flex-col p-2",
-                                                            count > 0
-                                                                ? "border-primary bg-primary/5 shadow-inner"
-                                                                : "border-slate-100 hover:border-primary/50 dark:border-slate-800"
-                                                        )}
-                                                    >
-                                                        <div className="flex-1 w-full bg-white dark:bg-black/20 rounded-xl mb-2 flex items-center justify-center overflow-hidden">
-                                                            <img src={design.image_url} alt={design.name} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" />
-                                                        </div>
-                                                        <div className="text-[10px] font-black uppercase truncate text-center mb-0.5">{design.name}</div>
-
-                                                        {count > 0 && (
-                                                            <div className="absolute top-3 right-3 bg-primary text-white w-5 h-5 flex items-center justify-center rounded-full shadow-lg font-bold text-[10px]">
-                                                                {count}
-                                                            </div>
-                                                        )}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </ScrollArea>
-                                    <div className="p-6 border-t bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
-                                        <p className="text-xs font-medium text-slate-500">
-                                            Has seleccionado {selectedDesigns.length} de 3 diseños
-                                        </p>
-                                        <Button onClick={() => setIsGalleryOpen(false)} className="rounded-xl px-8 font-bold h-12 shadow-xl shadow-primary/20">
-                                            Confirmar Selección
-                                        </Button>
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
-                        )}
-                    </div>
-
-                    {/* Personalization Text */}
-                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-500 delay-200 mt-6">
-                        <Label className="text-[10px] uppercase font-bold text-slate-400 tracking-[0.2em] ml-2">Personalización de Texto</Label>
                         <div className="flex flex-col gap-4">
-                            <div className="relative flex-1">
-                                <Input
-                                    placeholder="Ej: Nombre o mensaje especial..."
-                                    maxLength={80}
-                                    value={customText}
-                                    onChange={(e) => setCustomText(e.target.value)}
-                                    className="rounded-2xl h-14 bg-slate-50 dark:bg-slate-900 border-none pl-4 pr-16 text-sm font-medium"
-                                />
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                                    {customText.length}/80
+                            {selectedDesigns.map(design => (
+                                <div key={design.instanceId} className="group relative rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 shadow-sm animate-in fade-in slide-in-from-left duration-300">
+                                    <div className="flex gap-4">
+                                        <div className="relative aspect-square w-20 rounded-xl bg-white dark:bg-black/20 overflow-hidden border">
+                                            <img src={design.image_url} alt={design.name} className="w-full h-full object-contain p-2" />
+                                            <button
+                                                onClick={() => setSelectedDesigns(prev => prev.filter(d => d.instanceId !== design.instanceId))}
+                                                className="absolute -top-1 -right-1 bg-destructive text-white p-1 rounded-full shadow-md hover:scale-110 transition-transform"
+                                            >
+                                                <X size={10} strokeWidth={4} />
+                                            </button>
+                                        </div>
+
+                                        <div className="flex-1 space-y-3">
+                                            <div className="flex justify-between items-start">
+                                                <div className="font-bold text-sm uppercase truncate max-w-[150px]">{design.name}</div>
+                                                <div className="text-primary font-black text-xs">
+                                                    ${getDesignPrice(design).toFixed(2)}
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <div className="space-y-1">
+                                                    <Label className="text-[9px] uppercase font-bold text-muted-foreground">Tamaño</Label>
+                                                    <select
+                                                        value={design.selectedSize}
+                                                        onChange={(e) => updateDesignOption(design.instanceId, 'selectedSize', e.target.value)}
+                                                        className="w-full h-8 rounded-lg bg-white dark:bg-slate-800 border text-[10px] font-bold px-2 focus:ring-1 focus:ring-primary outline-none"
+                                                    >
+                                                        <option value="small">Pequeño</option>
+                                                        <option value="medium">Mediano</option>
+                                                        <option value="large">Grande</option>
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <Label className="text-[9px] uppercase font-bold text-muted-foreground">Ubicación</Label>
+                                                    <select
+                                                        value={design.selectedLocation}
+                                                        onChange={(e) => updateDesignOption(design.instanceId, 'selectedLocation', e.target.value)}
+                                                        className="w-full h-8 rounded-lg bg-white dark:bg-slate-800 border text-[10px] font-bold px-2 focus:ring-1 focus:ring-primary outline-none"
+                                                    >
+                                                        {designLocations.map(loc => (
+                                                            <option key={loc} value={loc}>{loc}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Tamaño de Texto</Label>
-                                    <select
-                                        value={customTextSize}
-                                        onChange={(e) => setCustomTextSize(e.target.value as 'small' | 'large')}
-                                        className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
-                                    >
-                                        <option value="small">Pequeño (+${storeSettings?.personalization_price_small ?? '1.00'})</option>
-                                        <option value="large">Grande (+${storeSettings?.personalization_price_large ?? '3.00'})</option>
-                                    </select>
+                            ))}
+                        </div>
+
+                        <div className="flex flex-wrap gap-3">
+                            {selectedDesigns.length < 3 && (
+                                <Dialog open={isGalleryOpen} onOpenChange={setIsGalleryOpen}>
+                                    <DialogTrigger asChild>
+                                        <button className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-primary hover:bg-primary/5 transition-all flex flex-col items-center justify-center gap-2 group">
+                                            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-primary group-hover:text-white transition-colors flex items-center justify-center">
+                                                <Plus size={18} />
+                                            </div>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Añadir Logo</span>
+                                        </button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col rounded-3xl p-0 overflow-hidden">
+                                        <DialogHeader className="p-6 pb-0">
+                                            <DialogTitle className="flex items-center gap-2 text-2xl font-black italic uppercase tracking-tighter">
+                                                <Palette className="text-primary" /> Galería de Diseños Disponibles
+                                            </DialogTitle>
+                                            <div className="flex flex-col sm:flex-row gap-4 mt-4">
+                                                <div className="relative flex-1">
+                                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                                    <Input
+                                                        placeholder="Busca un logo..."
+                                                        className="pl-10 rounded-xl h-11 bg-slate-50 dark:bg-slate-900 border-none"
+                                                        value={designSearch}
+                                                        onChange={e => setDesignSearch(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                                    <Button
+                                                        variant={activeDesignCategory === null ? 'default' : 'ghost'}
+                                                        className="rounded-xl h-11 shrink-0 font-bold"
+                                                        onClick={() => setActiveDesignCategory(null)}
+                                                    >
+                                                        Todos
+                                                    </Button>
+                                                    {categories.map(cat => (
+                                                        <Button
+                                                            key={cat.id}
+                                                            variant={activeDesignCategory === cat.id ? 'default' : 'ghost'}
+                                                            className="rounded-xl h-11 shrink-0 font-bold"
+                                                            onClick={() => setActiveDesignCategory(cat.id)}
+                                                        >
+                                                            {cat.name}
+                                                        </Button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </DialogHeader>
+                                        <Separator className="mt-6" />
+                                        <ScrollArea className="flex-1 p-6">
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                                {filteredDesigns.map(design => {
+                                                    const count = selectedDesigns.filter(d => d.id === design.id).length;
+                                                    return (
+                                                        <button
+                                                            key={design.id}
+                                                            onClick={() => toggleDesign(design)}
+                                                            className={cn(
+                                                                "group relative aspect-square rounded-2xl border-2 transition-all overflow-hidden flex flex-col p-2",
+                                                                count > 0
+                                                                    ? "border-primary bg-primary/5 shadow-inner"
+                                                                    : "border-slate-100 hover:border-primary/50 dark:border-slate-800"
+                                                            )}
+                                                        >
+                                                            <div className="flex-1 w-full bg-white dark:bg-black/20 rounded-xl mb-2 flex items-center justify-center overflow-hidden">
+                                                                <img src={design.image_url} alt={design.name} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" />
+                                                            </div>
+                                                            <div className="text-[10px] font-black uppercase truncate text-center mb-0.5">{design.name}</div>
+
+                                                            {count > 0 && (
+                                                                <div className="absolute top-3 right-3 bg-primary text-white w-5 h-5 flex items-center justify-center rounded-full shadow-lg font-bold text-[10px]">
+                                                                    {count}
+                                                                </div>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </ScrollArea>
+                                        <div className="p-6 border-t bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+                                            <p className="text-xs font-medium text-slate-500">
+                                                Has seleccionado {selectedDesigns.length} de 3 diseños
+                                            </p>
+                                            <Button onClick={() => setIsGalleryOpen(false)} className="rounded-xl px-8 font-bold h-12 shadow-xl shadow-primary/20">
+                                                Confirmar Selección
+                                            </Button>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            )}
+                        </div>
+
+                        {/* Personalization Text */}
+                        <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-500 delay-200 mt-6">
+                            <Label className="text-[10px] uppercase font-bold text-slate-400 tracking-[0.2em] ml-2">Personalización de Texto</Label>
+                            <div className="flex flex-col gap-4">
+                                <div className="relative flex-1">
+                                    <Input
+                                        placeholder="Ej: Nombre o mensaje especial..."
+                                        maxLength={80}
+                                        value={customText}
+                                        onChange={(e) => setCustomText(e.target.value)}
+                                        className="rounded-2xl h-14 bg-slate-50 dark:bg-slate-900 border-none pl-4 pr-16 text-sm font-medium"
+                                    />
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                                        {customText.length}/80
+                                    </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Ubicación de Texto</Label>
-                                    <select
-                                        value={customTextLocation}
-                                        onChange={(e) => setCustomTextLocation(e.target.value)}
-                                        className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
-                                    >
-                                        {designLocations.map(loc => (
-                                            <option key={loc} value={loc}>{loc}</option>
-                                        ))}
-                                    </select>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Tamaño de Texto</Label>
+                                        <select
+                                            value={customTextSize}
+                                            onChange={(e) => setCustomTextSize(e.target.value as 'small' | 'large')}
+                                            className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
+                                        >
+                                            <option value="small">Pequeño (+${storeSettings?.personalization_price_small ?? '1.00'})</option>
+                                            <option value="large">Grande (+${storeSettings?.personalization_price_large ?? '3.00'})</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Ubicación de Texto</Label>
+                                        <select
+                                            value={customTextLocation}
+                                            onChange={(e) => setCustomTextLocation(e.target.value)}
+                                            className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
+                                        >
+                                            {designLocations.map(loc => (
+                                                <option key={loc} value={loc}>{loc}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Step 4: Quantity and Final Action */}
             <div className="pt-8 border-t border-lavanda/30 space-y-6">
@@ -623,7 +634,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
 
                 <Button
                     className="w-full h-16 rounded-2xl text-xl font-black italic shadow-2xl shadow-primary/30 gap-4 uppercase tracking-tighter hover:scale-[1.02] active:scale-95 transition-all bg-gradient-to-r from-primary to-primary/90"
-                    disabled={isAdding || (hasVariants && (!activeVariant || (activeVariant.stock <= 0 && !isOnDemand)))}
+                    disabled={isAdding || (hasVariants && (!activeVariant || ((activeVariant?.stock ?? 0) <= 0 && !isOnDemand)))}
                     onClick={handleAddToCart}
                 >
                     {isAdding ? (
@@ -645,7 +656,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                     <Check size={12} className="text-emerald-500" /> Garantía de Satisfacción 100%
                 </p>
             </div>
-        </div>
+        </div >
     );
 }
 

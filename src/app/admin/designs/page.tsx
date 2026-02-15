@@ -56,10 +56,6 @@ export default function AdminDesignsPage() {
         name: '',
         description: '',
         image_url: '',
-        price: '0',
-        price_small: '0',
-        price_medium: '0',
-        price_large: '0',
         category_id: ''
     });
     const [saving, setSaving] = useState(false);
@@ -179,10 +175,6 @@ export default function AdminDesignsPage() {
                 name: design.name,
                 description: design.description || '',
                 image_url: design.image_url,
-                price: design.price.toString(),
-                price_small: (design.price_small || 0).toString(),
-                price_medium: (design.price_medium || 0).toString(),
-                price_large: (design.price_large || 0).toString(),
                 category_id: design.category_id || 'none'
             });
         } else {
@@ -191,10 +183,6 @@ export default function AdminDesignsPage() {
                 name: '',
                 description: '',
                 image_url: '',
-                price: '0',
-                price_small: '0',
-                price_medium: '0',
-                price_large: '0',
                 category_id: ''
             });
         }
@@ -215,11 +203,7 @@ export default function AdminDesignsPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...formData,
-                    category_id: formData.category_id === 'none' ? null : formData.category_id,
-                    price: parseFloat(formData.price),
-                    price_small: parseFloat(formData.price_small),
-                    price_medium: parseFloat(formData.price_medium),
-                    price_large: parseFloat(formData.price_large)
+                    category_id: formData.category_id === 'none' ? null : formData.category_id
                 }),
             });
 
@@ -368,9 +352,9 @@ export default function AdminDesignsPage() {
                         <TableHeader>
                             <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                                 <TableHead className="w-[100px]">Arte</TableHead>
+                                <TableHead className="w-[80px]">ID</TableHead>
                                 <TableHead>Nombre</TableHead>
                                 <TableHead>Tipo/Categoría</TableHead>
-                                <TableHead>Precio Extra</TableHead>
                                 <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -391,21 +375,16 @@ export default function AdminDesignsPage() {
                                                 <img src={design.image_url} alt="" className="w-full h-full object-cover" />
                                             </div>
                                         </TableCell>
+                                        <TableCell>
+                                            <code className="text-[10px] font-black bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                                                {design.friendly_id || '--'}
+                                            </code>
+                                        </TableCell>
                                         <TableCell className="font-bold">{design.name}</TableCell>
                                         <TableCell>
                                             <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-muted-foreground">
                                                 {design.category?.name || 'Sin categoría'}
                                             </span>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-xs font-bold text-slate-400">Base: ${design.price.toFixed(2)}</span>
-                                                <div className="flex gap-2 text-[10px] font-mono">
-                                                    <span className="text-blue-500">S: ${design.price_small?.toFixed(2)}</span>
-                                                    <span className="text-purple-500">M: ${design.price_medium?.toFixed(2)}</span>
-                                                    <span className="text-orange-500">L: ${design.price_large?.toFixed(2)}</span>
-                                                </div>
-                                            </div>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
@@ -460,48 +439,6 @@ export default function AdminDesignsPage() {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Precio Base</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={formData.price}
-                                        onChange={e => setFormData({ ...formData, price: e.target.value })}
-                                        className="rounded-xl h-11"
-                                    />
-                                </div>
-                                <div className="col-span-2 grid grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[10px] uppercase font-bold text-blue-500">Peq. (S)</Label>
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            value={formData.price_small}
-                                            onChange={e => setFormData({ ...formData, price_small: e.target.value })}
-                                            className="rounded-xl h-10 text-xs"
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[10px] uppercase font-bold text-purple-500">Med. (M)</Label>
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            value={formData.price_medium}
-                                            onChange={e => setFormData({ ...formData, price_medium: e.target.value })}
-                                            className="rounded-xl h-10 text-xs"
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[10px] uppercase font-bold text-orange-500">Grd. (L)</Label>
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            value={formData.price_large}
-                                            onChange={e => setFormData({ ...formData, price_large: e.target.value })}
-                                            className="rounded-xl h-10 text-xs"
-                                        />
-                                    </div>
                                 </div>
                             </div>
 
@@ -563,7 +500,7 @@ export default function AdminDesignsPage() {
                         </DialogFooter>
                     </form>
                 </DialogContent>
-            </Dialog>
+            </Dialog >
         </div >
     );
 }

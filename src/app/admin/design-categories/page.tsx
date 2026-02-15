@@ -38,6 +38,10 @@ interface DesignCategory {
     id: string;
     name: string;
     description: string | null;
+    price: number;
+    price_small: number;
+    price_medium: number;
+    price_large: number;
     created_at: string;
 }
 
@@ -47,7 +51,14 @@ export default function AdminDesignCategoriesPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<DesignCategory | null>(null);
-    const [formData, setFormData] = useState({ name: '', description: '' });
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        price: '0',
+        price_small: '0',
+        price_medium: '0',
+        price_large: '0'
+    });
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -73,10 +84,21 @@ export default function AdminDesignCategoriesPage() {
             setFormData({
                 name: category.name,
                 description: category.description || '',
+                price: category.price?.toString() || '0',
+                price_small: category.price_small?.toString() || '0',
+                price_medium: category.price_medium?.toString() || '0',
+                price_large: category.price_large?.toString() || '0'
             });
         } else {
             setEditingCategory(null);
-            setFormData({ name: '', description: '' });
+            setFormData({
+                name: '',
+                description: '',
+                price: '0',
+                price_small: '0',
+                price_medium: '0',
+                price_large: '0'
+            });
         }
         setIsDialogOpen(true);
     };
@@ -93,7 +115,13 @@ export default function AdminDesignCategoriesPage() {
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    ...formData,
+                    price: parseFloat(formData.price),
+                    price_small: parseFloat(formData.price_small),
+                    price_medium: parseFloat(formData.price_medium),
+                    price_large: parseFloat(formData.price_large)
+                }),
             });
 
             if (!res.ok) {
@@ -161,6 +189,8 @@ export default function AdminDesignCategoriesPage() {
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                                     <TableHead>Nombre</TableHead>
+                                    <TableHead>Base</TableHead>
+                                    <TableHead>S / M / L</TableHead>
                                     <TableHead>Descripción</TableHead>
                                     <TableHead className="text-right">Acciones</TableHead>
                                 </TableRow>
@@ -168,7 +198,7 @@ export default function AdminDesignCategoriesPage() {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="h-48 text-center text-muted-foreground">
+                                        <TableCell colSpan={5} className="h-48 text-center text-muted-foreground">
                                             <div className="flex flex-col items-center gap-2">
                                                 <Loader2 className="h-8 w-8 animate-spin" />
                                                 <span>Cargando datos...</span>
@@ -177,7 +207,7 @@ export default function AdminDesignCategoriesPage() {
                                     </TableRow>
                                 ) : filteredCategories.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="h-48 text-center text-muted-foreground">
+                                        <TableCell colSpan={5} className="h-48 text-center text-muted-foreground">
                                             No se encontraron categorías.
                                         </TableCell>
                                     </TableRow>
@@ -190,7 +220,13 @@ export default function AdminDesignCategoriesPage() {
                                                     {category.name}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-muted-foreground max-w-xs truncate">
+                                            <TableCell className="font-mono text-xs">
+                                                ${category.price || '0.00'}
+                                            </TableCell>
+                                            <TableCell className="font-mono text-[10px] text-muted-foreground">
+                                                ${category.price_small} / ${category.price_medium} / ${category.price_large}
+                                            </TableCell>
+                                            <TableCell className="text-muted-foreground max-w-xs truncate text-xs">
                                                 {category.description || '-'}
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -253,8 +289,58 @@ export default function AdminDesignCategoriesPage() {
                                         id="cat-desc"
                                         value={formData.description}
                                         onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                        className="rounded-xl min-h-[100px]"
+                                        className="rounded-xl min-h-[60px]"
                                     />
+                                </div>
+
+                                <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                    <h3 className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                                        Tarifas de Personalización (USD)
+                                    </h3>
+
+                                    <div className="space-y-2">
+                                        <Label>Precio Base (Instalación/Arte)</Label>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            value={formData.price}
+                                            onChange={e => setFormData({ ...formData, price: e.target.value })}
+                                            className="rounded-xl h-11"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[10px] uppercase font-bold text-blue-500">Peq. (S)</Label>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                value={formData.price_small}
+                                                onChange={e => setFormData({ ...formData, price_small: e.target.value })}
+                                                className="rounded-xl h-10 text-xs"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[10px] uppercase font-bold text-purple-500">Med. (M)</Label>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                value={formData.price_medium}
+                                                onChange={e => setFormData({ ...formData, price_medium: e.target.value })}
+                                                className="rounded-xl h-10 text-xs"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[10px] uppercase font-bold text-orange-500">Grd. (L)</Label>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                value={formData.price_large}
+                                                onChange={e => setFormData({ ...formData, price_large: e.target.value })}
+                                                className="rounded-xl h-10 text-xs"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
 
                             </div>

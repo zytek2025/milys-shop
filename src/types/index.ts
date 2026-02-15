@@ -7,6 +7,7 @@ export interface Product {
   image_url: string | null;
   category: string | null;
   stock: number;
+  friendly_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -21,6 +22,7 @@ export interface Design {
   price_medium?: number;
   price_large?: number;
   category_id?: string | null;
+  friendly_id?: string;
   is_active?: boolean;
   created_at?: string;
 }
@@ -39,6 +41,7 @@ export interface Category {
   design_price_large?: number;
   text_price_small?: number;
   text_price_large?: number;
+  friendly_id?: string;
   created_at?: string;
   updated_at: string;
 }
