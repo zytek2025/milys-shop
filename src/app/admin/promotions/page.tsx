@@ -41,6 +41,7 @@ import {
     SelectValue
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -50,6 +51,7 @@ import { es } from 'date-fns/locale';
 
 export default function AdminPromotionsPage() {
     const [promotions, setPromotions] = useState<Promotion[]>([]);
+    const [products, setProducts] = useState<any[]>([]); // To select reward products
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -62,6 +64,9 @@ export default function AdminPromotionsPage() {
         target_id: '',
         value: 0,
         min_quantity: 1,
+        min_orders_required: 0,
+        min_order_value_condition: 0,
+        reward_product_id: '',
         start_date: new Date().toISOString().split('T')[0],
         end_date: '',
         is_active: true
@@ -74,11 +79,18 @@ export default function AdminPromotionsPage() {
 
     const fetchPromotions = async () => {
         try {
-            const res = await fetch('/api/admin/promotions');
-            const data = await res.json();
-            if (res.ok) setPromotions(data);
+            const [promoRes, prodRes] = await Promise.all([
+                fetch('/api/admin/promotions'),
+                fetch('/api/admin/products')
+            ]);
+
+            const promoData = await promoRes.json();
+            const prodData = await prodRes.json();
+
+            if (promoRes.ok) setPromotions(promoData);
+            if (prodRes.ok) setProducts(prodData.products || prodData || []);
         } catch (error) {
-            toast.error('Error al cargar promociones');
+            toast.error('Error al cargar datos');
         } finally {
             setLoading(false);
         }
@@ -95,6 +107,9 @@ export default function AdminPromotionsPage() {
                 target_id: promo.target_id || '',
                 value: promo.value,
                 min_quantity: promo.min_quantity,
+                min_orders_required: promo.min_orders_required || 0,
+                min_order_value_condition: promo.min_order_value_condition || 0,
+                reward_product_id: promo.reward_product_id || '',
                 start_date: new Date(promo.start_date).toISOString().split('T')[0],
                 end_date: promo.end_date ? new Date(promo.end_date).toISOString().split('T')[0] : '',
                 is_active: promo.is_active
@@ -109,6 +124,9 @@ export default function AdminPromotionsPage() {
                 target_id: '',
                 value: 0,
                 min_quantity: 1,
+                min_orders_required: 0,
+                min_order_value_condition: 0,
+                reward_product_id: '',
                 start_date: new Date().toISOString().split('T')[0],
                 end_date: '',
                 is_active: true
@@ -167,7 +185,8 @@ export default function AdminPromotionsPage() {
         bogo: '2x1 (BOGO)',
         second_unit_50: '50% 2da Unidad',
         percentage: 'Porcentaje (%)',
-        fixed: 'Monto Fijo ($)'
+        fixed: 'Monto Fijo ($)',
+        gift: 'Obsequio / Regalo'
     };
 
     return (
@@ -244,9 +263,16 @@ export default function AdminPromotionsPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="secondary" className="rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-none font-bold italic text-[10px]">
-                                                {typeLabels[promo.type]}
-                                            </Badge>
+                                            <div className="flex flex-col gap-1">
+                                                <Badge variant="secondary" className="max-w-fit rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-none font-bold italic text-[10px]">
+                                                    {typeLabels[promo.type]}
+                                                </Badge>
+                                                {promo.min_orders_required > 0 && (
+                                                    <Badge variant="outline" className="max-w-fit rounded-lg border-amber-500/50 text-amber-600 bg-amber-50 dark:bg-amber-950/20 text-[9px] font-black italic px-2 py-0">
+                                                        💎 FIDELIDAD ({promo.min_orders_required}+)
+                                                    </Badge>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
@@ -312,145 +338,198 @@ export default function AdminPromotionsPage() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] border-none shadow-3xl bg-white dark:bg-slate-950 max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-black italic uppercase tracking-tight flex items-center gap-3">
-                            <div className="p-2 rounded-2xl bg-primary/10 text-primary">
-                                <Tag size={24} />
-                            </div>
-                            {editingPromo ? 'Editar Campaña' : 'Nueva Campaña'}
-                        </DialogTitle>
-                        <DialogDescription className="italic font-medium">
-                            Configura las reglas de descuento y vigencia de la oferta.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <form onSubmit={handleSave} className="space-y-6 py-4">
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="space-y-2 col-span-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Nombre de la Campaña</Label>
-                                <Input
-                                    placeholder="Ej: Oferta San Valentín 2x1"
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
-                                    required
-                                />
-                            </div>
-
-                            <div className="space-y-2 col-span-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Descripción</Label>
-                                <Input
-                                    placeholder="Detalles internos de la oferta..."
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Tipo de Oferta</Label>
-                                <Select
-                                    value={formData.type}
-                                    onValueChange={(val: any) => setFormData({ ...formData, type: val })}
-                                >
-                                    <SelectTrigger className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none shadow-none">
-                                        <SelectValue placeholder="Seleccionar tipo" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-none shadow-2xl">
-                                        <SelectItem value="percentage">Porcentaje (%)</SelectItem>
-                                        <SelectItem value="fixed">Monto Fijo ($)</SelectItem>
-                                        <SelectItem value="bogo">2x1 (BOGO)</SelectItem>
-                                        <SelectItem value="second_unit_50">50% 2da Unidad</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Valor / Descuento</Label>
-                                <Input
-                                    type="number"
-                                    disabled={formData.type === 'bogo' || formData.type === 'second_unit_50'}
-                                    value={formData.value}
-                                    onChange={e => setFormData({ ...formData, value: parseFloat(e.target.value) })}
-                                    className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Alcance (Target)</Label>
-                                <Select
-                                    value={formData.target_type}
-                                    onValueChange={(val: any) => setFormData({ ...formData, target_type: val, target_id: '' })}
-                                >
-                                    <SelectTrigger className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none shadow-none">
-                                        <SelectValue placeholder="Seleccionar alcance" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-none shadow-2xl">
-                                        <SelectItem value="all">Toda la Tienda</SelectItem>
-                                        <SelectItem value="category">Categoría</SelectItem>
-                                        <SelectItem value="product">Producto Específico</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">ID del Target (Nombre Cat / ID Prod)</Label>
-                                <Input
-                                    disabled={formData.target_type === 'all'}
-                                    value={formData.target_id}
-                                    onChange={e => setFormData({ ...formData, target_id: e.target.value })}
-                                    className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
-                                    placeholder={formData.target_type === 'category' ? 'Ej: "ropa"' : 'ID Producto'}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Fecha de Inicio</Label>
-                                <Input
-                                    type="date"
-                                    value={formData.start_date}
-                                    onChange={e => setFormData({ ...formData, start_date: e.target.value })}
-                                    className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
-                                    required
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Fecha de Fin (Opcional)</Label>
-                                <Input
-                                    type="date"
-                                    value={formData.end_date}
-                                    onChange={e => setFormData({ ...formData, end_date: e.target.value })}
-                                    className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
-                                />
-                            </div>
-
-                            <div className="col-span-2 p-4 rounded-3xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <Label className="text-sm font-bold">Estado de la Campaña</Label>
-                                    <p className="text-[10px] text-slate-400 italic">Activar o pausar inmediatamente.</p>
+                <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl max-h-[95vh] flex flex-col">
+                    <form onSubmit={handleSave} className="flex flex-col max-h-[95vh]">
+                        <DialogHeader className="px-8 pt-8 pb-4 shrink-0">
+                            <DialogTitle className="text-2xl font-black italic uppercase tracking-tight flex items-center gap-3">
+                                <div className="p-2 rounded-2xl bg-primary/10 text-primary">
+                                    <Tag size={24} />
                                 </div>
-                                <Switch
-                                    checked={formData.is_active}
-                                    onCheckedChange={checked => setFormData({ ...formData, is_active: checked })}
-                                />
-                            </div>
-                        </div>
+                                {editingPromo ? 'Editar Campaña' : 'Nueva Campaña'}
+                            </DialogTitle>
+                            <DialogDescription className="italic font-medium">
+                                Configura las reglas de descuento y vigencia de la oferta.
+                            </DialogDescription>
+                        </DialogHeader>
 
-                        <DialogFooter className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <ScrollArea className="flex-1 px-8 min-h-0">
+                            <div className="grid grid-cols-2 gap-6 py-4 pb-8">
+                                <div className="space-y-2 col-span-2">
+                                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Nombre de la Campaña</Label>
+                                    <Input
+                                        placeholder="Ej: Oferta San Valentín 2x1"
+                                        value={formData.name}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                        className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2 col-span-2">
+                                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Descripción</Label>
+                                    <Input
+                                        placeholder="Detalles internos de la oferta..."
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                        className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Tipo de Oferta</Label>
+                                    <Select
+                                        value={formData.type}
+                                        onValueChange={(val: any) => setFormData({ ...formData, type: val })}
+                                    >
+                                        <SelectTrigger className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none shadow-none">
+                                            <SelectValue placeholder="Seleccionar tipo" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-2xl border-none shadow-2xl">
+                                            <SelectItem value="percentage">Porcentaje (%)</SelectItem>
+                                            <SelectItem value="fixed">Monto Fijo ($)</SelectItem>
+                                            <SelectItem value="bogo">2x1 (BOGO)</SelectItem>
+                                            <SelectItem value="second_unit_50">50% 2da Unidad</SelectItem>
+                                            <SelectItem value="gift">Obsequio / Regalo</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                                        {formData.type === 'gift' ? 'Producto de Obsequio' : 'Valor / Descuento'}
+                                    </Label>
+                                    {formData.type === 'gift' ? (
+                                        <Select
+                                            value={formData.reward_product_id}
+                                            onValueChange={val => setFormData({ ...formData, reward_product_id: val })}
+                                        >
+                                            <SelectTrigger className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none shadow-none">
+                                                <SelectValue placeholder="Elegir producto" />
+                                            </SelectTrigger>
+                                            <SelectContent className="max-h-60 rounded-2xl border-none shadow-2xl">
+                                                {products.map(p => (
+                                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <Input
+                                            type="number"
+                                            disabled={formData.type === 'bogo' || formData.type === 'second_unit_50'}
+                                            value={formData.value}
+                                            onChange={e => setFormData({ ...formData, value: parseFloat(e.target.value) })}
+                                            className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
+                                        />
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Alcance (Target)</Label>
+                                    <Select
+                                        value={formData.target_type}
+                                        onValueChange={(val: any) => setFormData({ ...formData, target_type: val, target_id: '' })}
+                                    >
+                                        <SelectTrigger className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none shadow-none">
+                                            <SelectValue placeholder="Seleccionar alcance" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-2xl border-none shadow-2xl">
+                                            <SelectItem value="all">Toda la Tienda</SelectItem>
+                                            <SelectItem value="category">Categoría</SelectItem>
+                                            <SelectItem value="product">Producto Específico</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">ID del Target (Nombre Cat / ID Prod)</Label>
+                                    <Input
+                                        disabled={formData.target_type === 'all'}
+                                        value={formData.target_id}
+                                        onChange={e => setFormData({ ...formData, target_id: e.target.value })}
+                                        className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
+                                        placeholder={formData.target_type === 'category' ? 'Ej: "ropa"' : 'ID Producto'}
+                                    />
+                                </div>
+
+                                {/* LOYALTY SECTION */}
+                                <div className="col-span-2 space-y-4 p-5 rounded-[2rem] bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50">
+                                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 flex items-center gap-2">
+                                        💎 Configuración de Fidelidad (Opcional)
+                                    </Label>
+                                    <div className="grid grid-cols-2 gap-4 pt-2">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-bold uppercase text-slate-400">Mínimo de Compras</Label>
+                                            <Input
+                                                type="number"
+                                                value={formData.min_orders_required}
+                                                onChange={e => setFormData({ ...formData, min_orders_required: parseInt(e.target.value) })}
+                                                className="h-10 rounded-xl bg-white dark:bg-slate-950"
+                                                placeholder="5 para descuento, 10 para regalo..."
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-bold uppercase text-slate-400">Valor Mín. por Pedido ($)</Label>
+                                            <Input
+                                                type="number"
+                                                value={formData.min_order_value_condition}
+                                                onChange={e => setFormData({ ...formData, min_order_value_condition: parseFloat(e.target.value) })}
+                                                className="h-10 rounded-xl bg-white dark:bg-slate-950"
+                                                placeholder="Ej: 50"
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-[9px] text-amber-700/60 dark:text-amber-500/50 italic leading-tight">
+                                        Estas condiciones limitan la oferta a clientes recurrentes. Si el tipo es "Obsequio", se recomienda 10 compras con valor mínimo.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2 text-slate-600">
+                                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Fecha de Inicio</Label>
+                                    <Input
+                                        type="date"
+                                        value={formData.start_date}
+                                        onChange={e => setFormData({ ...formData, start_date: e.target.value })}
+                                        className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Fecha de Fin (Opcional)</Label>
+                                    <Input
+                                        type="date"
+                                        value={formData.end_date}
+                                        onChange={e => setFormData({ ...formData, end_date: e.target.value })}
+                                        className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
+                                    />
+                                </div>
+
+                                <div className="col-span-2 p-4 rounded-3xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-sm font-bold">Estado de la Campaña</Label>
+                                        <p className="text-[10px] text-slate-400 italic">Activar o pausar inmediatamente.</p>
+                                    </div>
+                                    <Switch
+                                        checked={formData.is_active}
+                                        onCheckedChange={checked => setFormData({ ...formData, is_active: checked })}
+                                    />
+                                </div>
+                            </div>
+                        </ScrollArea>
+
+                        <DialogFooter className="px-8 py-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 sm:justify-end gap-3 rounded-b-[2rem]">
                             <Button
                                 type="button"
                                 variant="ghost"
                                 onClick={() => setIsDialogOpen(false)}
-                                className="rounded-2xl font-bold italic h-12"
+                                className="rounded-2xl font-bold h-12 px-6"
                             >
                                 Cancelar
                             </Button>
                             <Button
                                 type="submit"
                                 disabled={saving}
-                                className="rounded-2xl bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/20 h-12 px-8 font-bold uppercase italic text-xs tracking-widest"
+                                className="rounded-2xl bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/20 h-12 px-8 font-bold uppercase text-xs tracking-widest transition-transform hover:scale-[1.02]"
                             >
                                 {saving ? <Loader2 className="animate-spin" size={18} /> : (editingPromo ? 'Guardar Cambios' : 'Crear Campaña')}
                             </Button>

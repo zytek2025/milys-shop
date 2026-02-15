@@ -29,7 +29,7 @@ async function getProduct(id: string) {
     if (product.category) {
         const { data: category } = await supabase
             .from('categories')
-            .select('has_variants, is_customizable, available_sizes, available_colors')
+            .select('has_variants, is_customizable, available_sizes, available_colors, design_price_small, design_price_medium, design_price_large, text_price_small, text_price_large')
             .eq('name', product.category)
             .maybeSingle();
 

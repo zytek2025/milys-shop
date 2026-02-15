@@ -179,12 +179,24 @@ export function useClearCart() {
   });
 }
 
+// Fetch user order history/count
+export function useUserOrders() {
+  return useQuery({
+    queryKey: ['orders', 'count'],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/orders/count`);
+      if (!response.ok) return { count: 0, orders: [] };
+      return response.json();
+    },
+  });
+}
+
 // Fetch active promotions
 export function usePromotions() {
   return useQuery<Promotion[]>({
     queryKey: ['promotions', 'active'],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE}/admin/promotions`); // Should probably have a public endpoint too, but using admin for now as they are checked for is_active
+      const response = await fetch(`${API_BASE}/admin/promotions`);
       if (!response.ok) throw new Error('Failed to fetch promotions');
       return response.json();
     },
@@ -219,31 +231,52 @@ export function useCartTotals() {
   // Apply discounts
   let totalDiscount = 0;
   const activePromos = promotions?.filter(p => p.is_active) || [];
+  const { data: userHistory } = useUserOrders();
+  const userOrderCount = userHistory?.count || 0;
+  const userValidOrders = userHistory?.orders || [];
 
   cart?.items.forEach(item => {
     const itemPrice = (item.variant?.price_override ?? item.product?.price ?? 0);
-    // Customizations usually don't have discounts unless specified, but let's calculate per unit price
     const unitPrice = itemPrice + (item.custom_metadata?.designs?.reduce((s: number, d: any) => s + (d.price || 0), 0) || 0) + (item.custom_metadata?.personalization?.price || 0);
 
     activePromos.forEach(promo => {
+      // 1. Check target (all, category, product)
       let applies = false;
       if (promo.target_type === 'all') applies = true;
       else if (promo.target_type === 'category' && item.product?.category === promo.target_id) applies = true;
       else if (promo.target_type === 'product' && item.product_id === promo.target_id) applies = true;
 
-      if (applies && item.quantity >= promo.min_quantity) {
+      if (!applies) return;
+
+      // 2. Check loyalty (min orders)
+      if (promo.min_orders_required > 0) {
+        if (userOrderCount < promo.min_orders_required) return;
+
+        // 3. Check min order value condition if exists
+        if (promo.min_order_value_condition > 0) {
+          const qualifyingOrders = userValidOrders.filter((o: any) => o.total >= promo.min_order_value_condition);
+          if (qualifyingOrders.length < promo.min_orders_required) return;
+        }
+      }
+
+      // 4. Check min quantity in current cart
+      if (item.quantity >= promo.min_quantity) {
         if (promo.type === 'bogo') {
-          // Buy One Get One (2x1)
           const freeUnits = Math.floor(item.quantity / 2);
           totalDiscount += freeUnits * unitPrice;
         } else if (promo.type === 'second_unit_50') {
-          // 50% off on second unit
           const discountedUnits = Math.floor(item.quantity / 2);
           totalDiscount += discountedUnits * (unitPrice * 0.5);
         } else if (promo.type === 'percentage') {
           totalDiscount += (unitPrice * item.quantity) * (promo.value / 100);
         } else if (promo.type === 'fixed') {
           totalDiscount += promo.value * Math.floor(item.quantity / promo.min_quantity);
+        } else if (promo.type === 'gift') {
+          // If the item itself IS the reward product, it's free (100% discount)
+          // Or if we should handle it as a separate item, this logic might need adjustment
+          if (item.product_id === promo.reward_product_id) {
+            totalDiscount += unitPrice * item.quantity;
+          }
         }
       }
     });

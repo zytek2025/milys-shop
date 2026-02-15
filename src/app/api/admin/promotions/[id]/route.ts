@@ -18,9 +18,25 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         const body = await req.json();
         const supabase = await createClient();
 
+        const {
+            name, description, type, target_type, target_id, value,
+            min_quantity, min_orders_required, min_order_value_condition,
+            reward_product_id, start_date, end_date, is_active
+        } = body;
+
         const { data, error } = await supabase
             .from('promotions')
-            .update({ ...body, updated_at: new Date().toISOString() })
+            .update({
+                name, description, type, target_type, target_id, value,
+                min_quantity,
+                min_orders_required,
+                min_order_value_condition,
+                reward_product_id: reward_product_id || null,
+                start_date,
+                end_date: end_date || null,
+                is_active,
+                updated_at: new Date().toISOString()
+            })
             .eq('id', id)
             .select()
             .single();

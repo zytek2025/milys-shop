@@ -35,9 +35,23 @@ export async function POST(req: Request) {
         const body = await req.json();
         const supabase = await createClient();
 
+        const {
+            name, description, type, target_type, target_id, value,
+            min_quantity, min_orders_required, min_order_value_condition,
+            reward_product_id, start_date, end_date, is_active
+        } = body;
+
         const { data, error } = await supabase
             .from('promotions')
-            .insert([body])
+            .insert([{
+                name, description, type, target_type, target_id, value,
+                min_quantity: min_quantity || 1,
+                min_orders_required: min_orders_required || 0,
+                min_order_value_condition: min_order_value_condition || 0,
+                reward_product_id: reward_product_id || null,
+                start_date, end_date: end_date || null,
+                is_active: is_active ?? true
+            }])
             .select()
             .single();
 

@@ -34,6 +34,11 @@ export interface Category {
   is_customizable?: boolean;
   available_sizes?: string[];
   available_colors?: { name: string; hex: string }[];
+  design_price_small?: number;
+  design_price_medium?: number;
+  design_price_large?: number;
+  text_price_small?: number;
+  text_price_large?: number;
   created_at?: string;
   updated_at: string;
 }
@@ -169,11 +174,14 @@ export interface Promotion {
   id: string;
   name: string;
   description: string | null;
-  type: 'bogo' | 'second_unit_50' | 'percentage' | 'fixed';
+  type: 'bogo' | 'second_unit_50' | 'percentage' | 'fixed' | 'gift';
   target_type: 'all' | 'category' | 'product';
   target_id: string | null;
   value: number;
   min_quantity: number;
+  min_orders_required: number;
+  min_order_value_condition: number;
+  reward_product_id: string | null;
   start_date: string;
   end_date: string | null;
   is_active: boolean;

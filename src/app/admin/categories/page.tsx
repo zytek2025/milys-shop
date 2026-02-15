@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import type { Category } from '@/types';
 
@@ -49,7 +50,12 @@ export default function AdminCategoriesPage() {
         has_variants: false,
         is_customizable: true,
         available_sizes: [] as string[],
-        available_colors: [] as { name: string; hex: string }[]
+        available_colors: [] as { name: string; hex: string }[],
+        design_price_small: 0,
+        design_price_medium: 0,
+        design_price_large: 0,
+        text_price_small: 0,
+        text_price_large: 0
     });
     const [newSize, setNewSize] = useState('');
     const [newColorName, setNewColorName] = useState('');
@@ -82,7 +88,12 @@ export default function AdminCategoriesPage() {
                 has_variants: !!category.has_variants,
                 is_customizable: category.is_customizable !== false,
                 available_sizes: category.available_sizes || [],
-                available_colors: category.available_colors || []
+                available_colors: category.available_colors || [],
+                design_price_small: category.design_price_small || 0,
+                design_price_medium: category.design_price_medium || 0,
+                design_price_large: category.design_price_large || 0,
+                text_price_small: category.text_price_small || 0,
+                text_price_large: category.text_price_large || 0
             });
         } else {
             setEditingCategory(null);
@@ -92,7 +103,12 @@ export default function AdminCategoriesPage() {
                 has_variants: false,
                 is_customizable: true,
                 available_sizes: [],
-                available_colors: []
+                available_colors: [],
+                design_price_small: 0,
+                design_price_medium: 0,
+                design_price_large: 0,
+                text_price_small: 0,
+                text_price_large: 0
             });
         }
         setIsDialogOpen(true);
@@ -266,140 +282,228 @@ export default function AdminCategoriesPage() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[425px] rounded-3xl">
-                    <DialogHeader>
-                        <DialogTitle>{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="cat-name">Nombre</Label>
-                            <Input
-                                id="cat-name"
-                                value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                required
-                                className="rounded-xl h-11"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="cat-desc">Descripción</Label>
-                            <Textarea
-                                id="cat-desc"
-                                value={formData.description}
-                                onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                className="rounded-xl min-h-[100px]"
-                            />
-                        </div>
+                <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl max-h-[95vh] flex flex-col">
+                    <form onSubmit={handleSubmit} className="flex flex-col max-h-[95vh]">
+                        <DialogHeader className="px-8 pt-8 pb-4 shrink-0">
+                            <DialogTitle className="text-2xl font-bold tracking-tight">
+                                {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
+                            </DialogTitle>
+                            <p className="text-sm text-muted-foreground">
+                                Configura los detalles y precios de personalización.
+                            </p>
+                        </DialogHeader>
 
-                        <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
-                            <div className="space-y-0.5">
-                                <Label className="text-sm font-semibold">Activar Variantes</Label>
-                                <p className="text-xs text-muted-foreground">Permite tallas y colores (Ropa/Zapatos).</p>
-                            </div>
-                            <Switch
-                                checked={formData.has_variants}
-                                onCheckedChange={checked => setFormData({ ...formData, has_variants: checked })}
-                            />
-                        </div>
-
-                        <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
-                            <div className="space-y-0.5">
-                                <Label className="text-sm font-semibold">Permitir Personalización</Label>
-                                <p className="text-xs text-muted-foreground">Solicitar logos/diseños al cliente.</p>
-                            </div>
-                            <Switch
-                                checked={formData.is_customizable}
-                                onCheckedChange={checked => setFormData({ ...formData, is_customizable: checked })}
-                            />
-                        </div>
-
-                        {formData.has_variants && (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-top duration-300">
-                                <Separator />
-                                <div className="space-y-3">
-                                    <Label className="text-sm font-bold uppercase tracking-wider text-slate-400">Tallas Globales</Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            placeholder="Ej: XL"
-                                            value={newSize}
-                                            onChange={e => setNewSize(e.target.value.toUpperCase())}
-                                            className="h-9 rounded-lg"
-                                        />
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            onClick={() => {
-                                                if (newSize && !formData.available_sizes.includes(newSize)) {
-                                                    setFormData({ ...formData, available_sizes: [...formData.available_sizes, newSize] });
-                                                    setNewSize('');
-                                                }
-                                            }}
-                                        >
-                                            <Plus size={16} />
-                                        </Button>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {formData.available_sizes.map(size => (
-                                            <Badge key={size} variant="secondary" className="gap-1 rounded-lg px-2 py-1">
-                                                {size}
-                                                <X size={12} className="cursor-pointer" onClick={() => setFormData({ ...formData, available_sizes: formData.available_sizes.filter(s => s !== size) })} />
-                                            </Badge>
-                                        ))}
-                                    </div>
+                        <ScrollArea className="flex-1 px-8 min-h-0">
+                            <div className="space-y-6 pb-8">
+                                <div className="space-y-2">
+                                    <Label htmlFor="cat-name" className="text-xs font-bold uppercase tracking-widest text-slate-400">Nombre</Label>
+                                    <Input
+                                        id="cat-name"
+                                        value={formData.name}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                        className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900 border-none px-4"
+                                        placeholder="Ej: Camisetas, Tazas..."
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="cat-desc" className="text-xs font-bold uppercase tracking-widest text-slate-400">Descripción</Label>
+                                    <Textarea
+                                        id="cat-desc"
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                        className="rounded-2xl min-h-[100px] bg-slate-50 dark:bg-slate-900 border-none px-4"
+                                        placeholder="Breve descripción de la categoría..."
+                                    />
                                 </div>
 
-                                <div className="space-y-3">
-                                    <Label className="text-sm font-bold uppercase tracking-wider text-slate-400">Colores Globales</Label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <Input
-                                            placeholder="Nombre: Azul"
-                                            value={newColorName}
-                                            onChange={e => setNewColorName(e.target.value)}
-                                            className="h-9 rounded-lg"
-                                        />
-                                        <div className="flex gap-2">
-                                            <Input
-                                                type="color"
-                                                value={newColorHex}
-                                                onChange={e => setNewColorHex(e.target.value)}
-                                                className="h-9 w-12 p-1 rounded-lg"
-                                            />
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                className="flex-1"
-                                                onClick={() => {
-                                                    if (newColorName) {
-                                                        setFormData({
-                                                            ...formData,
-                                                            available_colors: [...formData.available_colors, { name: newColorName, hex: newColorHex }]
-                                                        });
-                                                        setNewColorName('');
-                                                    }
-                                                }}
-                                            >
-                                                <Plus size={16} />
-                                            </Button>
+                                <div className="flex items-center justify-between p-5 rounded-[2rem] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-sm font-bold">Activar Variantes</Label>
+                                        <p className="text-[10px] text-muted-foreground italic">Permite tallas y colores (Ropa/Zapatos).</p>
+                                    </div>
+                                    <Switch
+                                        checked={formData.has_variants}
+                                        onCheckedChange={checked => setFormData({ ...formData, has_variants: checked })}
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between p-5 rounded-[2rem] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-sm font-bold">Permitir Personalización</Label>
+                                        <p className="text-[10px] text-muted-foreground italic">Solicitar logos/diseños al cliente.</p>
+                                    </div>
+                                    <Switch
+                                        checked={formData.is_customizable}
+                                        onCheckedChange={checked => setFormData({ ...formData, is_customizable: checked })}
+                                    />
+                                </div>
+
+                                {formData.is_customizable && (
+                                    <div className="space-y-4 p-5 rounded-[2rem] bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 animate-in fade-in slide-in-from-top duration-300">
+                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2">
+                                            🎨 Precios de Personalización
+                                        </Label>
+                                        <p className="text-[9px] text-indigo-700/60 dark:text-indigo-500/50 italic leading-tight">
+                                            Define precios por categoría. Deja en $0 para usar precios globales.
+                                        </p>
+
+                                        <div className="space-y-4 pt-2">
+                                            <div className="grid grid-cols-3 gap-3">
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] uppercase font-bold text-slate-400">Logo S</Label>
+                                                    <Input
+                                                        type="number"
+                                                        value={formData.design_price_small}
+                                                        onChange={e => setFormData({ ...formData, design_price_small: Number(e.target.value) })}
+                                                        className="h-10 rounded-xl bg-white dark:bg-slate-950 border-none shadow-sm"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] uppercase font-bold text-slate-400">Logo M</Label>
+                                                    <Input
+                                                        type="number"
+                                                        value={formData.design_price_medium}
+                                                        onChange={e => setFormData({ ...formData, design_price_medium: Number(e.target.value) })}
+                                                        className="h-10 rounded-xl bg-white dark:bg-slate-950 border-none shadow-sm"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] uppercase font-bold text-slate-400">Logo L</Label>
+                                                    <Input
+                                                        type="number"
+                                                        value={formData.design_price_large}
+                                                        onChange={e => setFormData({ ...formData, design_price_large: Number(e.target.value) })}
+                                                        className="h-10 rounded-xl bg-white dark:bg-slate-950 border-none shadow-sm"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] uppercase font-bold text-slate-400">Texto S</Label>
+                                                    <Input
+                                                        type="number"
+                                                        value={formData.text_price_small}
+                                                        onChange={e => setFormData({ ...formData, text_price_small: Number(e.target.value) })}
+                                                        className="h-10 rounded-xl bg-white dark:bg-slate-950 border-none shadow-sm"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] uppercase font-bold text-slate-400">Texto L</Label>
+                                                    <Input
+                                                        type="number"
+                                                        value={formData.text_price_large}
+                                                        onChange={e => setFormData({ ...formData, text_price_large: Number(e.target.value) })}
+                                                        className="h-10 rounded-xl bg-white dark:bg-slate-950 border-none shadow-sm"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {formData.available_colors.map((color, i) => (
-                                            <div key={i} className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-lg px-2 py-1 group">
-                                                <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: color.hex }} />
-                                                <span className="text-xs font-medium">{color.name}</span>
-                                                <X size={12} className="cursor-pointer text-slate-400 hover:text-destructive" onClick={() => setFormData({ ...formData, available_colors: formData.available_colors.filter((_, idx) => idx !== i) })} />
+                                )}
+
+                                {formData.has_variants && (
+                                    <div className="space-y-4 p-5 rounded-[2rem] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-top duration-300">
+                                        <div className="space-y-3">
+                                            <Label className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">Tallas</Label>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    placeholder="Ej: XL"
+                                                    value={newSize}
+                                                    onChange={e => setNewSize(e.target.value.toUpperCase())}
+                                                    className="h-10 rounded-xl bg-white dark:bg-slate-950 border-none shadow-sm px-4"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    size="icon"
+                                                    className="rounded-xl h-10 w-10 shrink-0"
+                                                    onClick={() => {
+                                                        if (newSize && !formData.available_sizes.includes(newSize)) {
+                                                            setFormData({ ...formData, available_sizes: [...formData.available_sizes, newSize] });
+                                                            setNewSize('');
+                                                        }
+                                                    }}
+                                                >
+                                                    <Plus size={18} />
+                                                </Button>
                                             </div>
-                                        ))}
+                                            <div className="flex flex-wrap gap-2 pt-1">
+                                                {formData.available_sizes.map(size => (
+                                                    <Badge key={size} variant="secondary" className="gap-1 rounded-lg px-3 py-1 bg-white dark:bg-slate-800 border-none shadow-sm">
+                                                        {size}
+                                                        <X size={12} className="cursor-pointer text-slate-400 hover:text-destructive" onClick={() => setFormData({ ...formData, available_sizes: formData.available_sizes.filter(s => s !== size) })} />
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <Separator className="bg-slate-200 dark:bg-slate-800" />
+
+                                        <div className="space-y-3">
+                                            <Label className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">Colores</Label>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <Input
+                                                    placeholder="Ej: Azul"
+                                                    value={newColorName}
+                                                    onChange={e => setNewColorName(e.target.value)}
+                                                    className="h-10 rounded-xl bg-white dark:bg-slate-950 border-none shadow-sm px-4"
+                                                />
+                                                <div className="flex gap-2">
+                                                    <Input
+                                                        type="color"
+                                                        value={newColorHex}
+                                                        onChange={e => setNewColorHex(e.target.value)}
+                                                        className="h-10 w-12 p-1.5 rounded-xl bg-white dark:bg-slate-950 border-none shadow-sm cursor-pointer"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        className="rounded-xl h-10 w-10 shrink-0"
+                                                        onClick={() => {
+                                                            if (newColorName) {
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    available_colors: [...formData.available_colors, { name: newColorName, hex: newColorHex }]
+                                                                });
+                                                                setNewColorName('');
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Plus size={18} />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2 pt-1">
+                                                {formData.available_colors.map((color, i) => (
+                                                    <div key={i} className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-lg px-3 py-1 shadow-sm group">
+                                                        <div className="w-3.5 h-3.5 rounded-full border border-black/10" style={{ backgroundColor: color.hex }} />
+                                                        <span className="text-xs font-medium">{color.name}</span>
+                                                        <X size={12} className="cursor-pointer text-slate-400 hover:text-destructive" onClick={() => setFormData({ ...formData, available_colors: formData.available_colors.filter((_, idx) => idx !== i) })} />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
-                        )}
-                        <DialogFooter className="pt-4">
-                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
+                        </ScrollArea>
+
+                        <DialogFooter className="px-8 py-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 sm:justify-end gap-3 rounded-b-[2rem]">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setIsDialogOpen(false)}
+                                className="rounded-2xl h-12 px-6 font-semibold"
+                            >
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={saving} className="rounded-xl gap-2 shadow-lg shadow-primary/20">
-                                {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                            <Button
+                                type="submit"
+                                disabled={saving}
+                                className="rounded-2xl h-12 px-8 font-bold gap-2 shadow-xl shadow-primary/20 bg-gradient-to-r from-primary to-primary/90 hover:scale-[1.02] transition-transform"
+                            >
+                                {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                                 {editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}
                             </Button>
                         </DialogFooter>

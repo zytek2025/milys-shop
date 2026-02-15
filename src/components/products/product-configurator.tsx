@@ -191,20 +191,40 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
         return variant?.color_hex || '#f1f5f9';
     }, [selectedColor, variants]);
 
-    // Price Calculation
-    const garmentPrice = hasVariants ? (activeVariant?.price_override || product.price) : product.price;
-    const designsPrice = isCustomizable ? selectedDesigns.reduce((sum, d) => {
-        const sizePrice = d.selectedSize === 'small' ? (storeSettings?.design_price_small ?? 2.00) :
-            d.selectedSize === 'medium' ? (storeSettings?.design_price_medium ?? 5.00) :
-                (storeSettings?.design_price_large ?? 10.00);
-        return sum + sizePrice;
-    }, 0) : 0;
+    // Price Calculation helper
+    const getDesignPrice = (size: 'small' | 'medium' | 'large') => {
+        const catPrices: Record<string, number | undefined> = {
+            small: product.category_data?.design_price_small,
+            medium: product.category_data?.design_price_medium,
+            large: product.category_data?.design_price_large
+        };
+        const globalPrices: Record<string, number | undefined> = {
+            small: storeSettings?.design_price_small,
+            medium: storeSettings?.design_price_medium,
+            large: storeSettings?.design_price_large
+        };
 
-    const personalizationPrice = customText ? (
-        customTextSize === 'small'
-            ? (storeSettings?.personalization_price_small ?? 1.00)
-            : (storeSettings?.personalization_price_large ?? 3.00)
-    ) : 0;
+        const price = catPrices[size] || globalPrices[size];
+        return price || (size === 'small' ? 2.00 : size === 'medium' ? 5.00 : 10.00);
+    };
+
+    const getPersonalizationPrice = (size: 'small' | 'large') => {
+        const catPrices: Record<string, number | undefined> = {
+            small: product.category_data?.text_price_small,
+            large: product.category_data?.text_price_large
+        };
+        const globalPrices: Record<string, number | undefined> = {
+            small: storeSettings?.personalization_price_small,
+            large: storeSettings?.personalization_price_large
+        };
+
+        const price = catPrices[size] || globalPrices[size];
+        return price || (size === 'small' ? 1.00 : 3.00);
+    };
+
+    const garmentPrice = hasVariants ? (activeVariant?.price_override || product.price) : product.price;
+    const designsPrice = isCustomizable ? selectedDesigns.reduce((sum, d) => sum + getDesignPrice(d.selectedSize), 0) : 0;
+    const personalizationPrice = customText ? getPersonalizationPrice(customTextSize) : 0;
 
     const totalPrice = garmentPrice + designsPrice + personalizationPrice;
 
@@ -247,15 +267,13 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                         name: d.name,
                         size: d.selectedSize,
                         location: d.selectedLocation,
-                        price: d.selectedSize === 'small' ? (storeSettings?.design_price_small ?? 2.00) :
-                            d.selectedSize === 'medium' ? (storeSettings?.design_price_medium ?? 5.00) :
-                                (storeSettings?.design_price_large ?? 10.00)
+                        price: getDesignPrice(d.selectedSize)
                     })),
                     personalization: customText ? {
                         text: customText,
                         size: customTextSize,
                         location: customTextLocation,
-                        price: personalizationPrice
+                        price: getPersonalizationPrice(customTextSize)
                     } : null
                 }
             });
