@@ -15,6 +15,7 @@ interface ProductPreviewProps {
     }>;
     customText: string;
     customTextSize: 'small' | 'large';
+    customTextLocation: string;
     garmentImage?: string; // Optional custom base image
 }
 
@@ -24,6 +25,7 @@ export function ProductPreview({
     designs,
     customText,
     customTextSize,
+    customTextLocation,
     garmentImage
 }: ProductPreviewProps) {
 
@@ -130,20 +132,31 @@ export function ProductPreview({
                             {/* Text Component */}
                             {customText && (
                                 <motion.div
-                                    initial={{ opacity: 0, y: 10, x: '-50%' }}
-                                    animate={{ opacity: 1, y: 0, x: '-50%' }}
-                                    className="absolute left-1/2 bottom-[24%] flex justify-center w-full max-w-[80%]"
+                                    initial={{ opacity: 0, scale: 0.5, x: '-50%', y: '-50%' }}
+                                    animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
+                                    className="absolute"
+                                    style={{
+                                        top: locationConfig[customTextLocation]?.top || '38%',
+                                        left: locationConfig[customTextLocation]?.left || '50%',
+                                        rotate: `${locationConfig[customTextLocation]?.rotate || 0}deg`,
+                                        zIndex: 40
+                                    }}
                                 >
                                     <span
                                         className={cn(
-                                            "font-serif font-black italic text-center px-6 py-2 rounded-xl border border-white/20 transition-all duration-300",
+                                            "font-serif font-black italic text-center px-4 py-1.5 rounded-lg border border-white/20 transition-all duration-300 whitespace-nowrap inline-block shadow-lg",
                                             colorHex === '#000000' || colorHex === '#1a1a1b'
-                                                ? "text-white bg-white/5 backdrop-blur-md"
+                                                ? "text-white bg-white/10 backdrop-blur-md"
                                                 : "text-slate-900 bg-black/5 backdrop-blur-sm"
                                         )}
-                                        style={{ fontSize: customTextSize === 'small' ? '14px' : '22px' }}
+                                        style={{
+                                            fontSize: customTextSize === 'small' ? '12px' : '20px',
+                                            maxWidth: '180px',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis'
+                                        }}
                                     >
-                                        "{customText}"
+                                        {customText}
                                     </span>
                                 </motion.div>
                             )}
