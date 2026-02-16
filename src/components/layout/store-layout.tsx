@@ -38,8 +38,7 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                 <Toaster position="top-center" richColors theme="light" />
 
                 <Header
-                    onOpenCart={handleOpenCart}
-                    onOpenAuth={handleOpenAuth}
+                    onCartClick={handleOpenCart}
                 />
 
                 <main className="flex-1 relative z-10 w-full animate-in fade-in duration-500">
@@ -47,8 +46,8 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                 </main>
 
                 <CartDrawer
-                    isOpen={isCartOpen}
-                    onClose={() => setIsCartOpen(false)}
+                    open={isCartOpen}
+                    onOpenChange={setIsCartOpen}
                 />
 
                 <AuthModal
