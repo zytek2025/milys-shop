@@ -55,15 +55,15 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                     onOpenChange={setIsAuthModalOpen}
                 />
 
-                <footer className="border-t border-border/40 py-16 bg-slate-50 dark:bg-slate-950 mt-auto shadow-inner">
+                <footer className="border-t border-primary/10 py-16 bg-muted/30 mt-auto">
                     <div className="container mx-auto px-6">
                         <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-12">
                             <div className="flex flex-col items-center md:items-start gap-4">
-                                <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-black text-2xl shadow-xl shadow-primary/20">
+                                <div className="h-12 w-12 rounded-2xl bg-white border border-primary/20 flex items-center justify-center text-primary font-black text-2xl shadow-sm">
                                     M
                                 </div>
                                 <div className="flex flex-col items-center md:items-start">
-                                    <span className="text-xl font-serif font-black tracking-tight">Mily's Shop</span>
+                                    <span className="text-xl font-serif font-black tracking-tight text-foreground">Mily's Shop</span>
                                     <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Tu Estilo, Nuestra Pasión</p>
                                 </div>
                             </div>
@@ -76,7 +76,7 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                             </div>
                         </div>
 
-                        <div className="pt-8 border-t border-border/20 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">
+                        <div className="pt-8 border-t border-primary/10 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
                             <p>© 2024 Mily's Shop. All rights reserved.</p>
                             <p>Handcrafted with ✨ by Mily's Team</p>
                         </div>

@@ -47,13 +47,13 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 transition-all duration-300">
+      <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur-md transition-all duration-300 shadow-sm">
         <div className="container mx-auto flex h-20 items-center justify-between px-6 gap-6">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-4 flex-shrink-0 group">
             <div className="relative">
               <div className="absolute -inset-1 bg-gradient-to-tr from-primary to-secondary rounded-2xl blur-sm opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-              <div className="relative h-14 w-14 flex items-center justify-center p-2 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-border/50 group-hover:scale-110 transition-transform duration-500">
+              <div className="relative h-14 w-14 flex items-center justify-center p-2 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-primary/20 group-hover:border-primary/50 group-hover:scale-110 transition-all duration-500">
                 <svg viewBox="0 0 150 120" className="w-full h-full fill-none">
                   <defs>
                     <linearGradient id="threadGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -62,8 +62,8 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
                     </linearGradient>
                   </defs>
                   {/* Needle Body */}
-                  <path d="M105 90 L115 10" stroke="#B8B8B8" strokeWidth="2" strokeLinecap="round" />
-                  <path d="M115 10 L112 5 Q115 0 118 5 L115 10" fill="#B8B8B8" />
+                  <path d="M105 90 L115 10" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M115 10 L112 5 Q115 0 118 5 L115 10" fill="hsl(var(--primary))" />
                   <circle cx="115" cy="8" r="1.5" fill="white" />
 
                   {/* Styled M (Thread) */}
@@ -77,7 +77,7 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
                   <path d="M50 25 Q 75 -10 100 25" stroke="hsl(var(--secondary))" strokeWidth="3" strokeDasharray="3,3" opacity="0.5" />
 
                   {/* Cosmetic drop */}
-                  <path d="M75 105 Q 85 105 85 95 Q 85 85 75 75 Q 65 85 65 95 Q 65 105 75 105 Z" fill="hsl(var(--accent))" />
+                  <path d="M75 105 Q 85 105 85 95 Q 85 85 75 75 Q 65 85 65 95 Q 65 105 75 105 Z" fill="hsl(var(--primary))" />
                 </svg>
               </div>
             </div>
@@ -85,7 +85,7 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
               <span className="text-2xl font-serif font-black tracking-tighter text-foreground leading-none">
                 Mily's
               </span>
-              <span className="text-[10px] font-sans font-black uppercase tracking-[0.4em] text-muted-foreground/60">
+              <span className="text-[10px] font-sans font-black uppercase tracking-[0.4em] text-primary">
                 Premium Shop
               </span>
             </div>

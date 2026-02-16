@@ -1,7 +1,8 @@
 
 // import fetch from 'node-fetch'; // Not needed in Node 18+
 
-const WEBHOOK_URL = 'https://main.dqcip6zepoktb.amplifyapp.com/api/marketing/trigger';
+// const WEBHOOK_URL = 'https://main.dqcip6zepoktb.amplifyapp.com/api/marketing/trigger';
+const WEBHOOK_URL = 'https://zytek.app.n8n.cloud/webhook-test/milys'; // User specific test URL
 // const WEBHOOK_URL = 'http://localhost:3000/api/marketing/trigger'; // Toggle for local testing
 
 const DUMMY_DATA = {

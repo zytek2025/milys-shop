@@ -11,66 +11,74 @@
 }
 
 :root {
-  /* Premium Palette - Soft Pearl & Sage */
-  --background: 60 20% 98%;
-  --foreground: 220 10% 25%;
+  /* Golden Pastel Premium Palette */
+  /* Background: Soft Cream / Pearl White */
+  --background: 40 20% 98%;
+  --foreground: 0 0% 20%;
+
   --card: 0 0% 100%;
-  --card-foreground: 220 10% 25%;
+  --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
-  --popover-foreground: 220 10% 25%;
+  --popover-foreground: 0 0% 20%;
 
-  /* Primary: Elegant Lavender/Blue */
-  --primary: 245 40% 90%;
-  --primary-foreground: 245 40% 25%;
+  /* Primary: Metallic Gold #D4AF37 */
+  --primary: 45 65% 52%;
+  --primary-foreground: 0 0% 100%;
 
-  /* Secondary: Soft Sage */
-  --secondary: 120 25% 85%;
-  --secondary-foreground: 120 25% 25%;
+  /* Secondary: Soft Pink #FCE7F3 */
+  --secondary: 330 65% 95%;
+  --secondary-foreground: 330 65% 25%;
 
-  /* Accents & UI */
-  --muted: 60 10% 96%;
-  --muted-foreground: 220 5% 45%;
-  --accent: 0 40% 94%;
-  --accent-foreground: 0 40% 25%;
+  /* Accents */
+  --muted: 40 10% 96%;
+  --muted-foreground: 25 5% 45%;
 
-  --border: 245 40% 94%;
-  --input: 245 40% 94%;
-  --ring: 245 40% 80%;
+  /* Accent: Lavender/Mint mixed */
+  --accent: 250 60% 96%;
+  --accent-foreground: 250 60% 25%;
+
+  --border: 45 30% 90%;
+  --input: 45 30% 90%;
+  --ring: 45 65% 52%;
   --radius: 1rem;
 
-  /* Glassmorphism Tokens */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.3);
-  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  /* Glassmorphism Tokens (Subtle) */
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(212, 175, 55, 0.2);
+  --glass-shadow: 0 8px 32px 0 rgba(212, 175, 55, 0.1);
 }
 
 .dark {
-  --background: 220 20% 5%;
-  --foreground: 220 10% 95%;
-  --card: 220 20% 7%;
-  --card-foreground: 220 10% 95%;
-  --popover: 220 20% 7%;
-  --popover-foreground: 220 10% 95%;
+  /* Luxury Dark Palette */
+  --background: 240 10% 4%;
+  --foreground: 45 20% 95%;
 
-  --primary: 245 30% 20%;
-  --primary-foreground: 245 30% 90%;
+  --card: 240 10% 6%;
+  --card-foreground: 45 20% 95%;
+  --popover: 240 10% 6%;
+  --popover-foreground: 45 20% 95%;
 
-  --secondary: 120 15% 15%;
-  --secondary-foreground: 120 15% 85%;
+  /* Primary: Bright Gold */
+  --primary: 51 100% 50%;
+  --primary-foreground: 240 10% 4%;
 
-  --muted: 220 20% 10%;
-  --muted-foreground: 220 10% 65%;
-  --accent: 0 20% 15%;
-  --accent-foreground: 0 20% 85%;
+  --secondary: 240 10% 10%;
+  --secondary-foreground: 45 20% 90%;
 
-  --border: 220 20% 15%;
-  --input: 220 20% 15%;
-  --ring: 220 20% 25%;
+  --muted: 240 10% 10%;
+  --muted-foreground: 240 5% 60%;
+
+  --accent: 45 30% 10%;
+  --accent-foreground: 45 20% 90%;
+
+  --border: 45 20% 15%;
+  --input: 45 20% 15%;
+  --ring: 51 100% 50%;
 
   /* Dark Glassmorphism */
-  --glass-bg: rgba(15, 20, 30, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.05);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  --glass-bg: rgba(10, 10, 12, 0.9);
+  --glass-border: rgba(255, 215, 0, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
 }
 
 @theme inline {
