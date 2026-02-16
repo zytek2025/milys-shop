@@ -7,9 +7,9 @@ import { ArrowRight, ShoppingBag } from 'lucide-react';
 export function Hero() {
     return (
         <section className="relative h-[90vh] flex items-center justify-center overflow-hidden bg-background">
-            {/* Background with Gradient Overlay - Light & Golden */}
-            <div className="absolute inset-0 z-0 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent z-10" />
+            {/* Background with Gradient Overlay - Light & Golden - SOLID COLOR BASE */
+            <div className="absolute inset-0 z-0 overflow-hidden bg-background">
+                <div className="absolute inset-0 bg-gradient-to-r from-background via-background to-transparent z-10 opacity-90" />
                 <motion.img
                     initial={{ scale: 1.2, opacity: 0 }}
                     animate={{ scale: 1, opacity: 0.15 }}
@@ -51,7 +51,7 @@ export function Hero() {
                             Explorar Ahora <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </Button>
 
-                        <Button size="lg" variant="outline" className="rounded-2xl px-12 text-lg h-16 gap-3 border-primary/30 text-primary hover:bg-primary/10 backdrop-blur-sm w-full sm:w-auto hover:border-primary">
+                        <Button size="lg" variant="outline" className="rounded-2xl px-12 text-lg h-16 gap-3 border-primary/30 text-primary bg-white hover:bg-slate-50 w-full sm:w-auto hover:border-primary">
                             Custom Studio
                         </Button>
                     </div>
@@ -64,7 +64,7 @@ export function Hero() {
                     initial={{ opacity: 0, y: 50 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.8, duration: 1 }}
-                    className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-primary/20 shadow-[0_20px_60px_-15px_rgba(212,175,55,0.15)] max-w-sm group hover:-translate-y-2 transition-transform duration-500"
+                    className="bg-white p-8 rounded-[2.5rem] border border-primary/20 shadow-[0_20px_60px_-15px_rgba(212,175,55,0.15)] max-w-sm group hover:-translate-y-2 transition-transform duration-500"
                 >
                     <div className="flex items-center gap-6 mb-4">
                         <div className="w-16 h-16 bg-gradient-to-br from-primary to-amber-400 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary/30 group-hover:rotate-6 transition-transform duration-500">

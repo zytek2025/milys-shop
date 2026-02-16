@@ -12,6 +12,8 @@ import { useAuthCheck } from '@/hooks/use-auth';
 // Create a client (singleton for browser)
 const queryClient = new QueryClient();
 
+import { SessionTimeout } from '@/components/auth/session-timeout';
+
 export function StoreLayout({ children }: { children: React.ReactNode }) {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -19,35 +21,34 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
     // Initialize auth state
     useAuthCheck();
 
-    const handleLoginRequired = () => {
-        setIsCartOpen(false);
-        setIsAuthModalOpen(true);
-    };
+    const handleOpenCart = () => setIsCartOpen(true);
+    const handleOpenAuth = () => setIsAuthModalOpen(true);
 
     return (
         <QueryClientProvider client={queryClient}>
-            <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-x-hidden">
-                {/* Premium Background Decorative Elements */}
-                <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse duration-[10s]" />
-                    <div className="absolute bottom-[-5%] right-[-5%] w-[35%] h-[35%] bg-secondary/20 rounded-full blur-[100px] animate-pulse duration-[8s]" />
-                    <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] bg-accent/10 rounded-full blur-[80px] animate-pulse duration-[12s]" />
-                    {/* Texture overlay */}
-                    <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] mix-blend-overlay" />
+            <div className="min-h-screen flex flex-col font-sans bg-background text-foreground bg-[url('/noise.png')]">
+                <SessionTimeout />
+
+                {/* Global Background Decoration - Updated for Solid Look */}
+                <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-30 dark:opacity-20 hidden">
+                    <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[120px]" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/5 rounded-full blur-[100px]" />
                 </div>
 
+                <Toaster position="top-center" richColors theme="light" />
+
                 <Header
-                    onCartClick={() => setIsCartOpen(true)}
+                    onOpenCart={handleOpenCart}
+                    onOpenAuth={handleOpenAuth}
                 />
 
-                <main className="flex-1 relative z-10">
+                <main className="flex-1 relative z-10 w-full animate-in fade-in duration-500">
                     {children}
                 </main>
 
                 <CartDrawer
-                    open={isCartOpen}
-                    onOpenChange={setIsCartOpen}
-                    onLoginRequired={handleLoginRequired}
+                    isOpen={isCartOpen}
+                    onClose={() => setIsCartOpen(false)}
                 />
 
                 <AuthModal
