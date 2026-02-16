@@ -7,15 +7,35 @@ import type { Product } from '@/types';
 
 interface ProductGridProps {
   products: Product[];
+  promotions?: any[]; // Avoiding strict type dependency for now
   isLoading?: boolean;
   isError?: boolean;
-  onAddToCart?: (productId: string) => void; // Deprecated but kept for compatibility if needed
+  onAddToCart?: (productId: string) => void;
 }
 
 export function ProductGrid({
   products,
+  promotions = [],
   isError
 }: ProductGridProps) {
+
+  const getBestPromotion = (product: Product) => {
+    if (!promotions || promotions.length === 0) return null;
+
+    // Filter applicable promotions
+    const applicable = promotions.filter(p => {
+      if (!p.is_active) return false;
+      if (p.target_type === 'all') return true;
+      if (p.target_type === 'product' && p.target_id === product.id) return true;
+      // Check category match - assuming product.category stores the ID or the logic handles it
+      // If product.category is the name map it, but for now strict match
+      if (p.target_type === 'category' && p.target_id === product.category) return true;
+      return false;
+    });
+
+    // Sort by value to give the best offer
+    return applicable.sort((a, b) => b.value - a.value)[0];
+  };
 
   if (isError) {
     return (
@@ -48,7 +68,7 @@ export function ProductGrid({
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.2, delay: index * 0.05 }}
           >
-            <ProductCard product={product} />
+            <ProductCard product={product} promotion={getBestPromotion(product)} />
           </motion.div>
         ))}
       </AnimatePresence>

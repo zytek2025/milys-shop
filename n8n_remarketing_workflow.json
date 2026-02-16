@@ -1,0 +1,148 @@
+{
+    "name": "Mily's Shop - Remarketing & VIP Welcome AI",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "trigger",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ],
+            "id": "webhook-trigger",
+            "name": "Webhook Trigger"
+        },
+        {
+            "parameters": {
+                "model": "gpt-4o",
+                "prompt": "=Eres un experto en marketing de moda para \"Mily's Shop\". \n\nDatos del Cliente:\nNombre: {{ $json.body.customer.fullName }}\nEmail: {{ $json.body.customer.email }}\n\nPromociones Activas:\n{{ JSON.stringify($json.body.promotions) }}\n\nObjetivo: Redacta un mensaje de bienvenida corto, cálido y exclusivo para WhatsApp. Menciona la oferta más atractiva disponible (ej. 2x1 o descuento mayor). Usa emojis y un tono elegante pero cercano. El mensaje debe tener menos de 1000 caracteres.",
+                "maxTokens": 200
+            },
+            "type": "n8n-nodes-base.openAi",
+            "typeVersion": 1,
+            "position": [
+                480,
+                300
+            ],
+            "id": "ai-generator",
+            "name": "AI Message Generator",
+            "credentials": {
+                "openAiApi": {
+                    "id": "YOUR_OPENAI_CREDENTIAL_ID",
+                    "name": "OpenAI Account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.body.customer.whatsapp }}",
+                            "operation": "notEqual",
+                            "value2": ""
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                700,
+                300
+            ],
+            "id": "check-whatsapp",
+            "name": "Has WhatsApp?"
+        },
+        {
+            "parameters": {
+                "operation": "send",
+                "phoneNumber": "={{ $json.body.customer.whatsapp }}",
+                "text": "={{ $json.text }}",
+                "messagingServiceSid": "YOUR_TWILIO_MESSAGING_SERVICE_SID"
+            },
+            "type": "n8n-nodes-base.twilio",
+            "typeVersion": 1,
+            "position": [
+                950,
+                200
+            ],
+            "id": "send-whatsapp",
+            "name": "Send WhatsApp",
+            "credentials": {
+                "twilioApi": {
+                    "id": "YOUR_TWILIO_CREDENTIAL_ID",
+                    "name": "Twilio Account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "fromEmail": "vip@milyshop.com",
+                "toEmail": "={{ $json.body.customer.email }}",
+                "subject": "Bienvenido al Club VIP de Mily's Shop - Tu Regalo Exclusivo 🎁",
+                "text": "={{ $json.text }}",
+                "html": "=<h1>Bienvenido, {{ $json.body.customer.fullName }}!</h1><br><p>{{ $json.text }}</p>"
+            },
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 1,
+            "position": [
+                950,
+                450
+            ],
+            "id": "send-email",
+            "name": "Send Email",
+            "credentials": {
+                "smtp": {
+                    "id": "YOUR_SMTP_CREDENTIAL_ID",
+                    "name": "SMTP Account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Webhook Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "AI Message Generator",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AI Message Generator": {
+            "main": [
+                [
+                    {
+                        "node": "check-whatsapp",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "check-whatsapp": {
+            "main": [
+                [
+                    {
+                        "node": "send-whatsapp",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "send-email",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

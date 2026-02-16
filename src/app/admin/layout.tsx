@@ -49,10 +49,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     ];
 
     return (
-        <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 font-sans">
+        <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 font-sans relative overflow-x-hidden">
+            {/* Premium Background Decorative Elements */}
+            <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] animate-pulse duration-[10s]" />
+                <div className="absolute bottom-[-5%] right-[-5%] w-[35%] h-[35%] bg-secondary/10 rounded-full blur-[100px] animate-pulse duration-[8s]" />
+                <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] bg-accent/5 rounded-full blur-[80px] animate-pulse duration-[12s]" />
+                {/* Texture overlay */}
+                <div className="absolute inset-0 opacity-[0.02] bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] mix-blend-overlay" />
+            </div>
+
             {/* Sidebar for Desktop */}
             <aside className={cn(
-                "fixed inset-y-0 left-0 z-50 w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-border/50 transition-all duration-300 transform md:translate-x-0 shadow-2xl shadow-slate-200/50 dark:shadow-none",
+                "fixed inset-y-0 left-0 z-50 w-72 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-r border-border/50 transition-all duration-300 transform md:translate-x-0 shadow-2xl shadow-slate-200/50 dark:shadow-none",
                 isSidebarOpen ? "translate-x-0" : "-translate-x-full"
             )}>
                 <div className="flex flex-col h-full overflow-hidden">
@@ -130,9 +139,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             )}
 
             {/* Main Content */}
-            <main className="flex-1 md:ml-72 min-h-screen flex flex-col bg-white dark:bg-slate-950 transition-all duration-500">
+            <main className="flex-1 md:ml-72 min-h-screen flex flex-col bg-transparent ring-1 ring-white/10 relative z-10 transition-all duration-500">
                 {/* Mobile Header */}
-                <header className="md:hidden flex items-center justify-between p-6 border-b bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
+                <header className="md:hidden flex items-center justify-between p-6 border-b bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl sticky top-0 z-30">
                     <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black shadow-lg shadow-primary/20">
                             M

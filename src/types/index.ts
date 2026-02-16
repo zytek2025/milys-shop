@@ -59,6 +59,25 @@ export interface ProductInsert {
   stock?: number;
 }
 
+export interface Promotion {
+  id: string;
+  name: string;
+  description?: string;
+  type: 'percentage' | 'fixed' | 'bogo' | 'gift' | 'second_unit_50';
+  value: number;
+  is_active: boolean;
+  start_date: string;
+  end_date: string;
+  target_type: 'all' | 'product' | 'category';
+  target_id?: string;
+  min_order_value_condition?: number;
+  min_orders_required?: number;
+  min_quantity?: number;
+  reward_product_id?: string;
+  image_url?: string;
+  created_at?: string;
+}
+
 // Cart types
 export interface Cart {
   id: string;

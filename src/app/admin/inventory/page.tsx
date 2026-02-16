@@ -12,6 +12,7 @@ import {
     ArrowDownCircle,
     AlertCircle
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,7 @@ export default function InventoryPage() {
     const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
     const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
     const [modalType, setModalType] = useState<'in' | 'out'>('in');
+    const [movementType, setMovementType] = useState<string>('manual');
     const [qty, setQty] = useState(1);
     const [reason, setReason] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -108,7 +110,7 @@ export default function InventoryPage() {
             const finalQty = modalType === 'in' ? qty : -qty;
             const payload: any = {
                 quantity: finalQty,
-                type: 'manual',
+                type: movementType,
                 reason: reason || (modalType === 'in' ? 'Ingreso manual' : 'Egreso manual')
             };
 
@@ -152,45 +154,47 @@ export default function InventoryPage() {
         <div className="space-y-6">
             <div className="flex justify-between items-end">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Gestión de Inventario</h1>
-                    <p className="text-muted-foreground">Control de ingresos, egresos y trazabilidad de stock.</p>
+                    <h1 className="text-4xl font-black bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent dark:from-white dark:to-slate-400 tracking-tighter italic uppercase">
+                        Gestión de Inventario
+                    </h1>
+                    <p className="text-slate-500 font-medium italic">Control de ingresos, egresos y trazabilidad proactiva de stock.</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="border-none shadow-sm bg-emerald-50/50 dark:bg-emerald-500/5">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-black uppercase text-emerald-600 flex items-center gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <Card className="border-none shadow-xl bg-white/90 dark:bg-emerald-500/10 backdrop-blur-xl rounded-[2rem]">
+                    <CardContent className="p-6 flex items-center gap-4">
+                        <CardTitle className="text-xs font-black uppercase text-emerald-600 flex items-center gap-2 italic">
                             <ArrowUpCircle size={14} /> Entradas recientes
                         </CardTitle>
-                    </CardHeader>
+                    </CardContent>
                     <CardContent>
-                        <p className="text-2xl font-black italic">
-                            {(movements || []).filter(m => (m?.quantity || 0) > 0).slice(0, 5).length} <span className="text-xs font-bold text-muted-foreground uppercase">registros</span>
+                        <p className="text-3xl font-black italic tracking-tighter">
+                            {(movements || []).filter(m => (m?.quantity || 0) > 0).slice(0, 5).length} <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">registros</span>
                         </p>
                     </CardContent>
                 </Card>
-                <Card className="border-none shadow-sm bg-rose-50/50 dark:bg-rose-500/5">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-black uppercase text-rose-600 flex items-center gap-2">
+                <Card className="border-none shadow-xl bg-white/90 dark:bg-rose-500/10 backdrop-blur-xl rounded-[2rem]">
+                    <CardContent className="p-6 flex items-center gap-4">
+                        <CardTitle className="text-xs font-black uppercase text-rose-600 flex items-center gap-2 italic">
                             <ArrowDownCircle size={14} /> Salidas recientes
                         </CardTitle>
-                    </CardHeader>
+                    </CardContent>
                     <CardContent>
-                        <p className="text-2xl font-black italic">
-                            {(movements || []).filter(m => (m?.quantity || 0) < 0).slice(0, 5).length} <span className="text-xs font-bold text-muted-foreground uppercase">registros</span>
+                        <p className="text-3xl font-black italic tracking-tighter">
+                            {(movements || []).filter(m => (m?.quantity || 0) < 0).slice(0, 5).length} <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">registros</span>
                         </p>
                     </CardContent>
                 </Card>
-                <Card className="border-none shadow-sm bg-amber-50/50 dark:bg-amber-500/5">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-black uppercase text-amber-600 flex items-center gap-2">
+                <Card className="border-none shadow-xl bg-white/90 dark:bg-amber-500/10 backdrop-blur-xl rounded-[2rem]">
+                    <CardContent className="p-6 flex items-center gap-4">
+                        <CardTitle className="text-xs font-black uppercase text-amber-600 flex items-center gap-2 italic">
                             <AlertCircle size={14} /> Stock Bajo
                         </CardTitle>
-                    </CardHeader>
+                    </CardContent>
                     <CardContent>
-                        <p className="text-2xl font-black italic">
-                            {(variants || []).filter(v => (v?.stock || 0) <= 5).length} <span className="text-xs font-bold text-muted-foreground uppercase">variantes</span>
+                        <p className="text-3xl font-black italic tracking-tighter">
+                            {(variants || []).filter(v => (v?.stock || 0) <= 5).length} <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">variantes</span>
                         </p>
                     </CardContent>
                 </Card>
@@ -198,10 +202,10 @@ export default function InventoryPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Stock List */}
-                <Card className="border-none shadow-sm">
-                    <CardHeader>
+                <Card className="border-none shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden rounded-[2.5rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20">
+                    <CardHeader className="border-b border-slate-100 dark:border-slate-800">
                         <div className="flex justify-between items-center">
-                            <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <CardTitle className="text-sm font-black uppercase italic italic flex items-center gap-2 tracking-tight">
                                 <Package className="text-primary" size={18} /> Existencias Actuales
                             </CardTitle>
                             <div className="relative w-48">
@@ -279,9 +283,9 @@ export default function InventoryPage() {
                 </Card>
 
                 {/* Movements History */}
-                <Card className="border-none shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Card className="border-none shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden rounded-[2.5rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20">
+                    <CardHeader className="border-b border-slate-100 dark:border-slate-800">
+                        <CardTitle className="text-sm font-black uppercase italic flex items-center gap-2 tracking-tight">
                             <History className="text-primary" size={18} /> Historial de Movimientos
                         </CardTitle>
                     </CardHeader>
@@ -312,11 +316,29 @@ export default function InventoryPage() {
                                             </p>
                                         </TableCell>
                                         <TableCell>
-                                            <span className={`font-black ${(m?.quantity || 0) > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                {(m?.quantity || 0) > 0 ? '+' : ''}{m?.quantity || 0}
-                                            </span>
+                                            <div className="flex flex-col gap-1">
+                                                <Badge
+                                                    variant="secondary"
+                                                    className={cn(
+                                                        "max-w-fit rounded-lg border-none font-bold italic text-[8px] uppercase",
+                                                        m?.type === 'purchase' && "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
+                                                        m?.type === 'return' && "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400",
+                                                        m?.type === 'adjustment' && "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
+                                                        m?.type === 'manual' && "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400",
+                                                        m?.type === 'order' && "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400"
+                                                    )}
+                                                >
+                                                    {m?.type === 'purchase' ? 'Compra' :
+                                                        m?.type === 'return' ? 'Devolución' :
+                                                            m?.type === 'adjustment' ? 'Ajuste' :
+                                                                m?.type === 'order' ? 'Venta' : 'Manual'}
+                                                </Badge>
+                                                <span className={`font-black tracking-tighter text-sm ${(m?.quantity || 0) > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                    {(m?.quantity || 0) > 0 ? '+' : ''}{m?.quantity || 0}
+                                                </span>
+                                            </div>
                                         </TableCell>
-                                        <TableCell className="max-w-[120px] truncate italic" title={m?.reason || ''}>
+                                        <TableCell className="max-w-[120px] truncate italic text-slate-400 font-medium" title={m?.reason || ''}>
                                             {m?.reason || '--'}
                                         </TableCell>
                                     </TableRow>
@@ -343,34 +365,72 @@ export default function InventoryPage() {
                             <p className="text-xs uppercase font-black text-primary">{selectedVariant?.size} / {selectedVariant?.color}</p>
                         </div>
 
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black uppercase italic text-slate-400">Tipo de Movimiento</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {modalType === 'in' ? (
+                                    <>
+                                        <Button
+                                            variant={movementType === 'purchase' ? 'default' : 'outline'}
+                                            onClick={() => setMovementType('purchase')}
+                                            className="rounded-xl h-10 font-bold text-xs italic uppercase"
+                                        >Compra</Button>
+                                        <Button
+                                            variant={movementType === 'adjustment' ? 'default' : 'outline'}
+                                            onClick={() => setMovementType('adjustment')}
+                                            className="rounded-xl h-10 font-bold text-xs italic uppercase"
+                                        >Ajuste +</Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Button
+                                            variant={movementType === 'manual' ? 'default' : 'outline'}
+                                            onClick={() => setMovementType('manual')}
+                                            className="rounded-xl h-10 font-bold text-xs italic uppercase"
+                                        >Salida</Button>
+                                        <Button
+                                            variant={movementType === 'return' ? 'default' : 'outline'}
+                                            onClick={() => setMovementType('return')}
+                                            className="rounded-xl h-10 font-bold text-xs italic uppercase"
+                                        >Devolución</Button>
+                                        <Button
+                                            variant={movementType === 'adjustment' ? 'default' : 'outline'}
+                                            onClick={() => setMovementType('adjustment')}
+                                            className="rounded-xl h-10 font-bold text-xs italic uppercase"
+                                        >Ajuste -</Button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase italic">Cantidad</label>
+                            <label className="text-[10px] font-black uppercase italic text-slate-400">Cantidad</label>
                             <Input
                                 type="number"
                                 value={qty}
                                 onChange={(e) => setQty(Number(e.target.value))}
-                                className="rounded-xl border-2"
+                                className="rounded-xl border-none bg-slate-100 dark:bg-slate-900 h-12 px-4 font-bold"
                                 min={1}
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase italic">Motivo / Notas</label>
+                            <label className="text-[10px] font-black uppercase italic text-slate-400">Motivo / Notas</label>
                             <Input
                                 placeholder="Ej: Compra a proveedor, Ajuste inventario..."
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
-                                className="rounded-xl border-2"
+                                className="rounded-xl border-none bg-slate-100 dark:bg-slate-900 h-12 px-4 shadow-inner"
                             />
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="pt-4 border-t border-slate-100 dark:border-slate-800">
                         <Button
-                            className={`w-full font-black uppercase italic rounded-xl ${modalType === 'in' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`}
+                            className={`w-full h-14 font-black uppercase italic rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] ${modalType === 'in' ? 'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-emerald-500/20' : 'bg-gradient-to-r from-rose-500 to-red-600 shadow-rose-500/20'}`}
                             onClick={handleMovement}
                             disabled={submitting}
                         >
-                            {submitting ? <Loader2 className="animate-spin h-4 w-4" /> : 'Confirmar Movimiento'}
+                            {submitting ? <Loader2 className="animate-spin h-5 w-5" /> : 'Confirmar Movimiento'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -77,8 +77,19 @@ export default async function ProductPage(props: {
                         )}
                     </div>
 
+                    {product.description && (
+                        <>
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4">Descripción</h3>
+                            <div className="p-6 rounded-2xl bg-slate-50/90 dark:bg-slate-900/90 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
+                                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                                    {product.description}
+                                </p>
+                            </div>
+                        </>
+                    )}
+
                     {product.category_data?.is_customizable ? (
-                        <div className="p-6 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
+                        <div className="p-6 rounded-2xl bg-slate-50/90 dark:bg-slate-900/90 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
                             <h3 className="font-bold flex items-center gap-2 mb-2 text-primary">
                                 <Info size={16} /> Sobre este diseño
                             </h3>

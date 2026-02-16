@@ -12,7 +12,8 @@ import {
     CheckCircle2,
     XCircle,
     Info,
-    ChevronRight
+    ChevronRight,
+    Star
 } from 'lucide-react';
 import {
     Table,
@@ -106,7 +107,7 @@ export default function AdminPromotionsPage() {
                 target_type: promo.target_type,
                 target_id: promo.target_id || '',
                 value: promo.value,
-                min_quantity: promo.min_quantity,
+                min_quantity: promo.min_quantity || 1,
                 min_orders_required: promo.min_orders_required || 0,
                 min_order_value_condition: promo.min_order_value_condition || 0,
                 reward_product_id: promo.reward_product_id || '',
@@ -209,7 +210,7 @@ export default function AdminPromotionsPage() {
                 </Button>
             </div>
 
-            <Card className="border-none shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden rounded-[2rem] bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-white/20 dark:border-slate-800">
+            <Card className="border-none shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden rounded-[2rem] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/20 dark:border-slate-800">
                 <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-6">
                     <div className="flex flex-col md:flex-row gap-4 justify-between">
                         <div className="relative flex-1 max-w-md">
@@ -291,6 +292,12 @@ export default function AdminPromotionsPage() {
                                                     <Calendar size={10} />
                                                     {format(new Date(promo.start_date), 'dd MMM yyyy', { locale: es })}
                                                 </div>
+                                                {(promo.min_orders_required || 0) > 0 && (
+                                                    <div className="flex items-center gap-1 text-slate-500 mt-1">
+                                                        <Star size={10} />
+                                                        Fidelidad
+                                                    </div>
+                                                )}
                                                 {promo.end_date && (
                                                     <div className="flex items-center gap-1.5 text-slate-400 mt-1">
                                                         <ChevronRight size={10} />

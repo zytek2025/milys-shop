@@ -120,6 +120,23 @@ export function useRegister() {
       }
       const profile = await profileResponse.json();
 
+      // Trigger Marketing Webhook (Fire and forget)
+      try {
+        fetch(`${API_BASE}/marketing/trigger`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer: {
+              fullName: fullName,
+              email: email,
+              whatsapp: whatsapp
+            }
+          })
+        });
+      } catch (e) {
+        console.error('Error triggering marketing webhook', e);
+      }
+
       return { data: profile };
     },
     onSuccess: (data) => {

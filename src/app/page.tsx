@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Hero } from '@/components/hero';
 import { ProductGrid } from '@/components/products/product-grid';
 import { CategoryFilter } from '@/components/products/category-filter';
+import { FeaturedOffers } from '@/components/featured-offers';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MOCK_PRODUCTS } from '@/lib/mock-data';
 
@@ -29,13 +30,26 @@ async function getProducts() {
     console.error('Error fetching categories:', cError.message);
   }
 
+  // 3. Fetch active promotions for featured section
+  const { data: promotions, error: promoError } = await supabase
+    .from('promotions')
+    .select('*')
+    .eq('is_active', true)
+    .gte('end_date', new Date().toISOString().split('T')[0])
+    .order('value', { ascending: false })
+    .limit(3);
+
+  if (promoError) {
+    console.error('Error fetching promotions:', promoError.message);
+  }
+
   const hasContent = (products && products.length > 0) || (categories && categories.length > 0);
 
   if (!hasContent) {
-    return { products: MOCK_PRODUCTS, categories: [] };
+    return { products: MOCK_PRODUCTS, categories: [], promotions: [] };
   }
 
-  return { products: products || [], categories: categories || [] };
+  return { products: products || [], categories: categories || [], promotions: promotions || [] };
 }
 
 export default async function Home(props: {
@@ -44,7 +58,7 @@ export default async function Home(props: {
   const searchParams = await props.searchParams;
   const category = searchParams.category;
 
-  const { products, categories: fetchedCategories } = await getProducts();
+  const { products, categories: fetchedCategories, promotions } = await getProducts();
   const filteredProducts = category && category !== 'all'
     ? products.filter(p => p.category === category)
     : products;
@@ -52,6 +66,8 @@ export default async function Home(props: {
   return (
     <div className="flex flex-col min-h-screen">
       <Hero />
+
+      <FeaturedOffers promotions={promotions} />
 
       <section className="container mx-auto px-6 py-24" id="products">
         <div className="flex flex-col items-center text-center mb-16">

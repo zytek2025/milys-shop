@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, LogIn } from 'lucide-react';
+import { ShoppingCart, LogIn, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCartTotals, useAddToCart } from '@/hooks/use-cart';
@@ -47,7 +47,7 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 transition-all duration-300">
+      <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 transition-all duration-300">
         <div className="container mx-auto flex h-20 items-center justify-between px-6 gap-6">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-4 flex-shrink-0 group">
@@ -90,6 +90,15 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
               </span>
             </div>
           </Link>
+
+          {/* Navigation Links (Desktop) */}
+          <nav className="hidden md:flex items-center gap-6">
+            <Link href="/" className="text-sm font-bold hover:text-primary transition-colors">Tienda</Link>
+            <Link href="/offers" className="text-sm font-bold hover:text-primary transition-colors">Ofertas</Link>
+            <Link href="/design/editor" className="flex items-center gap-2 text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 hover:scale-105 transition-transform">
+              <Palette size={16} className="text-pink-500" /> Custom Studio
+            </Link>
+          </nav>
 
           {/* Search Bar - Hidden on mobile */}
           <div className="hidden lg:flex flex-1 max-w-2xl justify-center">

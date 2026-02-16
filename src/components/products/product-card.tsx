@@ -14,9 +14,10 @@ import type { Product } from '@/types';
 
 interface ProductCardProps {
   product: Product;
+  promotion?: any;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, promotion }: ProductCardProps) {
   const addToCart = useAddToCart();
   const [isAdding, setIsAdding] = useState(false);
 
@@ -54,7 +55,16 @@ export function ProductCard({ product }: ProductCardProps) {
       <Link href={`/products/${product.id}`} className="block h-full group">
         <Card className="h-full overflow-hidden border-border/50 bg-white/60 dark:bg-slate-900/60 transition-all duration-700 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 relative">
           {/* Product Image */}
-          <div className="relative aspect-[1/1] overflow-hidden bg-slate-100 dark:bg-slate-800">
+          <div className="relative aspect-square overflow-hidden bg-slate-100 dark:bg-slate-800">
+            {promotion && (
+              <div className="absolute top-3 right-3 z-20">
+                <Badge className="bg-rose-500 hover:bg-rose-600 text-white border-none shadow-lg font-black tracking-widest text-[10px] uppercase">
+                  {promotion.type === 'percentage' ? `-${promotion.value}% OFF` :
+                    promotion.type === 'bogo' ? '2x1' :
+                      promotion.type === 'gift' ? 'REGALO' : 'OFERTA'}
+                </Badge>
+              </div>
+            )}
             {product.image_url ? (
               <img
                 src={product.image_url}
