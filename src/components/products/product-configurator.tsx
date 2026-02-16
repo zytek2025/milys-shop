@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { ProductPreview } from './product-preview';
+
 
 interface Design {
     id: string;
@@ -546,17 +546,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 </div>
             )}
 
-            {/* Visual Preview - Now at the bottom to avoid initial empty space */}
-            <div className="w-full max-w-sm mx-auto animate-in fade-in zoom-in duration-500">
-                <ProductPreview
-                    color={selectedColor || 'Blanco'}
-                    colorHex={activeColorHex}
-                    designs={selectedDesigns}
-                    customText={customText}
-                    customTextSize={customTextSize}
-                    garmentImage={product.image_url}
-                />
-            </div>
+
 
             {/* Final Action */}
             <div className="pt-6 border-t border-slate-100 dark:border-slate-900">
