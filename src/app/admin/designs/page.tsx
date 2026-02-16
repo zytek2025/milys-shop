@@ -312,7 +312,7 @@ export default function AdminDesignsPage() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[450px] rounded-3xl">
+                <DialogContent className="sm:max-w-[450px] rounded-3xl bg-white dark:bg-slate-950">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Palette className="text-primary" />

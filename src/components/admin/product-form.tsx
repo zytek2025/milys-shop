@@ -258,7 +258,7 @@ export function ProductForm({ product, isOpen, onClose, onSuccess }: ProductForm
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[700px] rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden max-h-[95vh] flex flex-col">
+            <DialogContent className="sm:max-w-[700px] rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden max-h-[95vh] flex flex-col bg-white dark:bg-slate-950">
                 <DialogHeader className="px-8 pt-8 pb-4 bg-white dark:bg-slate-950 sticky top-0 z-10">
                     <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter">
                         {product ? 'Editar Producto' : 'Nuevo Producto'}

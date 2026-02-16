@@ -26,12 +26,21 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <QueryClientProvider client={queryClient}>
-            <div className="min-h-screen bg-background text-foreground flex flex-col">
+            <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-x-hidden">
+                {/* Premium Background Decorative Elements */}
+                <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse duration-[10s]" />
+                    <div className="absolute bottom-[-5%] right-[-5%] w-[35%] h-[35%] bg-secondary/20 rounded-full blur-[100px] animate-pulse duration-[8s]" />
+                    <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] bg-accent/10 rounded-full blur-[80px] animate-pulse duration-[12s]" />
+                    {/* Texture overlay */}
+                    <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] mix-blend-overlay" />
+                </div>
+
                 <Header
                     onCartClick={() => setIsCartOpen(true)}
                 />
 
-                <main className="flex-1">
+                <main className="flex-1 relative z-10">
                     {children}
                 </main>
 

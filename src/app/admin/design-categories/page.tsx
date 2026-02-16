@@ -256,7 +256,7 @@ export default function AdminDesignCategoriesPage() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] p-8 border-none shadow-2xl">
+                <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] p-8 border-none shadow-2xl bg-white dark:bg-slate-950">
                     <DialogHeader>
                         <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter">
                             {editingCategory ? 'Editar Categoría' : 'Nueva Categoría de Logos'}
