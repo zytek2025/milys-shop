@@ -114,7 +114,7 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
                 <Button
                   variant="ghost"
                   onClick={() => setIsAuthModalOpen(true)}
-                  className="gap-2 rounded-2xl hover:bg-primary/10"
+                  className="gap-2 rounded-2xl hover:bg-slate-100"
                 >
                   <LogIn className="h-4 w-4" />
                   <span className="hidden sm:inline font-bold">Entrar</span>

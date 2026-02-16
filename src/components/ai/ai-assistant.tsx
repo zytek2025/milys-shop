@@ -65,7 +65,7 @@ export function AIAssistant() {
                         className="mb-4 w-[350px] max-w-[calc(100vw-2rem)] bg-white rounded-3xl shadow-2xl border border-lavanda/30 overflow-hidden flex flex-col h-[500px]"
                     >
                         {/* Header */}
-                        <div className="p-4 bg-gradient-to-r from-lavanda/20 to-rosa/20 border-b border-lavanda/20 flex items-center justify-between">
+                        <div className="p-4 bg-slate-50 border-b border-lavanda/20 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
                                     <Sparkles className="w-4 h-4 text-lavanda" />
@@ -89,7 +89,7 @@ export function AIAssistant() {
                                             "max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed",
                                             m.role === 'user'
                                                 ? "bg-lavanda text-slate-800 rounded-tr-none"
-                                                : "bg-crema/40 text-slate-700 rounded-tl-none border border-crema"
+                                                : "bg-crema text-slate-700 rounded-tl-none border border-crema"
                                         )}>
                                             {m.content}
                                         </div>
@@ -97,7 +97,7 @@ export function AIAssistant() {
                                 ))}
                                 {isLoading && (
                                     <div className="flex justify-start">
-                                        <div className="bg-crema/40 p-3 rounded-2xl rounded-tl-none border border-crema">
+                                        <div className="bg-crema p-3 rounded-2xl rounded-tl-none border border-crema">
                                             <Loader2 className="w-4 h-4 animate-spin text-lavanda" />
                                         </div>
                                     </div>

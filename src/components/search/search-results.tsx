@@ -23,13 +23,13 @@ export function SearchResults({
   // Highlight search term in text
   const highlightText = (text: string, searchTerm: string) => {
     if (!searchTerm.trim()) return text;
-    
+
     const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
     const parts = text.split(regex);
-    
-    return parts.map((part, index) => 
+
+    return parts.map((part, index) =>
       regex.test(part) ? (
-        <mark key={index} className="bg-emerald-200 dark:bg-emerald-800/50 text-inherit rounded px-0.5">
+        <mark key={index} className="bg-emerald-200 dark:bg-emerald-900 text-inherit rounded px-0.5">
           {part}
         </mark>
       ) : (
@@ -84,8 +84,8 @@ export function SearchResults({
             onClick={() => onProductClick(product)}
             className={cn(
               "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors",
-              "hover:bg-muted/50",
-              focusedIndex === index && "bg-muted/50"
+              "hover:bg-muted",
+              focusedIndex === index && "bg-muted"
             )}
           >
             {/* Product Image */}

@@ -23,25 +23,25 @@ interface OrderDetailProps {
 const statusConfig = {
   pending: {
     label: 'Pending',
-    color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+    color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-400',
     icon: Clock,
     description: 'Your order is being processed'
   },
   processing: {
     label: 'Processing',
-    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-400',
     icon: Truck,
     description: 'Your order is being prepared for shipping'
   },
   completed: {
     label: 'Completed',
-    color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
+    color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-400',
     icon: CheckCircle,
     description: 'Your order has been delivered'
   },
   cancelled: {
     label: 'Cancelled',
-    color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+    color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-400',
     icon: XCircle,
     description: 'Your order has been cancelled'
   },
@@ -67,8 +67,8 @@ export function OrderDetail({ order, onBack }: OrderDetailProps) {
             <CardTitle className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
                 <StatusIcon className={`h-6 w-6 ${order.status === 'completed' ? 'text-emerald-600' :
-                    order.status === 'cancelled' ? 'text-red-600' :
-                      'text-yellow-600'
+                  order.status === 'cancelled' ? 'text-red-600' :
+                    'text-yellow-600'
                   }`} />
               </div>
               <div>

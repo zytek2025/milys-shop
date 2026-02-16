@@ -16,7 +16,7 @@ export function FeaturedOffers({ promotions }: FeaturedOffersProps) {
     if (!promotions || promotions.length === 0) return null;
 
     return (
-        <section className="py-16 bg-muted/30 overflow-hidden">
+        <section className="py-16 bg-muted overflow-hidden">
             <div className="container mx-auto px-6">
                 <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
                     <div>

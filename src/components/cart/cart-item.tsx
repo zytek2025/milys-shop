@@ -88,7 +88,7 @@ export function CartItemRow({
             {designList.map((design: any, idx: number) => (
               <div key={idx} className="flex flex-col bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-[9px] font-bold text-slate-500 uppercase tracking-tighter">
                 <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
                   {design.name} (${design.price})
                 </span>
                 {(design.size || design.location) && (
@@ -104,7 +104,7 @@ export function CartItemRow({
         )}
 
         {personalizationText && (
-          <div className="mt-2 p-2 rounded-lg bg-primary/5 border border-primary/10">
+          <div className="mt-2 p-2 rounded-lg bg-slate-50 border border-primary/20">
             <p className="text-[8px] uppercase font-black text-primary tracking-widest mb-0.5">
               Personalización {personalizationSize && `(${personalizationSize === 'small' ? 'Puequeño' : 'Grande'})`}
             </p>

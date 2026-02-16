@@ -7,7 +7,7 @@ import { ArrowRight, ShoppingBag } from 'lucide-react';
 export function Hero() {
     return (
         <section className="relative h-[90vh] flex items-center justify-center overflow-hidden bg-background">
-            {/* Background with Gradient Overlay - Light & Golden - SOLID COLOR BASE */
+            {/* Background with Gradient Overlay - Light & Golden - SOLID COLOR BASE */}
             <div className="absolute inset-0 z-0 overflow-hidden bg-background">
                 <div className="absolute inset-0 bg-gradient-to-r from-background via-background to-transparent z-10 opacity-90" />
                 <motion.img

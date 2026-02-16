@@ -55,7 +55,7 @@ export function ProductCard({ product, promotion }: ProductCardProps) {
       <Link href={`/products/${product.id}`} className="block h-full group">
         <Card className="h-full overflow-hidden border-border bg-white dark:bg-card transition-all duration-500 hover:shadow-[0_15px_40px_-10px_rgba(212,175,55,0.15)] hover:border-primary/30 relative">
           {/* Product Image */}
-          <div className="relative aspect-square overflow-hidden bg-muted/30">
+          <div className="relative aspect-square overflow-hidden bg-slate-100 dark:bg-slate-800">
             {promotion && (
               <div className="absolute top-3 right-3 z-20">
                 <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground border-none shadow-md font-black tracking-widest text-[10px] uppercase">
@@ -72,7 +72,7 @@ export function ProductCard({ product, promotion }: ProductCardProps) {
                 className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 mixture-blend-multiply"
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground/30 font-black uppercase tracking-widest text-xs bg-secondary/20">
+              <div className="flex items-center justify-center h-full text-muted-foreground font-black uppercase tracking-widest text-xs bg-slate-100">
                 Mily's Design
               </div>
             )}
@@ -95,7 +95,7 @@ export function ProductCard({ product, promotion }: ProductCardProps) {
             </div>
 
             {/* Quick Add Overlay (Desktop) */}
-            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center pointer-events-none">
+            <div className="absolute inset-0 bg-white/0 hover:bg-white/10 transition-colors duration-500 flex items-center justify-center pointer-events-none">
               <div className="h-12 w-12 rounded-full bg-white shadow-xl flex items-center justify-center transform scale-50 group-hover:scale-100 transition-transform duration-500 delay-100 border border-primary/20">
                 <ExternalLink className="h-5 w-5 text-primary" />
               </div>

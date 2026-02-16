@@ -96,7 +96,7 @@ export function SearchBar({ onProductClick }: SearchBarProps) {
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          className="pl-10 pr-10 w-full bg-background/50 border-muted focus:border-emerald-500/50 focus:ring-emerald-500/20"
+          className="pl-10 pr-10 w-full bg-background border-muted focus:border-emerald-500/50 focus:ring-emerald-500/20"
         />
         {query && (
           <Button

@@ -344,7 +344,7 @@ export function ProductForm({ product, isOpen, onClose, onSuccess }: ProductForm
                                 <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
                                     <div className="p-6 bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 space-y-6">
                                         <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                                                 <Layers size={16} className="text-primary" />
                                             </div>
                                             <h3 className="font-black italic uppercase tracking-tight">Generador de Matriz de Variantes</h3>
@@ -486,7 +486,7 @@ export function ProductForm({ product, isOpen, onClose, onSuccess }: ProductForm
                                                 </div>
                                             )}
                                             {uploading && (
-                                                <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 flex items-center justify-center">
+                                                <div className="absolute inset-0 bg-white dark:bg-slate-900 flex items-center justify-center">
                                                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                                 </div>
                                             )}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useCartStore } from '@/store/cart-store';
 import { useLogout } from '@/hooks/use-auth';
 import {
     AlertDialog,
@@ -17,7 +17,7 @@ import { Clock } from 'lucide-react';
 const TIMEOUT_DURATION = 60 * 60 * 1000; // 1 hour in ms
 
 export function SessionTimeout() {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated } = useCartStore();
     const logout = useLogout();
     const [showWarning, setShowWarning] = useState(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
