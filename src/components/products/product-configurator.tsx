@@ -277,11 +277,99 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 )}
             </div>
 
-            {/* Step 1: Designs Selection */}
+            {/* Step 1: Color */}
+            {hasVariants && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <SectionLabel label="Paso 1: Elige el color de prenda" />
+                        {selectedColor && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">{selectedColor}</span>}
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                        {availableColors.map(color => (
+                            <button
+                                key={color.name}
+                                onClick={() => {
+                                    setSelectedColor(color.name);
+                                    setSelectedSize(null);
+                                }}
+                                title={color.name}
+                                className={cn(
+                                    "group relative w-12 h-12 rounded-full border-2 transition-all p-0.5",
+                                    selectedColor === color.name
+                                        ? "border-primary scale-110 shadow-lg"
+                                        : "border-slate-100 hover:border-slate-300 dark:border-slate-800"
+                                )}
+                            >
+                                <div
+                                    className="w-full h-full rounded-full border border-black/5"
+                                    style={{ backgroundColor: color.hex }}
+                                />
+                                {selectedColor === color.name && (
+                                    <div className="absolute -top-1 -right-1 bg-primary text-white p-0.5 rounded-full shadow-sm">
+                                        <Check size={10} strokeWidth={4} />
+                                    </div>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Step 2: Size */}
+            {hasVariants && (
+                <AnimatePresence>
+                    {selectedColor && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="space-y-4"
+                        >
+                            <div className="flex items-center justify-between">
+                                <SectionLabel label="Paso 2: Elige tu talla" />
+                                {selectedSize && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">Talla {selectedSize}</span>}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {availableSizes.map(s => {
+                                    const isOutOfStock = s.stock <= 0;
+                                    return (
+                                        <button
+                                            key={s.size}
+                                            onClick={() => setSelectedSize(s.size)}
+                                            className={cn(
+                                                "min-w-[75px] h-12 rounded-2xl text-sm font-bold transition-all border-2 relative overflow-hidden",
+                                                isOutOfStock ? "border-amber-200 bg-amber-50/50 text-amber-700" : "border-slate-100 hover:border-slate-300 dark:border-slate-800",
+                                                selectedSize === s.size
+                                                    ? "border-primary bg-primary text-white shadow-lg shadow-primary/20"
+                                                    : ""
+                                            )}
+                                        >
+                                            {s.size}
+                                            {isOutOfStock && (
+                                                <div className="absolute inset-x-0 bottom-0 bg-amber-500 text-white text-[7px] font-black uppercase text-center leading-tight py-0.5">Bajo Pedido</div>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            {selectedSize && availableSizes.find(s => s.size === selectedSize && s.stock <= 0) && (
+                                <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+                                    <Info size={14} className="text-amber-600 mt-0.5 shrink-0" />
+                                    <p className="text-[10px] font-bold text-amber-800 uppercase italic leading-tight">
+                                        Este producto no tiene existencia inmediata y se fabricará <span className="underline">bajo pedido</span>.
+                                        Soporte se contactará contigo para notificarte el tiempo de espera.
+                                    </p>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            )}
+
+            {/* Step 3: Designs Selection */}
             {isCustomizable && (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <SectionLabel label="Paso 1: Añade tus diseños (Máx 3)" />
+                        <SectionLabel label="Paso 3: Añade tus diseños (Máx 3)" />
                         <Badge variant="secondary" className="rounded-full bg-primary/10 text-primary border-none">
                             {selectedDesigns.length} / 3 Seleccionados
                         </Badge>
@@ -435,7 +523,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 </div>
             )}
 
-            {/* Step 1.5: Personalization Text */}
+            {/* Step 4: Personalization Text */}
             {isCustomizable && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-500 delay-200">
                     <SectionLabel label="Paso Adicional: Personalización de Texto" />
@@ -468,94 +556,6 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                         Puedes añadir un nombre o mensaje corto que será incluido en la prenda (bordado o vinil según disponibilidad).
                     </p>
                 </div>
-            )}
-
-            {/* Step 2: Color */}
-            {hasVariants && (
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <SectionLabel label="Paso 2: Elige el color de prenda" />
-                        {selectedColor && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">{selectedColor}</span>}
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                        {availableColors.map(color => (
-                            <button
-                                key={color.name}
-                                onClick={() => {
-                                    setSelectedColor(color.name);
-                                    setSelectedSize(null);
-                                }}
-                                title={color.name}
-                                className={cn(
-                                    "group relative w-12 h-12 rounded-full border-2 transition-all p-0.5",
-                                    selectedColor === color.name
-                                        ? "border-primary scale-110 shadow-lg"
-                                        : "border-slate-100 hover:border-slate-300 dark:border-slate-800"
-                                )}
-                            >
-                                <div
-                                    className="w-full h-full rounded-full border border-black/5"
-                                    style={{ backgroundColor: color.hex }}
-                                />
-                                {selectedColor === color.name && (
-                                    <div className="absolute -top-1 -right-1 bg-primary text-white p-0.5 rounded-full shadow-sm">
-                                        <Check size={10} strokeWidth={4} />
-                                    </div>
-                                )}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Step 3: Size */}
-            {hasVariants && (
-                <AnimatePresence>
-                    {selectedColor && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="space-y-4"
-                        >
-                            <div className="flex items-center justify-between">
-                                <SectionLabel label="Paso 3: Elige tu talla" />
-                                {selectedSize && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">Talla {selectedSize}</span>}
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {availableSizes.map(s => {
-                                    const isOutOfStock = s.stock <= 0;
-                                    return (
-                                        <button
-                                            key={s.size}
-                                            onClick={() => setSelectedSize(s.size)}
-                                            className={cn(
-                                                "min-w-[75px] h-12 rounded-2xl text-sm font-bold transition-all border-2 relative overflow-hidden",
-                                                isOutOfStock ? "border-amber-200 bg-amber-50/50 text-amber-700" : "border-slate-100 hover:border-slate-300 dark:border-slate-800",
-                                                selectedSize === s.size
-                                                    ? "border-primary bg-primary text-white shadow-lg shadow-primary/20"
-                                                    : ""
-                                            )}
-                                        >
-                                            {s.size}
-                                            {isOutOfStock && (
-                                                <div className="absolute inset-x-0 bottom-0 bg-amber-500 text-white text-[7px] font-black uppercase text-center leading-tight py-0.5">Bajo Pedido</div>
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            {selectedSize && availableSizes.find(s => s.size === selectedSize && s.stock <= 0) && (
-                                <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
-                                    <Info size={14} className="text-amber-600 mt-0.5 shrink-0" />
-                                    <p className="text-[10px] font-bold text-amber-800 uppercase italic leading-tight">
-                                        Este producto no tiene existencia inmediata y se fabricará <span className="underline">bajo pedido</span>.
-                                        Soporte se contactará contigo para notificarte el tiempo de espera.
-                                    </p>
-                                </div>
-                            )}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
             )}
 
             {/* Final Action */}
