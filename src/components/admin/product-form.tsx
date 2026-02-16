@@ -30,7 +30,6 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import type { Product, Category } from '@/types';
 
@@ -175,204 +174,205 @@ export function ProductForm({ product, isOpen, onClose, onSuccess }: ProductForm
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl max-h-[95vh] flex flex-col">
-                <form onSubmit={handleSubmit}>
-                    <DialogHeader className="px-8 pt-8 pb-4 shrink-0">
-                        <DialogTitle className="text-2xl font-bold">
-                            {product ? 'Editar Producto' : 'Nuevo Producto'}
-                        </DialogTitle>
-                        <p className="text-sm text-muted-foreground">
-                            Completa los detalles del producto para el catálogo.
-                        </p>
-                    </DialogHeader>
+            <DialogContent className="sm:max-w-[550px] rounded-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold">
+                        {product ? 'Editar Producto' : 'Nuevo Producto'}
+                    </DialogTitle>
+                </DialogHeader>
 
-                    <ScrollArea className="flex-1 px-8 min-h-0">
-                        <div className="grid gap-6 py-4 pb-8">
+                <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+                    <div className="grid gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Nombre del Producto</Label>
+                            <Input
+                                id="name"
+                                placeholder="Ej. Franela Retro Design"
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                required
+                                className="rounded-xl h-11"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-slate-400">Nombre del Producto</Label>
+                                <Label htmlFor="price">Precio Base ($)</Label>
                                 <Input
-                                    id="name"
-                                    placeholder="Ej. Franela Retro Design"
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    id="price"
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    value={formData.price}
+                                    onChange={e => setFormData({ ...formData, price: e.target.value })}
                                     required
-                                    className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900 border-none px-4"
+                                    className="rounded-xl h-11"
                                 />
                             </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="price" className="text-xs font-bold uppercase tracking-widest text-slate-400">Precio Base ($)</Label>
-                                    <Input
-                                        id="price"
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        value={formData.price}
-                                        onChange={e => setFormData({ ...formData, price: e.target.value })}
-                                        required
-                                        className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900 border-none px-4"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="stock" className="text-xs font-bold uppercase tracking-widest text-slate-400">Stock {showVariants ? '(Sumado)' : 'Inicial'}</Label>
-                                    <Input
-                                        id="stock"
-                                        type="number"
-                                        placeholder="0"
-                                        value={showVariants ? variants.reduce((sum, v) => sum + parseInt(v.stock || 0), 0) : formData.stock}
-                                        onChange={e => setFormData({ ...formData, stock: e.target.value })}
-                                        required
-                                        disabled={showVariants}
-                                        className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900 border-none px-4"
-                                    />
-                                </div>
-                            </div>
-
                             <div className="space-y-2">
-                                <Label htmlFor="category" className="text-xs font-bold uppercase tracking-widest text-slate-400">Categoría</Label>
-                                <Select
-                                    value={formData.category}
-                                    onValueChange={v => setFormData({ ...formData, category: v })}
-                                >
-                                    <SelectTrigger className="rounded-2xl h-12 bg-slate-50 dark:bg-slate-900 border-none shadow-none px-4">
-                                        <SelectValue placeholder="Seleccionar categoría" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-none shadow-2xl">
-                                        {categories.map((cat) => (
-                                            <SelectItem key={cat.id} value={cat.name}>
-                                                {cat.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="description" className="text-xs font-bold uppercase tracking-widest text-slate-400">Descripción</Label>
-                                <Textarea
-                                    id="description"
-                                    placeholder="Detalles sobre el producto..."
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="rounded-2xl min-h-[100px] bg-slate-50 dark:bg-slate-900 border-none px-4"
+                                <Label htmlFor="stock">Stock {showVariants ? '(Autocalculado)' : 'Inicial'}</Label>
+                                <Input
+                                    id="stock"
+                                    type="number"
+                                    placeholder="0"
+                                    value={showVariants ? variants.reduce((sum, v) => sum + parseInt(v.stock || 0), 0) : formData.stock}
+                                    onChange={e => setFormData({ ...formData, stock: e.target.value })}
+                                    required
+                                    disabled={showVariants}
+                                    className="rounded-xl h-11"
                                 />
                             </div>
+                        </div>
 
-                            {showVariants && (
-                                <div className="space-y-4 p-5 rounded-[2rem] bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 animate-in fade-in slide-in-from-top duration-300">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <Palette size={18} className="text-indigo-600" />
-                                            <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-100">Variantes</h3>
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-8 rounded-xl text-xs bg-white dark:bg-slate-950"
-                                            onClick={() => setVariants([...variants, { id: Math.random().toString(), color: '#000000', color_name: 'Negro', size: 'M', stock: 0, price_override: null }])}
-                                        >
-                                            <Plus size={14} className="mr-1" /> Añadir
-                                        </Button>
+                        <div className="space-y-2">
+                            <Label htmlFor="category">Categoría</Label>
+                            <Select
+                                value={formData.category}
+                                onValueChange={v => setFormData({ ...formData, category: v })}
+                            >
+                                <SelectTrigger className="rounded-xl h-11">
+                                    <SelectValue placeholder="Seleccionar categoría" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                    {categories.map((cat) => (
+                                        <SelectItem key={cat.id} value={cat.name}>
+                                            {cat.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Descripción</Label>
+                            <Textarea
+                                id="description"
+                                placeholder="Detalles sobre el producto..."
+                                value={formData.description}
+                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                className="rounded-xl min-h-[80px]"
+                            />
+                        </div>
+
+                        {showVariants && (
+                            <div className="space-y-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Palette size={18} className="text-primary" />
+                                        <h3 className="text-sm font-bold">Variantes de Prenda</h3>
                                     </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 rounded-lg text-xs"
+                                        onClick={() => setVariants([...variants, { id: Math.random().toString(), color: '#000000', color_name: 'Negro', size: 'M', stock: 0, price_override: null }])}
+                                    >
+                                        <Plus size={14} className="mr-1" /> Añadir variante
+                                    </Button>
+                                </div>
 
-                                    <div className="space-y-3">
-                                        {variants.map((v, idx) => (
-                                            <div key={v.id} className="grid grid-cols-[1fr,0.8fr,0.8fr,auto] gap-3 items-end bg-white dark:bg-slate-900 p-3 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-                                                <div className="space-y-1">
-                                                    <Label className="text-[10px] uppercase font-black text-slate-400">Color</Label>
-                                                    <div className="flex items-center gap-2">
-                                                        <input
-                                                            type="color"
-                                                            value={v.color}
-                                                            onChange={e => {
-                                                                const newVariants = [...variants];
-                                                                newVariants[idx].color = e.target.value;
-                                                                setVariants(newVariants);
-                                                            }}
-                                                            className="w-7 h-7 rounded-full border-none cursor-pointer bg-transparent shadow-sm"
-                                                        />
-                                                        <Input
-                                                            placeholder="Nombre"
-                                                            className="h-8 text-[11px] rounded-lg border-none bg-slate-50 dark:bg-slate-800 px-2"
-                                                            value={v.color_name}
-                                                            onChange={e => {
-                                                                const newVariants = [...variants];
-                                                                newVariants[idx].color_name = e.target.value;
-                                                                setVariants(newVariants);
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <Label className="text-[10px] uppercase font-black text-slate-400">Talla</Label>
-                                                    <Input
-                                                        placeholder="S, M..."
-                                                        className="h-8 text-[11px] rounded-lg border-none bg-slate-50 dark:bg-slate-800 px-2"
-                                                        value={v.size}
+                                <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2">
+                                    {variants.map((v, idx) => (
+                                        <div key={v.id} className="grid grid-cols-[1.5fr,1fr,1fr,auto] gap-2 items-end bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px]">Color</Label>
+                                                <div className="flex items-center gap-1">
+                                                    <input
+                                                        type="color"
+                                                        value={v.color}
                                                         onChange={e => {
                                                             const newVariants = [...variants];
-                                                            newVariants[idx].size = e.target.value;
+                                                            newVariants[idx].color = e.target.value;
+                                                            setVariants(newVariants);
+                                                        }}
+                                                        className="w-6 h-6 rounded-full border-none cursor-pointer bg-transparent"
+                                                    />
+                                                    <Input
+                                                        placeholder="Nombre"
+                                                        className="h-8 text-[10px] rounded-lg border-none bg-slate-50 p-1"
+                                                        value={v.color_name}
+                                                        onChange={e => {
+                                                            const newVariants = [...variants];
+                                                            newVariants[idx].color_name = e.target.value;
                                                             setVariants(newVariants);
                                                         }}
                                                     />
                                                 </div>
-                                                <div className="space-y-1">
-                                                    <Label className="text-[10px] uppercase font-black text-slate-400">Stock</Label>
-                                                    <Input
-                                                        type="number"
-                                                        className="h-8 text-[11px] rounded-lg border-none bg-slate-50 dark:bg-slate-800 px-2"
-                                                        value={v.stock}
-                                                        onChange={e => {
-                                                            const newVariants = [...variants];
-                                                            newVariants[idx].stock = e.target.value;
-                                                            setVariants(newVariants);
-                                                        }}
-                                                    />
-                                                </div>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 text-destructive/60 hover:text-destructive"
-                                                    onClick={() => setVariants(variants.filter((_, i) => i !== idx))}
-                                                >
-                                                    <Trash2 size={16} />
-                                                </Button>
                                             </div>
-                                        ))}
-                                    </div>
-                                    {variants.length > 0 && (
-                                        <p className="text-[10px] text-indigo-600/60 italic flex items-center gap-1">
-                                            <Check size={10} /> El stock total se actualiza solo.
-                                        </p>
-                                    )}
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px]">Talla</Label>
+                                                <Input
+                                                    placeholder="S, M..."
+                                                    className="h-8 text-[10px] rounded-lg border-none bg-slate-50 p-1"
+                                                    value={v.size}
+                                                    onChange={e => {
+                                                        const newVariants = [...variants];
+                                                        newVariants[idx].size = e.target.value;
+                                                        setVariants(newVariants);
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px]">Stock</Label>
+                                                <Input
+                                                    type="number"
+                                                    className="h-8 text-[10px] rounded-lg border-none bg-slate-50 p-1"
+                                                    value={v.stock}
+                                                    onChange={e => {
+                                                        const newVariants = [...variants];
+                                                        newVariants[idx].stock = e.target.value;
+                                                        setVariants(newVariants);
+                                                    }}
+                                                />
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-destructive"
+                                                onClick={() => setVariants(variants.filter((_, i) => i !== idx))}
+                                            >
+                                                <Trash2 size={14} />
+                                            </Button>
+                                        </div>
+                                    ))}
                                 </div>
-                            )}
+                                {variants.length > 0 && (
+                                    <p className="text-[10px] text-muted-foreground italic flex items-center gap-1">
+                                        <Check size={10} className="text-green-500" /> Stock sumado automáticamente.
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
-                            {/* Gestión de Imagen */}
-                            <div className="space-y-4 pt-4">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Imagen del Producto</Label>
-                                <div className="grid grid-cols-2 gap-6 items-center">
-                                    <div className="aspect-square rounded-[2rem] bg-slate-50 dark:bg-slate-900 flex items-center justify-center overflow-hidden border-2 border-dashed border-slate-200 dark:border-slate-800 group relative">
+                        <div className="space-y-2">
+                            <Label htmlFor="image_url">Imagen del Diseño</Label>
+                            <div className="flex gap-3 mt-2">
+                                <div className="relative group">
+                                    <div className="h-24 w-24 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900/50 overflow-hidden">
                                         {formData.image_url ? (
-                                            <>
-                                                <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                    <Button variant="ghost" className="text-white hover:text-white" onClick={() => setFormData({ ...formData, image_url: '' })}>Eliminar</Button>
-                                                </div>
-                                            </>
+                                            <img
+                                                src={formData.image_url}
+                                                alt="Preview"
+                                                className="h-full w-full object-cover"
+                                            />
                                         ) : (
-                                            <div className="text-center space-y-2 p-6">
-                                                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400 group-hover:scale-110 transition-transform">
-                                                    <Upload size={24} />
-                                                </div>
-                                                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Subir archivo</p>
+                                            <div className="flex flex-col items-center gap-1 text-slate-400">
+                                                <ImageIcon size={20} />
+                                                <span className="text-[10px]">Sin imagen</span>
+                                            </div>
+                                        )}
+                                        {uploading && (
+                                            <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 flex items-center justify-center">
+                                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
                                             </div>
                                         )}
                                     </div>
-                                    <div className="space-y-4">
+                                </div>
+
+                                <div className="flex-1 flex flex-col justify-center gap-2">
+                                    <div className="relative">
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -384,42 +384,35 @@ export function ProductForm({ product, isOpen, onClose, onSuccess }: ProductForm
                                         <Button
                                             type="button"
                                             variant="outline"
-                                            className="w-full rounded-2xl gap-2 h-11 text-xs border-indigo-100 dark:border-indigo-900 bg-white dark:bg-slate-950 shadow-sm"
+                                            className="w-full rounded-xl gap-2 h-10 text-xs"
                                             onClick={() => document.getElementById('file-upload')?.click()}
                                             disabled={uploading}
                                         >
-                                            <Upload size={16} />
-                                            {formData.image_url ? 'Cambiar Foto' : 'Subir desde equipo'}
+                                            <Upload size={14} />
+                                            {formData.image_url ? 'Cambiar Diseño' : 'Subir Diseño'}
                                         </Button>
+                                    </div>
+                                    <div className="relative">
                                         <Input
                                             id="image_url"
-                                            placeholder="O pega link de imagen..."
+                                            placeholder="O pega una URL..."
                                             value={formData.image_url}
                                             onChange={e => setFormData({ ...formData, image_url: e.target.value })}
-                                            className="rounded-2xl h-10 text-[10px] bg-slate-50 dark:bg-slate-900 border-none px-4 shadow-inner"
+                                            className="rounded-xl h-10 text-[10px]"
                                         />
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </ScrollArea>
+                    </div>
 
-                    <DialogFooter className="px-8 py-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 sm:justify-end gap-3 rounded-b-[2rem] shrink-0">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={onClose}
-                            className="rounded-2xl h-12 px-6 font-semibold"
-                        >
+                    <DialogFooter className="gap-2">
+                        <Button type="button" variant="outline" onClick={onClose} className="rounded-xl h-11 px-6">
                             Cancelar
                         </Button>
-                        <Button
-                            type="submit"
-                            disabled={loading}
-                            className="rounded-2xl h-12 px-8 font-bold gap-2 shadow-xl shadow-primary/20 bg-gradient-to-r from-primary to-primary/90 hover:scale-[1.02] transition-transform"
-                        >
-                            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save size={20} />}
-                            {product ? 'Guardar Cambios' : 'Crear Producto'}
+                        <Button type="submit" disabled={loading} className="rounded-xl h-11 px-8 gap-2 shadow-lg shadow-primary/20">
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                            {product ? 'Actualizar' : 'Crear Producto'}
                         </Button>
                     </DialogFooter>
                 </form>

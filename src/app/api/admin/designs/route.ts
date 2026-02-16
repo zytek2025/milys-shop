@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         if (!(await isAdmin(supabase))) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
 
         const body = await request.json();
-        const { name, description, image_url, category_id } = body;
+        const { name, description, image_url, price, price_small, price_medium, price_large, category_id } = body;
 
         const { data, error } = await supabase
             .from('designs')
@@ -44,6 +44,10 @@ export async function POST(request: NextRequest) {
                 name,
                 description,
                 image_url,
+                price,
+                price_small,
+                price_medium,
+                price_large,
                 category_id
             })
             .select()

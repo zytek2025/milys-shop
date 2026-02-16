@@ -29,7 +29,7 @@ export function CartItemRow({
   // Estructura de metadatos (soporta formato nuevo y antiguo)
   const metadata = (item.custom_metadata || {}) as any;
   const isNewFormat = !Array.isArray(metadata) && !!metadata.designs;
-  const designList = (isNewFormat ? (metadata.designs || []) : (Array.isArray(metadata) ? metadata : [])) as any[];
+  const designList = (isNewFormat ? metadata.designs : (Array.isArray(metadata) ? metadata : [])) as any[];
   const personalization = isNewFormat ? metadata.personalization : null;
   const personalizationText = personalization?.text || personalization;
   const personalizationSize = personalization?.size || null;
@@ -72,9 +72,9 @@ export function CartItemRow({
         {/* Talla y Color si hay variante */}
         {(variant?.size || variant?.color) && (
           <p className="text-[10px] uppercase font-bold text-slate-400 tracking-tight">
-            {variant?.color && <span>{variant.color}</span>}
-            {variant?.color && variant?.size && <span> / </span>}
-            {variant?.size && <span>Talla {variant.size}</span>}
+            {variant.color && <span>{variant.color}</span>}
+            {variant.color && variant.size && <span> / </span>}
+            {variant.size && <span>Talla {variant.size}</span>}
           </p>
         )}
 

@@ -2,15 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ShoppingBag,
-  Trash2,
-  Loader2,
-  LogIn,
-  Info,
-  Gift,
-  Star
-} from 'lucide-react';
+import { ShoppingBag, Trash2, Loader2, LogIn } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -29,9 +21,7 @@ import {
   useCartTotals,
   useUpdateCartItem,
   useRemoveFromCart,
-  useClearCart,
-  usePromotions,
-  useUserOrders
+  useClearCart
 } from '@/hooks/use-cart';
 import { useAuth } from '@/store/cart-store';
 import { toast } from 'sonner';
@@ -42,15 +32,10 @@ interface CartDrawerProps {
   onLoginRequired?: () => void;
 }
 
-import { PaymentSelector } from '@/components/orders/payment-selector';
-
 export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerProps) {
   const { data: cart, isLoading } = useCart();
-  const { subtotal, totalDiscount, total: apiTotal, itemCount } = useCartTotals();
-  const { data: promotions } = usePromotions();
-  const { data: userOrders } = useUserOrders();
+  const { total, itemCount } = useCartTotals();
   const { isAuthenticated } = useAuth();
-  const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
 
   const updateCartItem = useUpdateCartItem();
   const removeFromCart = useRemoveFromCart();
@@ -59,21 +44,14 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
   const [removingItemId, setRemovingItemId] = useState<string | null>(null);
 
-  // Calculate payment discount
-  const paymentDiscount = (selectedPayment?.is_discount_active && selectedPayment?.discount_percentage > 0)
-    ? apiTotal * (selectedPayment.discount_percentage / 100)
-    : 0;
-
-  const finalTotal = apiTotal - paymentDiscount;
-
   const handleUpdateQuantity = async (itemId: string, quantity: number) => {
     if (quantity < 1) return;
     setUpdatingItemId(itemId);
     try {
       await updateCartItem.mutateAsync({ itemId, quantity });
-      toast.success('Cantidad actualizada');
+      toast.success('Quantity updated');
     } catch (error) {
-      toast.error('Error al actualizar');
+      toast.error('Failed to update quantity');
     } finally {
       setUpdatingItemId(null);
     }
@@ -83,9 +61,9 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
     setRemovingItemId(itemId);
     try {
       await removeFromCart.mutateAsync(itemId);
-      toast.success('Producto eliminado');
+      toast.success('Item removed from cart');
     } catch (error) {
-      toast.error('Error al eliminar');
+      toast.error('Failed to remove item');
     } finally {
       setRemovingItemId(null);
     }
@@ -94,40 +72,28 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
   const handleClearCart = async () => {
     try {
       await clearCart.mutateAsync();
-      toast.success('Carrito vaciado');
+      toast.success('Cart cleared');
     } catch (error) {
-      toast.error('Error al vaciar');
+      toast.error('Failed to clear cart');
     }
   };
 
   const handleOrderComplete = () => {
     onOpenChange(false);
-    toast.success('¡Pedido realizado con éxito!');
+    toast.success('Your order has been placed successfully!');
   };
-
-  // Loyalty Logic
-  const loyaltyPromo = promotions?.find(p => p.type === 'loyalty_reward' && p.is_active);
-  const qualifyingOrders = userOrders?.orders?.filter((o: any) => o.total >= (loyaltyPromo?.min_order_value_condition || 0)) || [];
-  const orderCount = qualifyingOrders.length;
-
-  // Safety check: avoid division by zero if min_orders_required is 0 or undefined
-  const minRequired = loyaltyPromo?.min_orders_required || 0;
-  const nextMilestone = (loyaltyPromo && minRequired > 0)
-    ? Math.ceil((orderCount + 1) / minRequired) * minRequired
-    : 0;
-  const remainingForReward = nextMilestone > 0 ? nextMilestone - orderCount : 0;
 
   const items = cart?.items ?? [];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex flex-col w-full sm:max-w-md p-0 overflow-hidden">
-        <SheetHeader className="px-6 pt-6">
-          <SheetTitle className="flex items-center gap-2 font-black italic uppercase tracking-tighter">
-            <ShoppingBag className="h-5 w-5 text-primary" />
+      <SheetContent className="flex flex-col w-full sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <ShoppingBag className="h-5 w-5" />
             Tu Carrito
           </SheetTitle>
-          <SheetDescription className="text-xs uppercase font-bold italic opacity-70">
+          <SheetDescription>
             {itemCount > 0
               ? `${itemCount} artículo${itemCount !== 1 ? 's' : ''} en tu carrito`
               : 'Tu carrito está vacío'
@@ -137,24 +103,24 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
 
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : items.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center p-6">
-            <ShoppingBag className="h-16 w-16 text-muted-foreground/20" />
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
+            <ShoppingBag className="h-16 w-16 text-muted-foreground/50" />
             <div>
-              <p className="text-lg font-black uppercase italic tracking-tighter">Tu carrito está vacío</p>
-              <p className="text-xs text-muted-foreground uppercase font-bold italic">
+              <p className="text-lg font-medium">Tu carrito está vacío</p>
+              <p className="text-sm text-muted-foreground">
                 Añade productos para comenzar
               </p>
             </div>
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl border-2 font-bold uppercase italic text-xs">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Seguir Comprando
             </Button>
           </div>
         ) : (
           <>
-            <ScrollArea className="flex-1 px-6">
+            <ScrollArea className="flex-1 -mx-6 px-6">
               <AnimatePresence mode="popLayout">
                 {items.map((item) => (
                   <CartItemRow
@@ -167,103 +133,49 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
                   />
                 ))}
               </AnimatePresence>
-
-              {/* Payment Methods Selection */}
-              <PaymentSelector
-                onSelect={(method) => setSelectedPayment(method)}
-                selectedId={selectedPayment?.id}
-              />
             </ScrollArea>
 
-            <div className="mt-auto bg-slate-50/80 dark:bg-slate-900/80 p-6 border-t border-slate-100 dark:border-slate-800">
-              {/* Loyalty Progress Banner */}
-              {isAuthenticated && loyaltyPromo && remainingForReward > 0 && remainingForReward <= 3 && (
-                <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-primary text-white shadow-lg shadow-indigo-500/20 border-none relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
-                    <Star size={48} className="rotate-12" />
-                  </div>
-                  <div className="flex items-start gap-3 relative z-10">
-                    <div className="mt-0.5 bg-white/20 p-2 rounded-xl">
-                      <Gift size={18} className="animate-bounce" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-black uppercase italic tracking-widest opacity-80">Meta de Fidelidad</p>
-                      <p className="text-[11px] leading-tight font-bold">
-                        {remainingForReward === 1
-                          ? '¡Tu PRÓXIMA compra te dará un premio!'
-                          : `Solo te faltan ${remainingForReward} compras para tu bono de $${loyaltyPromo.value}`}
-                      </p>
-                      <div className="w-full h-1.5 bg-white/30 rounded-full mt-2 overflow-hidden">
-                        <div
-                          className="h-full bg-white transition-all duration-1000"
-                          style={{ width: `${minRequired > 0 ? ((minRequired - (remainingForReward % minRequired)) / minRequired) * 100 : 0}%` }}
-                        />
-                      </div>
-                    </div>
+            <div className="mt-auto">
+              <Separator className="my-4" />
+
+              {/* Auth message for non-logged in users */}
+              {!isAuthenticated && (
+                <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+                    <LogIn className="h-4 w-4" />
+                    <span className="text-sm font-medium">
+                      Inicia sesión para guardar tu carrito
+                    </span>
                   </div>
                 </div>
               )}
 
-              {/* Return Policy Warning */}
-              <div className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border-2 border-amber-100 dark:border-amber-800/20">
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 bg-amber-100 dark:bg-amber-900/30 p-1.5 rounded-lg text-amber-600 dark:text-amber-400">
-                    <Info size={14} />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase italic tracking-tight text-amber-700 dark:text-amber-400">Política de Devoluciones</p>
-                    <p className="text-[10px] leading-relaxed font-bold text-amber-700/80 dark:text-amber-400/80">
-                      No se hace devolución de dinero, solo cambio por otro producto de igual valor o mayor. Si el producto es de menor valor, quedará el saldo a favor para una próxima compra.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               {/* Cart Summary */}
-              <div className="space-y-2 mb-6">
-                <div className="flex justify-between text-[11px] font-bold uppercase text-muted-foreground italic">
-                  <span>Subtotal Neto</span>
-                  <span className="text-slate-900 dark:text-slate-100">${subtotal.toFixed(2)}</span>
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span>${total.toFixed(2)}</span>
                 </div>
-
-                {totalDiscount > 0 && (
-                  <div className="flex justify-between text-[11px] text-emerald-600 font-black italic uppercase">
-                    <span className="flex items-center gap-1">✨ Oferta Aplicada</span>
-                    <span>-${totalDiscount.toFixed(2)}</span>
-                  </div>
-                )}
-
-                {paymentDiscount > 0 && (
-                  <div className="flex justify-between text-[11px] text-primary font-black italic uppercase animate-in slide-in-from-right-2 duration-300">
-                    <span className="flex items-center gap-1">💎 Descuento {selectedPayment?.name}</span>
-                    <span>-${paymentDiscount.toFixed(2)}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between text-[11px] text-emerald-600 font-black italic uppercase">
-                  <span>Envío Priority</span>
-                  <span className="tracking-tighter font-black">¡GRATIS!</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Envío</span>
+                  <span className="text-emerald-600">Gratis</span>
                 </div>
-
-                <div className="pt-2">
-                  <div className="flex justify-between items-center bg-white dark:bg-slate-950 p-3 rounded-2xl border-2 shadow-sm">
-                    <span className="font-black uppercase italic tracking-tighter text-sm">Total a Pagar</span>
-                    <span className="font-black text-2xl tracking-tighter text-primary">${finalTotal.toFixed(2)}</span>
-                  </div>
+                <Separator />
+                <div className="flex justify-between font-semibold text-lg">
+                  <span>Total</span>
+                  <span>${total.toFixed(2)}</span>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col gap-3">
+              <SheetFooter className="flex-col gap-2 sm:flex-col">
                 <CheckoutButton
                   onLoginRequired={onLoginRequired}
                   onOrderComplete={handleOrderComplete}
-                  paymentMethodId={selectedPayment?.id}
-                  discountAmount={paymentDiscount}
                 />
                 <Button
                   variant="outline"
-                  className="w-full text-destructive hover:text-destructive rounded-xl border-2 font-bold uppercase italic text-xs h-10"
+                  className="w-full text-destructive hover:text-destructive"
                   onClick={handleClearCart}
                   disabled={clearCart.isPending}
                 >
@@ -274,7 +186,7 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
                   )}
                   Vaciar Carrito
                 </Button>
-              </div>
+              </SheetFooter>
             </div>
           </>
         )}

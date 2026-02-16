@@ -34,19 +34,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const {
-            name,
-            description,
-            has_variants,
-            is_customizable,
-            available_sizes,
-            available_colors,
-            design_price_small,
-            design_price_medium,
-            design_price_large,
-            text_price_small,
-            text_price_large
-        } = body;
+        const { name, description, has_variants, is_customizable } = body;
 
         if (!name) {
             return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -66,14 +54,7 @@ export async function POST(req: Request) {
                 slug,
                 description,
                 has_variants: !!has_variants,
-                is_customizable: is_customizable !== undefined ? !!is_customizable : true,
-                available_sizes: available_sizes || [],
-                available_colors: available_colors || [],
-                design_price_small: design_price_small || 0,
-                design_price_medium: design_price_medium || 0,
-                design_price_large: design_price_large || 0,
-                text_price_small: text_price_small || 0,
-                text_price_large: text_price_large || 0
+                is_customizable: is_customizable !== undefined ? !!is_customizable : true
             })
             .select()
             .single();

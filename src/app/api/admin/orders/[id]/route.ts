@@ -110,7 +110,6 @@ export async function PATCH(
 
         return NextResponse.json(updatedOrder);
     } catch (error: any) {
-        console.error('Fatal API Error [PATCH /orders]:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

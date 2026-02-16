@@ -11,59 +11,66 @@
 }
 
 :root {
-  --background: #F9F9F5;
-  --foreground: #4A4A4A;
-  --card: #FFFFFF;
-  --card-foreground: #4A4A4A;
-  --popover: #FFFFFF;
-  --popover-foreground: #4A4A4A;
-  --primary: #E6E6FA;
-  --primary-foreground: #4A4A4A;
-  --secondary: #C1E1C1;
-  --secondary-foreground: #4A4A4A;
-  --muted: #F3F3F1;
-  --muted-foreground: #888888;
-  --accent: #ECD5D5;
-  --accent-foreground: #4A4A4A;
-  --border: #E6E6FA;
-  --input: #E6E6FA;
-  --ring: #B8B8B8;
-  --radius: 0.5rem;
+  /* Premium Palette - Soft Pearl & Sage */
+  --background: 60 20% 98%;
+  --foreground: 220 10% 25%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 10% 25%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 10% 25%;
+
+  /* Primary: Elegant Lavender/Blue */
+  --primary: 245 40% 90%;
+  --primary-foreground: 245 40% 25%;
+
+  /* Secondary: Soft Sage */
+  --secondary: 120 25% 85%;
+  --secondary-foreground: 120 25% 25%;
+
+  /* Accents & UI */
+  --muted: 60 10% 96%;
+  --muted-foreground: 220 5% 45%;
+  --accent: 0 40% 94%;
+  --accent-foreground: 0 40% 25%;
+
+  --border: 245 40% 94%;
+  --input: 245 40% 94%;
+  --ring: 245 40% 80%;
+  --radius: 1rem;
+
+  /* Glassmorphism Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --background: 220 20% 5%;
+  --foreground: 220 10% 95%;
+  --card: 220 20% 7%;
+  --card-foreground: 220 10% 95%;
+  --popover: 220 20% 7%;
+  --popover-foreground: 220 10% 95%;
+
+  --primary: 245 30% 20%;
+  --primary-foreground: 245 30% 90%;
+
+  --secondary: 120 15% 15%;
+  --secondary-foreground: 120 15% 85%;
+
+  --muted: 220 20% 10%;
+  --muted-foreground: 220 10% 65%;
+  --accent: 0 20% 15%;
+  --accent-foreground: 0 20% 85%;
+
+  --border: 220 20% 15%;
+  --input: 220 20% 15%;
+  --ring: 220 20% 25%;
+
+  /* Dark Glassmorphism */
+  --glass-bg: rgba(15, 20, 30, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 @theme inline {

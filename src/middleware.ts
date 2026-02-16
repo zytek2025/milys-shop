@@ -6,13 +6,9 @@ export async function middleware(request: NextRequest) {
         request,
     })
 
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        return response
-    }
-
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
             cookies: {
                 getAll() {
@@ -28,22 +24,7 @@ export async function middleware(request: NextRequest) {
     )
 
     // Refresh session if expired - required for Server Components
-    const { data: { user } } = await supabase.auth.getUser()
-
-    // Protected routes handling
-    if (request.nextUrl.pathname.startsWith('/admin')) {
-        // Skip current login page to avoid infinite loop
-        if (request.nextUrl.pathname === '/admin/login') {
-            return response
-        }
-
-        if (!user) {
-            // No session, redirect to admin login
-            const url = request.nextUrl.clone()
-            url.pathname = '/admin/login'
-            return NextResponse.redirect(url)
-        }
-    }
+    await supabase.auth.getUser()
 
     return response
 }

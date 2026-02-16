@@ -40,7 +40,6 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 
@@ -56,6 +55,10 @@ export default function AdminDesignsPage() {
         name: '',
         description: '',
         image_url: '',
+        price: '0',
+        price_small: '0',
+        price_medium: '0',
+        price_large: '0',
         category_id: ''
     });
     const [saving, setSaving] = useState(false);
@@ -114,22 +117,6 @@ export default function AdminDesignsPage() {
 
     const updateSettingField = (field: string, value: string) => {
         setStoreSettings(prev => ({ ...prev, [field]: parseFloat(value) || 0 }));
-    };
-
-    const [canvaApiKey, setCanvaApiKey] = useState<string | null>(null);
-
-    useEffect(() => {
-        fetchDesigns();
-        fetchCategories();
-        fetchCanvaConfig();
-    }, []);
-
-    const fetchCanvaConfig = async () => {
-        try {
-            const res = await fetch('/api/admin/settings');
-            const data = await res.json();
-            if (data.canva_api_key) setCanvaApiKey(data.canva_api_key);
-        } catch (error) { }
     };
 
     const fetchDesigns = async () => {
@@ -191,6 +178,10 @@ export default function AdminDesignsPage() {
                 name: design.name,
                 description: design.description || '',
                 image_url: design.image_url,
+                price: design.price.toString(),
+                price_small: (design.price_small || 0).toString(),
+                price_medium: (design.price_medium || 0).toString(),
+                price_large: (design.price_large || 0).toString(),
                 category_id: design.category_id || 'none'
             });
         } else {
@@ -199,6 +190,10 @@ export default function AdminDesignsPage() {
                 name: '',
                 description: '',
                 image_url: '',
+                price: '0',
+                price_small: '0',
+                price_medium: '0',
+                price_large: '0',
                 category_id: ''
             });
         }
@@ -219,7 +214,11 @@ export default function AdminDesignsPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...formData,
-                    category_id: formData.category_id === 'none' ? null : formData.category_id
+                    category_id: formData.category_id === 'none' ? null : formData.category_id,
+                    price: parseFloat(formData.price),
+                    price_small: parseFloat(formData.price_small),
+                    price_medium: parseFloat(formData.price_medium),
+                    price_large: parseFloat(formData.price_large)
                 }),
             });
 
@@ -247,16 +246,6 @@ export default function AdminDesignsPage() {
         } catch (error) {
             toast.error('Error');
         }
-    };
-
-    const handleCanvaDesign = async () => {
-        if (!canvaApiKey) {
-            toast.error('Configura tu API Key de Canva en Ajustes primero');
-            return;
-        }
-
-        toast.info('Abriendo Canva para diseñar...');
-        window.open('https://www.canva.com/design/play', '_blank');
     };
 
     const filteredDesigns = designs.filter(d =>
@@ -378,9 +367,9 @@ export default function AdminDesignsPage() {
                         <TableHeader>
                             <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                                 <TableHead className="w-[100px]">Arte</TableHead>
-                                <TableHead className="w-[80px]">ID</TableHead>
                                 <TableHead>Nombre</TableHead>
                                 <TableHead>Tipo/Categoría</TableHead>
+                                <TableHead>Precio Extra</TableHead>
                                 <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -401,16 +390,21 @@ export default function AdminDesignsPage() {
                                                 <img src={design.image_url} alt="" className="w-full h-full object-cover" />
                                             </div>
                                         </TableCell>
-                                        <TableCell>
-                                            <code className="text-[10px] font-black bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                                                {design.friendly_id || '--'}
-                                            </code>
-                                        </TableCell>
                                         <TableCell className="font-bold">{design.name}</TableCell>
                                         <TableCell>
                                             <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-muted-foreground">
                                                 {design.category?.name || 'Sin categoría'}
                                             </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-xs font-bold text-slate-400">Base: ${design.price.toFixed(2)}</span>
+                                                <div className="flex gap-2 text-[10px] font-mono">
+                                                    <span className="text-blue-500">S: ${design.price_small?.toFixed(2)}</span>
+                                                    <span className="text-purple-500">M: ${design.price_medium?.toFixed(2)}</span>
+                                                    <span className="text-orange-500">L: ${design.price_large?.toFixed(2)}</span>
+                                                </div>
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
@@ -427,117 +421,140 @@ export default function AdminDesignsPage() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl max-h-[95vh] flex flex-col">
-                    <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-                        <DialogHeader className="px-8 pt-8 pb-4 shrink-0">
-                            <DialogTitle className="text-2xl font-black italic uppercase tracking-tight flex items-center gap-3">
-                                <div className="p-2 rounded-2xl bg-primary/10 text-primary">
-                                    <Palette size={24} />
-                                </div>
-                                {editingDesign ? 'Editar Diseño' : 'Nuevo Diseño'}
-                            </DialogTitle>
-                        </DialogHeader>
-
-                        <ScrollArea className="flex-1 px-8 min-h-0">
-                            <div className="space-y-6 py-4 pb-8">
-                                <div className="space-y-2 col-span-2">
-                                    <Label>Nombre del Arte</Label>
+                <DialogContent className="sm:max-w-[450px] rounded-3xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Palette className="text-primary" />
+                            {editingDesign ? 'Editar Diseño' : 'Nuevo Diseño para Sublimación'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2 col-span-2">
+                                <Label>Nombre del Arte</Label>
+                                <Input
+                                    value={formData.name}
+                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    required
+                                    className="rounded-xl h-11"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Tipo/Colección</Label>
+                                <Select
+                                    value={formData.category_id}
+                                    onValueChange={val => setFormData({ ...formData, category_id: val })}
+                                >
+                                    <SelectTrigger className="rounded-xl h-11">
+                                        <SelectValue placeholder="Selecciona..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">Sin Categoría</SelectItem>
+                                        {Array.isArray(categories) && categories.map(c => (
+                                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Precio Base</Label>
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.price}
+                                    onChange={e => setFormData({ ...formData, price: e.target.value })}
+                                    className="rounded-xl h-11"
+                                />
+                            </div>
+                            <div className="col-span-2 grid grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] uppercase font-bold text-blue-500">Peq. (S)</Label>
                                     <Input
-                                        value={formData.name}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        required
-                                        className="rounded-xl h-11"
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.price_small}
+                                        onChange={e => setFormData({ ...formData, price_small: e.target.value })}
+                                        className="rounded-xl h-10 text-xs"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Tipo/Colección</Label>
-                                    <Select
-                                        value={formData.category_id}
-                                        onValueChange={val => setFormData({ ...formData, category_id: val })}
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] uppercase font-bold text-purple-500">Med. (M)</Label>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.price_medium}
+                                        onChange={e => setFormData({ ...formData, price_medium: e.target.value })}
+                                        className="rounded-xl h-10 text-xs"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] uppercase font-bold text-orange-500">Grd. (L)</Label>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.price_large}
+                                        onChange={e => setFormData({ ...formData, price_large: e.target.value })}
+                                        className="rounded-xl h-10 text-xs"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Imagen del Diseño (PNG sugerido)</Label>
+                            <div className="flex gap-4">
+                                <div className="h-24 w-24 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 dark:bg-slate-900/50 dark:border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                                    {formData.image_url ? (
+                                        <img src={formData.image_url} className="w-full h-full object-contain" alt="" />
+                                    ) : (
+                                        <ImageIcon className="text-slate-300" size={32} />
+                                    )}
+                                </div>
+                                <div className="flex-1 flex flex-col justify-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        className="rounded-xl h-10 gap-2 relative overflow-hidden"
+                                        disabled={uploading}
                                     >
-                                        <SelectTrigger className="rounded-xl h-11">
-                                            <SelectValue placeholder="Selecciona..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">Sin Categoría</SelectItem>
-                                            {Array.isArray(categories) && categories.map(c => (
-                                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Imagen del Diseño (PNG sugerido)</Label>
-                                <div className="flex gap-4">
-                                    <div className="h-24 w-24 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 dark:bg-slate-900/50 dark:border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
-                                        {formData.image_url ? (
-                                            <img src={formData.image_url} className="w-full h-full object-contain" alt="" />
+                                        {uploading ? (
+                                            <Loader2 className="animate-spin" size={16} />
                                         ) : (
-                                            <ImageIcon className="text-slate-300" size={32} />
+                                            <>
+                                                <Upload size={16} />
+                                                Elegir Archivo
+                                            </>
                                         )}
-                                    </div>
-                                    <div className="flex-1 flex flex-col justify-center gap-2">
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            className="rounded-xl h-10 gap-2 relative overflow-hidden"
-                                            disabled={uploading}
-                                        >
-                                            {uploading ? (
-                                                <Loader2 className="animate-spin" size={16} />
-                                            ) : (
-                                                <>
-                                                    <Upload size={16} />
-                                                    Elegir Archivo
-                                                </>
-                                            )}
-                                            <input
-                                                type="file"
-                                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                                onChange={handleImageUpload}
-                                                accept="image/*"
-                                            />
-                                        </Button>
-                                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest px-1">PNG o JPG máx 5MB</p>
-                                    </div>
-                                    <div className="flex flex-col gap-2">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={handleCanvaDesign}
-                                            className="rounded-xl h-10 gap-2 border-blue-200 hover:bg-blue-50 text-blue-600 dark:border-blue-900 border-2"
-                                        >
-                                            <Palette size={16} />
-                                            Diseñar en Canva
-                                        </Button>
-                                    </div>
+                                        <input
+                                            type="file"
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                            onChange={handleImageUpload}
+                                            accept="image/*"
+                                        />
+                                    </Button>
+                                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest px-1">PNG o JPG máx 5MB</p>
                                 </div>
                             </div>
-                        </ScrollArea>
+                        </div>
 
-                        <DialogFooter className="px-8 py-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 sm:justify-end gap-3 rounded-b-[2rem] shrink-0">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() => setIsDialogOpen(false)}
-                                className="rounded-2xl h-12 px-6 font-semibold"
-                            >
-                                Cancelar
-                            </Button>
-                            <Button
-                                type="submit"
-                                disabled={saving || uploading}
-                                className="rounded-2xl h-12 px-8 font-bold gap-2 shadow-xl shadow-primary/20 bg-gradient-to-r from-primary to-primary/90 hover:scale-[1.02] transition-transform"
-                            >
-                                {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save size={20} />}
-                                {editingDesign ? 'Guardar Cambios' : 'Publicar Arte'}
+                        <div className="space-y-2">
+                            <Label>Descripción (Opcional)</Label>
+                            <Textarea
+                                value={formData.description}
+                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                className="rounded-xl min-h-[80px]"
+                            />
+                        </div>
+
+                        <DialogFooter className="pt-4">
+                            <Button type="submit" disabled={saving || uploading} className="rounded-xl w-full h-12 text-lg font-bold shadow-lg shadow-primary/20">
+                                {saving ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" />}
+                                {editingDesign ? 'Guardar Cambios' : 'Publicar en Galería'}
                             </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
-            </Dialog >
-        </div >
+            </Dialog>
+        </div>
     );
 }

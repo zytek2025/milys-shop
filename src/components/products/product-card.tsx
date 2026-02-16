@@ -8,10 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAddToCart } from '@/hooks/use-cart';
 import { toast } from 'sonner';
-import { ShoppingCart, ExternalLink, Tag as TagIcon } from 'lucide-react';
+import { ShoppingCart, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-import type { Product, Promotion } from '@/types';
-import { usePromotions } from '@/hooks/use-cart';
+import type { Product } from '@/types';
 
 interface ProductCardProps {
   product: Product;
@@ -41,96 +40,65 @@ export function ProductCard({ product }: ProductCardProps) {
       transition={{ duration: 0.3 }}
       className="h-full"
     >
-      <Link href={`/products/${product.id}`} className="block h-full cursor-pointer">
-        <Card className="h-full overflow-hidden group hover:shadow-xl transition-all duration-300 border-border/50 bg-card/50 backdrop-blur-sm">
+      <Link href={`/products/${product.id}`} className="block h-full group">
+        <Card className="h-full overflow-hidden border-border/50 bg-white/60 dark:bg-slate-900/60 transition-all duration-700 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 relative">
           {/* Product Image */}
-          <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+          <div className="relative aspect-[1/1] overflow-hidden bg-slate-100 dark:bg-slate-800">
             {product.image_url ? (
               <img
                 src={product.image_url}
                 alt={product.name}
-                className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
+                className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-1000"
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground bg-secondary/30">
-                No image
+              <div className="flex items-center justify-center h-full text-muted-foreground/30 font-black uppercase tracking-widest text-xs">
+                Mily's Design
               </div>
             )}
-            <Badge
-              variant="secondary"
-              className="absolute top-3 left-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-sm border-0 font-bold text-[10px] uppercase tracking-tighter"
-            >
-              {product.category}
-            </Badge>
 
-            {/* Promotion Badge */}
-            {(() => {
-              const { data: promotions } = usePromotions();
-              const activePromo = promotions?.find(p =>
-                p.is_active &&
-                (p.target_type === 'all' ||
-                  (p.target_type === 'category' && p.target_id === product.category) ||
-                  (p.target_type === 'product' && p.target_id === product.id))
-              );
+            <div className="absolute top-4 left-4 z-10">
+              <Badge
+                variant="secondary"
+                className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm border-0 font-black text-[9px] uppercase tracking-[0.2em] px-3 py-1.5 rounded-full"
+              >
+                {product.category}
+              </Badge>
+            </div>
 
-              if (!activePromo) return null;
-
-              const promoLabels: Record<string, string> = {
-                bogo: '2x1',
-                second_unit_50: '50% 2da Ud.',
-                percentage: `-${activePromo.value}%`,
-                fixed: `-$${activePromo.value}`
-              };
-
-              return (
-                <div className="absolute top-3 right-3 animate-bounce">
-                  <Badge
-                    className="bg-primary text-white border-0 font-black text-[10px] uppercase tracking-tighter px-2 py-1 shadow-lg shadow-primary/30 flex items-center gap-1 italic"
-                  >
-                    <TagIcon size={10} className="fill-white" />
-                    {promoLabels[activePromo.type]}
-                  </Badge>
-                </div>
-              );
-            })()}
+            {/* Price Tag Overlay */}
+            <div className="absolute bottom-4 right-4 z-10">
+              <div className="bg-primary text-primary-foreground font-black text-xl px-4 py-2 rounded-2xl shadow-xl shadow-primary/20 transform group-hover:scale-110 transition-transform duration-500 italic">
+                ${product.price ? product.price.toFixed(0) : '0'}
+              </div>
+            </div>
 
             {/* Quick Add Overlay (Desktop) */}
-            <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 hidden lg:block bg-gradient-to-t from-black/60 to-transparent">
-              <Button
-                className="w-full rounded-full bg-white text-black hover:bg-gray-100"
-              >
-                Ver Diseños y Opciones
-              </Button>
+            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center pointer-events-none">
+              <div className="h-12 w-12 rounded-full bg-white/90 backdrop-blur shadow-2xl flex items-center justify-center transform scale-50 group-hover:scale-100 transition-transform duration-500 delay-100">
+                <ExternalLink className="h-5 w-5 text-primary" />
+              </div>
             </div>
           </div>
 
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm font-bold line-clamp-1 group-hover:text-primary transition-colors">
+          <CardHeader className="px-6 py-6 pb-2">
+            <CardTitle className="text-lg font-black tracking-tight line-clamp-2 group-hover:text-primary transition-colors duration-300 min-h-[3.5rem] leading-[1.1]">
               {product.name}
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="p-4 pt-0">
-            <div className="flex items-end justify-between">
-              <span className="text-lg font-black text-primary">
-                ${product.price.toFixed(2)}
-              </span>
-              <span className={`text-[10px] font-bold uppercase tracking-wider ${product.stock > 0 ? 'text-emerald-500' : 'text-destructive'}`}>
-                {product.stock > 0 ? 'Disponible' : 'Agotado'}
-              </span>
+          <CardContent className="px-6 pb-8 pt-2">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col">
+                <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${product.stock > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {product.stock > 0 ? 'Stock Disponible' : 'Agotado'}
+                </span>
+              </div>
+
+              <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
+                <ShoppingCart size={18} />
+              </div>
             </div>
           </CardContent>
-
-          {/* Mobile Button (Always visible) */}
-          <CardFooter className="p-4 pt-0 lg:hidden">
-            <Button
-              size="sm"
-              className="w-full rounded-xl"
-              variant="secondary"
-            >
-              Ver Opciones
-            </Button>
-          </CardFooter>
         </Card>
       </Link>
     </motion.div>

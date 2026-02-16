@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
+import Link from 'next/link';
 import { Header } from '@/components/header';
 import { CartDrawer } from '@/components/cart/cart-drawer';
 import { AuthModal } from '@/components/auth/auth-modal';
@@ -46,12 +46,31 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                     onOpenChange={setIsAuthModalOpen}
                 />
 
-                <footer className="border-t py-8 bg-muted/30 mt-auto">
-                    <div className="container mx-auto px-4 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
-                        <p>© 2024 Mily's. Tu Estilo, Tu Tienda.</p>
-                        <Link href="/admin" className="text-xs hover:text-primary transition-colors opacity-50 hover:opacity-100">
-                            Acceso Admin
-                        </Link>
+                <footer className="border-t border-border/40 py-16 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm mt-auto">
+                    <div className="container mx-auto px-6">
+                        <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-12">
+                            <div className="flex flex-col items-center md:items-start gap-4">
+                                <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-black text-2xl shadow-xl shadow-primary/20">
+                                    M
+                                </div>
+                                <div className="flex flex-col items-center md:items-start">
+                                    <span className="text-xl font-serif font-black tracking-tight">Mily's Shop</span>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Tu Estilo, Nuestra Pasión</p>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-8 text-sm font-bold text-muted-foreground">
+                                <Link href="/" className="hover:text-primary transition-colors">Catálogo</Link>
+                                <Link href="#" className="hover:text-primary transition-colors">Nosotros</Link>
+                                <Link href="#" className="hover:text-primary transition-colors">Contacto</Link>
+                                <Link href="/admin" className="hover:text-primary transition-colors">Admin</Link>
+                            </div>
+                        </div>
+
+                        <div className="pt-8 border-t border-border/20 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">
+                            <p>© 2024 Mily's Shop. All rights reserved.</p>
+                            <p>Handcrafted with ✨ by Mily's Team</p>
+                        </div>
                     </div>
                 </footer>
 

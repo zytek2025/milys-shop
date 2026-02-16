@@ -42,7 +42,6 @@ interface CustomerLead {
     full_name: string;
     avatar_url: string;
     crm_status: string;
-    friendly_id?: string;
     notes: string;
     ltv: number;
     orderCount: number;
@@ -203,7 +202,6 @@ export default function AdminCRMPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
-                                    <TableHead className="w-[100px]">ID</TableHead>
                                     <TableHead>Cliente</TableHead>
                                     <TableHead>Estado</TableHead>
                                     <TableHead>LTV (Valor)</TableHead>
@@ -215,7 +213,7 @@ export default function AdminCRMPage() {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="h-48 text-center">
+                                        <TableCell colSpan={6} className="h-48 text-center">
                                             <div className="flex flex-col items-center gap-2 text-muted-foreground">
                                                 <Loader2 className="h-8 w-8 animate-spin" />
                                                 <span>Cargando datos CRM...</span>
@@ -224,18 +222,13 @@ export default function AdminCRMPage() {
                                     </TableRow>
                                 ) : filteredLeads.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="h-48 text-center text-muted-foreground">
+                                        <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
                                             No se encontraron clientes.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     filteredLeads.map((lead) => (
                                         <TableRow key={lead.id} className="group border-slate-100 dark:border-slate-800">
-                                            <TableCell>
-                                                <span className="font-mono text-[10px] font-bold bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                                                    {lead.friendly_id || '---'}
-                                                </span>
-                                            </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
                                                     <div className="h-9 w-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden text-xs">

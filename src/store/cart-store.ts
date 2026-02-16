@@ -19,21 +19,16 @@ export const useCartStore = create<CartState>()(
       user: null,
       isAuthenticated: false,
       isAdmin: false,
-      hasHydrated: false,
       setSessionId: (id: string) => set({ sessionId: id }),
       clearSessionId: () => set({ sessionId: null }),
       setUserId: (id: string | null) => set({ userId: id }),
       setUser: (user: UserProfile | null) => set({ user, isAuthenticated: !!user, isAdmin: user?.role === 'admin' }),
       setAuthenticated: (auth: boolean) => set({ isAuthenticated: auth }),
       setAdmin: (isAdmin: boolean) => set({ isAdmin }),
-      setHasHydrated: (val: boolean) => set({ hasHydrated: val }),
       clearAuth: () => set({ userId: null, user: null, isAuthenticated: false, isAdmin: false }),
     }),
     {
       name: CART_SESSION_KEY,
-      onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
-      },
       partialize: (state) => ({
         sessionId: state.sessionId,
         userId: state.userId,

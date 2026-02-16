@@ -31,17 +31,12 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
 interface DesignCategory {
     id: string;
     name: string;
     description: string | null;
-    price: number;
-    price_small: number;
-    price_medium: number;
-    price_large: number;
     created_at: string;
 }
 
@@ -51,14 +46,7 @@ export default function AdminDesignCategoriesPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<DesignCategory | null>(null);
-    const [formData, setFormData] = useState({
-        name: '',
-        description: '',
-        price: '0',
-        price_small: '0',
-        price_medium: '0',
-        price_large: '0'
-    });
+    const [formData, setFormData] = useState({ name: '', description: '' });
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -84,21 +72,10 @@ export default function AdminDesignCategoriesPage() {
             setFormData({
                 name: category.name,
                 description: category.description || '',
-                price: category.price?.toString() || '0',
-                price_small: category.price_small?.toString() || '0',
-                price_medium: category.price_medium?.toString() || '0',
-                price_large: category.price_large?.toString() || '0'
             });
         } else {
             setEditingCategory(null);
-            setFormData({
-                name: '',
-                description: '',
-                price: '0',
-                price_small: '0',
-                price_medium: '0',
-                price_large: '0'
-            });
+            setFormData({ name: '', description: '' });
         }
         setIsDialogOpen(true);
     };
@@ -115,13 +92,7 @@ export default function AdminDesignCategoriesPage() {
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...formData,
-                    price: parseFloat(formData.price),
-                    price_small: parseFloat(formData.price_small),
-                    price_medium: parseFloat(formData.price_medium),
-                    price_large: parseFloat(formData.price_large)
-                }),
+                body: JSON.stringify(formData),
             });
 
             if (!res.ok) {
@@ -189,8 +160,6 @@ export default function AdminDesignCategoriesPage() {
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                                     <TableHead>Nombre</TableHead>
-                                    <TableHead>Base</TableHead>
-                                    <TableHead>S / M / L</TableHead>
                                     <TableHead>Descripción</TableHead>
                                     <TableHead className="text-right">Acciones</TableHead>
                                 </TableRow>
@@ -198,7 +167,7 @@ export default function AdminDesignCategoriesPage() {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-48 text-center text-muted-foreground">
+                                        <TableCell colSpan={3} className="h-48 text-center text-muted-foreground">
                                             <div className="flex flex-col items-center gap-2">
                                                 <Loader2 className="h-8 w-8 animate-spin" />
                                                 <span>Cargando datos...</span>
@@ -207,7 +176,7 @@ export default function AdminDesignCategoriesPage() {
                                     </TableRow>
                                 ) : filteredCategories.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-48 text-center text-muted-foreground">
+                                        <TableCell colSpan={3} className="h-48 text-center text-muted-foreground">
                                             No se encontraron categorías.
                                         </TableCell>
                                     </TableRow>
@@ -220,13 +189,7 @@ export default function AdminDesignCategoriesPage() {
                                                     {category.name}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="font-mono text-xs">
-                                                ${category.price || '0.00'}
-                                            </TableCell>
-                                            <TableCell className="font-mono text-[10px] text-muted-foreground">
-                                                ${category.price_small} / ${category.price_medium} / ${category.price_large}
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground max-w-xs truncate text-xs">
+                                            <TableCell className="text-muted-foreground max-w-xs truncate">
                                                 {category.description || '-'}
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -259,109 +222,39 @@ export default function AdminDesignCategoriesPage() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl max-h-[95vh] flex flex-col">
-                    <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-                        <DialogHeader className="px-8 pt-8 pb-4 shrink-0">
-                            <DialogTitle className="text-2xl font-black italic uppercase tracking-tight flex items-center gap-3">
-                                <div className="p-2 rounded-2xl bg-primary/10 text-primary">
-                                    <Tags size={24} />
-                                </div>
-                                {editingCategory ? 'Editar Tipo' : 'Nuevo Tipo'}
-                            </DialogTitle>
-                        </DialogHeader>
+                <DialogContent className="sm:max-w-[425px] rounded-3xl">
+                    <DialogHeader>
+                        <DialogTitle>{editingCategory ? 'Editar Tipo' : 'Nuevo Tipo'}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="cat-name">Nombre del Grupo</Label>
+                            <Input
+                                id="cat-name"
+                                placeholder="Ej: Superhéroes, Logos Minimalistas..."
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                required
+                                className="rounded-xl h-11"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="cat-desc">Descripción (Opcional)</Label>
+                            <Textarea
+                                id="cat-desc"
+                                value={formData.description}
+                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                className="rounded-xl min-h-[100px]"
+                            />
+                        </div>
 
-                        <ScrollArea className="flex-1 px-8 min-h-0">
-                            <div className="space-y-6 py-4 pb-8">
-                                <div className="space-y-2">
-                                    <Label htmlFor="cat-name">Nombre del Grupo</Label>
-                                    <Input
-                                        id="cat-name"
-                                        placeholder="Ej: Superhéroes, Logos Minimalistas..."
-                                        value={formData.name}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        required
-                                        className="rounded-xl h-11"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="cat-desc">Descripción (Opcional)</Label>
-                                    <Textarea
-                                        id="cat-desc"
-                                        value={formData.description}
-                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                        className="rounded-xl min-h-[60px]"
-                                    />
-                                </div>
-
-                                <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
-                                    <h3 className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                                        Tarifas de Personalización (USD)
-                                    </h3>
-
-                                    <div className="space-y-2">
-                                        <Label>Precio Base (Instalación/Arte)</Label>
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            value={formData.price}
-                                            onChange={e => setFormData({ ...formData, price: e.target.value })}
-                                            className="rounded-xl h-11"
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-3 gap-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                        <div className="space-y-1.5">
-                                            <Label className="text-[10px] uppercase font-bold text-blue-500">Peq. (S)</Label>
-                                            <Input
-                                                type="number"
-                                                step="0.01"
-                                                value={formData.price_small}
-                                                onChange={e => setFormData({ ...formData, price_small: e.target.value })}
-                                                className="rounded-xl h-10 text-xs"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label className="text-[10px] uppercase font-bold text-purple-500">Med. (M)</Label>
-                                            <Input
-                                                type="number"
-                                                step="0.01"
-                                                value={formData.price_medium}
-                                                onChange={e => setFormData({ ...formData, price_medium: e.target.value })}
-                                                className="rounded-xl h-10 text-xs"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label className="text-[10px] uppercase font-bold text-orange-500">Grd. (L)</Label>
-                                            <Input
-                                                type="number"
-                                                step="0.01"
-                                                value={formData.price_large}
-                                                onChange={e => setFormData({ ...formData, price_large: e.target.value })}
-                                                className="rounded-xl h-10 text-xs"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </ScrollArea>
-
-                        <DialogFooter className="px-8 py-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 sm:justify-end gap-3 rounded-b-[2rem] shrink-0">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() => setIsDialogOpen(false)}
-                                className="rounded-2xl h-12 px-6 font-semibold"
-                            >
+                        <DialogFooter className="pt-4">
+                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
                                 Cancelar
                             </Button>
-                            <Button
-                                type="submit"
-                                disabled={saving}
-                                className="rounded-2xl h-12 px-8 font-bold gap-2 shadow-xl shadow-primary/20 bg-gradient-to-r from-primary to-primary/90 hover:scale-[1.02] transition-transform"
-                            >
-                                {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save size={20} />}
-                                {editingCategory ? 'Guardar Cambios' : 'Crear Grupo'}
+                            <Button type="submit" disabled={saving} className="rounded-xl gap-2 shadow-lg shadow-primary/20">
+                                {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                                {editingCategory ? 'Actualizar' : 'Crear Grupo'}
                             </Button>
                         </DialogFooter>
                     </form>

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CreditCard, Loader2, LogIn } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useCart, useClearCart } from '@/hooks/use-cart';
 import { useAuth, useCartSession } from '@/store/cart-store';
@@ -12,17 +11,9 @@ import { toast } from 'sonner';
 interface CheckoutButtonProps {
   onLoginRequired?: () => void;
   onOrderComplete?: () => void;
-  paymentMethodId?: string;
-  discountAmount?: number;
 }
 
-export function CheckoutButton({
-  onLoginRequired,
-  onOrderComplete,
-  paymentMethodId,
-  discountAmount = 0
-}: CheckoutButtonProps) {
-  const router = useRouter();
+export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutButtonProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const { data: cart } = useCart();
   const { sessionId, clearSessionId } = useCartSession();
@@ -59,7 +50,7 @@ export function CheckoutButton({
       const basePrice = item.variant?.price_override ?? item.product?.price ?? 0;
       const extraPrice = calculateExtraPrice(item.custom_metadata);
       return sum + (basePrice + extraPrice) * item.quantity;
-    }, 0) - (discountAmount || 0);
+    }, 0);
 
     setIsProcessing(true);
     try {
@@ -80,9 +71,7 @@ export function CheckoutButton({
               custom_metadata: item.custom_metadata || {},
             };
           }),
-          total: Math.max(0, total),
-          payment_method_id: paymentMethodId,
-          payment_discount_amount: discountAmount
+          total,
         }),
       });
 
@@ -91,17 +80,11 @@ export function CheckoutButton({
         throw new Error(error.error || 'Failed to create order');
       }
 
-      const { data: orderData } = await orderResponse.json();
-
       // Clear cart
       await clearCart.mutateAsync();
 
-      toast.success('¡Pedido realizado con éxito!');
+      toast.success('Order placed successfully!');
       onOrderComplete?.();
-
-      if (orderData?.id) {
-        router.push(`/orders/${orderData.id}`);
-      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Checkout failed';
       toast.error(message);

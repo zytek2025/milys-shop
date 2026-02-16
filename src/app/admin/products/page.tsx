@@ -62,8 +62,8 @@ export default function AdminProductsPage() {
     };
 
     const filteredProducts = products.filter(p =>
-        (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.category || '').toLowerCase().includes(searchTerm.toLowerCase())
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.category?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleDelete = async (id: string) => {
@@ -116,7 +116,6 @@ export default function AdminProductsPage() {
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                                     <TableHead className="w-[80px]">Imagen</TableHead>
-                                    <TableHead className="w-[80px]">ID</TableHead>
                                     <TableHead>Producto</TableHead>
                                     <TableHead>Categoría</TableHead>
                                     <TableHead>Precio</TableHead>
@@ -127,7 +126,7 @@ export default function AdminProductsPage() {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="h-48 text-center text-muted-foreground">
+                                        <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
                                             <div className="flex flex-col items-center gap-2">
                                                 <Loader2 className="h-8 w-8 animate-spin" />
                                                 <span>Cargando productos...</span>
@@ -136,18 +135,13 @@ export default function AdminProductsPage() {
                                     </TableRow>
                                 ) : filteredProducts.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="h-48 text-center text-muted-foreground">
+                                        <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
                                             No se encontraron productos.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     filteredProducts.map((product) => (
                                         <TableRow key={product.id} className="group border-slate-100 dark:border-slate-800">
-                                            <TableCell>
-                                                <code className="text-[10px] font-black bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                                                    {product.friendly_id || '--'}
-                                                </code>
-                                            </TableCell>
                                             <TableCell>
                                                 <div className="h-12 w-12 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
                                                     {product.image_url ? (

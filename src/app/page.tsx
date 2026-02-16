@@ -53,12 +53,12 @@ export default async function Home(props: {
     <div className="flex flex-col min-h-screen">
       <Hero />
 
-      <section className="container mx-auto px-4 py-16" id="products">
-        <div className="text-center mb-12">
-          <SectionLabel label="Nuestras Colecciones" />
-          <h2 className="text-4xl font-serif font-light mb-4">Descubre tu Estilo</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto font-light">
-            Explora el Custom Studio para moda personalizada o sumérgete en nuestra Body & Soul Collection.
+      <section className="container mx-auto px-6 py-24" id="products">
+        <div className="flex flex-col items-center text-center mb-16">
+          <SectionLabel label="Exclusive Collections" />
+          <h2 className="text-5xl md:text-7xl font-serif font-black tracking-tighter mb-6 italic">Descubre tu <span className="text-primary">Estilo</span></h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed">
+            Explora el Custom Studio para moda personalizada o sumérgete en nuestra <span className="text-foreground font-bold">Body & Soul Collection</span>. Arte en cada detalle.
           </p>
         </div>
 

@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import { LoginForm } from './login-form';
 import { RegisterForm } from './register-form';
-import { ForgotPasswordForm } from './forgot-password-form';
 
 interface AuthModalProps {
   open: boolean;
@@ -20,7 +19,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ open, onOpenChange, defaultView = 'login' }: AuthModalProps) {
-  const [view, setView] = useState<'login' | 'register' | 'forgot-password'>(defaultView);
+  const [view, setView] = useState<'login' | 'register'>(defaultView);
 
   const handleSuccess = () => {
     onOpenChange(false);
@@ -54,10 +53,9 @@ export function AuthModal({ open, onOpenChange, defaultView = 'login' }: AuthMod
               <LoginForm
                 onSuccess={handleSuccess}
                 onSwitchToRegister={() => setView('register')}
-                onForgotPassword={() => setView('forgot-password')}
               />
             </motion.div>
-          ) : view === 'register' ? (
+          ) : (
             <motion.div
               key="register"
               initial={{ opacity: 0, x: 20 }}
@@ -68,19 +66,6 @@ export function AuthModal({ open, onOpenChange, defaultView = 'login' }: AuthMod
               <RegisterForm
                 onSuccess={handleSuccess}
                 onSwitchToLogin={() => setView('login')}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="forgot-password"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ForgotPasswordForm
-                onBack={() => setView('login')}
-                onSuccess={() => { }}
               />
             </motion.div>
           )}

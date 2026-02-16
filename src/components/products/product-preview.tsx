@@ -15,7 +15,6 @@ interface ProductPreviewProps {
     }>;
     customText: string;
     customTextSize: 'small' | 'large';
-    customTextLocation: string;
     garmentImage?: string; // Optional custom base image
 }
 
@@ -25,169 +24,135 @@ export function ProductPreview({
     designs,
     customText,
     customTextSize,
-    customTextLocation,
     garmentImage
 }: ProductPreviewProps) {
 
-    // Map locations to percentages (Top/Left) - Calibrated for a centered garment
-    // Refined coordinates for perfect centering on mobile and desktop
+    // Map locations to percentages (Top/Left)
     const locationConfig: Record<string, { top: string; left: string; rotate?: number }> = {
-        'Frente Centro': { top: '38%', left: '50%', rotate: 0 },
-        'Frente Lado Izquierdo': { top: '32%', left: '65%', rotate: 0 },
-        'Frente Lado Derecho': { top: '32%', left: '35%', rotate: 0 },
-        'Espalda Centro': { top: '35%', left: '50%', rotate: 0 },
-        'Espalda Cuello': { top: '18%', left: '50%', rotate: 0 },
-        'Manga Izquierda': { top: '35%', left: '82%', rotate: -8 },
-        'Manga Derecha': { top: '35%', left: '18%', rotate: 8 },
+        'Frente Centro': { top: '35%', left: '35%', rotate: 0 },
+        'Frente Lado Izquierdo': { top: '35%', left: '55%', rotate: 0 }, // Chest left (viewer's right)
+        'Frente Lado Derecho': { top: '35%', left: '20%', rotate: 0 },   // Chest right (viewer's left)
+        'Espalda Centro': { top: '30%', left: '35%', rotate: 0 },
+        'Espalda Cuello': { top: '15%', left: '42%', rotate: 0 },
+        'Manga Izquierda': { top: '35%', left: '75%', rotate: -10 },
+        'Manga Derecha': { top: '35%', left: '5%', rotate: 10 },
     };
 
+    // Helper to determine size in %
     const getSize = (size: string) => {
         switch (size) {
-            case 'small': return '18%';
-            case 'medium': return '28%';
-            case 'large': return '38%';
-            default: return '24%';
+            case 'small': return '15%';
+            case 'medium': return '25%';
+            case 'large': return '35%';
+            default: return '20%';
         }
     };
 
     return (
-        <div className="w-full aspect-square relative rounded-[2rem] overflow-hidden bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 shadow-2xl flex flex-col group">
-            {/* Main Stage */}
-            <div className="relative flex-1 w-full flex items-center justify-center p-6 sm:p-10 isolation-auto">
-                <div className="relative w-full h-full max-w-[340px] flex items-center justify-center pointer-events-none">
+        <div className="w-full aspect-square relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-primary/5">
+            {/* Background Grid Pattern */}
+            <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:16px_16px]" />
 
-                    {/* 1. Garment Base */}
-                    <div className="absolute inset-0 flex items-center justify-center z-0 overflow-hidden">
+            {/* Main Container */}
+            <div className="relative w-full h-full flex items-center justify-center p-8">
+
+                {/* Garment Layer */}
+                <div className="relative w-full max-w-[320px] aspect-[3/4]">
+                    {/* Base Shirt Shape (CSS Only for now, replacing image) */}
+                    {/* In production, we would use a real transparent PNG of a white shirt */}
+                    <div
+                        className="absolute inset-0 w-full h-full transition-colors duration-500 ease-in-out"
+                        style={{
+                            backgroundColor: '#fff',
+                            maskImage: 'url(/images/shirt-mask.png)', // Placeholder for mask
+                            WebkitMaskImage: 'url(/images/shirt-mask.png)'
+                        }}
+                    >
+                        {/* If we don't have a real image yet, use an SVG placeholder */}
                         {!garmentImage ? (
-                            <svg viewBox="0 0 100 100" className="w-[85%] h-[85%] drop-shadow-2xl opacity-80">
+                            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl filter">
                                 <path
                                     d="M20 30 L30 10 L40 15 L50 10 L60 15 L70 10 L80 30 L70 40 L70 90 L30 90 L30 40 Z"
                                     fill={colorHex || '#f1f5f9'}
-                                    stroke="rgba(0,0,0,0.05)"
+                                    stroke="rgba(0,0,0,0.1)"
                                     strokeWidth="0.5"
+                                    className="transition-[fill] duration-500"
                                 />
+                                {/* Neck shadow */}
                                 <path d="M40 15 Q50 25 60 15" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="1" />
                             </svg>
                         ) : (
-                            <div className="relative w-full h-full flex items-center justify-center">
+                            <>
                                 {/* Base Image */}
-                                <img
-                                    src={garmentImage}
-                                    alt="Base"
-                                    className="w-full h-full object-contain pointer-events-none z-10"
+                                <img src={garmentImage} alt="Base" className="absolute inset-0 w-full h-full object-contain" />
+                                {/* Color Tint Overlay */}
+                                <div
+                                    className="absolute inset-0 w-full h-full mix-blend-multiply transition-colors duration-300"
+                                    style={{ backgroundColor: colorHex }} // Tint
                                 />
-
-                                {/* Intelligent Tint Layer */}
-                                {/* We only apply tint if color is NOT white */}
-                                {colorHex !== '#ffffff' && colorHex !== '#FFFFFF' && (
-                                    <div
-                                        className="absolute inset-0 z-20 mix-blend-multiply opacity-60 transition-all duration-700 ease-in-out pointer-events-none"
-                                        style={{
-                                            backgroundColor: colorHex,
-                                            // The mask ensures the tint only applies to where the shirt is
-                                            // Works best with transparent PNG, but handles white/solid backgrounds better now
-                                            WebkitMaskImage: `url(${garmentImage})`,
-                                            maskImage: `url(${garmentImage})`,
-                                            maskSize: 'contain',
-                                            WebkitMaskSize: 'contain',
-                                            maskRepeat: 'no-repeat',
-                                            maskPosition: 'center'
-                                        }}
-                                    />
-                                )}
-                            </div>
+                            </>
                         )}
                     </div>
 
-                    {/* 2. Customization Layer (Logos & Text) */}
-                    <div className="absolute inset-0 z-30 pointer-events-none">
-                        <div className="relative w-full h-full">
-                            <AnimatePresence>
-                                {designs.map((design, idx) => {
-                                    const pos = locationConfig[design.selectedLocation] || locationConfig['Frente Centro'];
-                                    return (
-                                        <motion.div
-                                            key={`${design.id}-${idx}`}
-                                            initial={{ opacity: 0, scale: 0.5, x: '-50%', y: '-50%' }}
-                                            animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
-                                            transition={{ type: 'spring', damping: 20 }}
-                                            className="absolute"
-                                            style={{
-                                                top: pos.top,
-                                                left: pos.left,
-                                                width: getSize(design.selectedSize),
-                                                rotate: `${pos.rotate || 0}deg`
-                                            }}
-                                        >
-                                            <img
-                                                src={design.image_url}
-                                                alt="Logo"
-                                                className="w-full h-full object-contain drop-shadow-xl brightness-105"
-                                            />
-                                        </motion.div>
-                                    );
-                                })}
-                            </AnimatePresence>
-
-                            {/* Text Component */}
-                            {customText && (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.5, x: '-50%', y: '-50%' }}
-                                    animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
-                                    className="absolute"
-                                    style={{
-                                        top: locationConfig[customTextLocation]?.top || '38%',
-                                        left: locationConfig[customTextLocation]?.left || '50%',
-                                        rotate: `${locationConfig[customTextLocation]?.rotate || 0}deg`,
-                                        zIndex: 40
-                                    }}
-                                >
-                                    <span
-                                        className={cn(
-                                            "font-serif font-black italic text-center px-4 py-1.5 rounded-lg border border-white/20 transition-all duration-300 whitespace-nowrap inline-block shadow-lg",
-                                            colorHex === '#000000' || colorHex === '#1a1a1b'
-                                                ? "text-white bg-white/10 backdrop-blur-md"
-                                                : "text-slate-900 bg-black/5 backdrop-blur-sm"
-                                        )}
+                    {/* Design Layers */}
+                    <div className="absolute inset-0 w-full h-full pointer-events-none">
+                        <AnimatePresence>
+                            {designs.map((design) => {
+                                const pos = locationConfig[design.selectedLocation] || locationConfig['Frente Centro'];
+                                return (
+                                    <motion.div
+                                        key={design.id + design.selectedLocation}
+                                        initial={{ opacity: 0, scale: 0.5 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.5 }}
+                                        className="absolute z-10"
                                         style={{
-                                            fontSize: customTextSize === 'small' ? '12px' : '20px',
-                                            maxWidth: '180px',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis'
+                                            top: pos.top,
+                                            left: pos.left,
+                                            width: getSize(design.selectedSize),
+                                            rotate: `${pos.rotate}deg`
                                         }}
                                     >
-                                        {customText}
-                                    </span>
-                                </motion.div>
-                            )}
-                        </div>
+                                        <img src={design.image_url} alt="design" className="w-full h-full object-contain drop-shadow-sm filter brightness-95" />
+                                    </motion.div>
+                                );
+                            })}
+                        </AnimatePresence>
                     </div>
+
+                    {/* Text Layer - Simple Overlay */}
+                    {customText && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="absolute inset-x-0 top-[60%] flex justify-center z-20 pointer-events-none"
+                        >
+                            <div
+                                className={cn(
+                                    "font-serif font-black italic text-center text-slate-800 drop-shadow-sm px-4",
+                                )}
+                                style={{
+                                    fontSize: customTextSize === 'small' ? '12px' : '18px',
+                                    color: colorHex === '#000000' ? 'white' : '#1e293b' // Auto-contrast
+                                }}
+                            >
+                                "{customText}"
+                            </div>
+                        </motion.div>
+                    )}
+
                 </div>
             </div>
 
-            {/* Micro-Interaction Footer */}
-            <div className="px-6 py-4 bg-white/40 dark:bg-black/20 backdrop-blur-xl border-t border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div
-                        className="w-5 h-5 rounded-full border border-white/40 shadow-xl transition-transform group-hover:scale-110"
-                        style={{ backgroundColor: colorHex }}
-                    />
-                    <div className="flex flex-col">
-                        <span className="text-[10px] uppercase font-black tracking-tighter text-slate-400">Color Base</span>
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate max-w-[100px]">{color}</span>
-                    </div>
-                </div>
-                <div className="flex -space-x-2">
-                    {designs.slice(0, 3).map((d, i) => (
-                        <div key={i} className="w-7 h-7 rounded-full border-2 border-white bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
-                            <img src={d.image_url} alt="mini" className="w-5 h-5 object-contain" />
-                        </div>
-                    ))}
-                    {designs.length > 3 && (
-                        <div className="w-7 h-7 rounded-full border-2 border-white bg-primary text-[8px] font-bold text-white flex items-center justify-center">
-                            +{designs.length - 3}
-                        </div>
-                    )}
+            {/* Info Badge */}
+            <div className="absolute bottom-4 left-4 right-4 flex justify-center">
+                <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-full shadow-lg flex items-center gap-3">
+                    <div className="w-3 h-3 rounded-full border shadow-sm" style={{ backgroundColor: colorHex || '#fff' }} />
+                    <span className="text-[10px] uppercase font-bold text-slate-500">
+                        {color || 'Color Base'}
+                        <span className="mx-1">•</span>
+                        {designs.length} Logos
+                    </span>
                 </div>
             </div>
         </div>

@@ -22,19 +22,11 @@ export async function PUT(
 
         const { id } = await params;
         const body = await request.json();
-        const { name, description, price, price_small, price_medium, price_large } = body;
+        const { name, description } = body;
 
         const { data, error } = await supabase
             .from('design_categories')
-            .update({
-                name,
-                description,
-                price,
-                price_small,
-                price_medium,
-                price_large,
-                updated_at: new Date().toISOString()
-            })
+            .update({ name, description, updated_at: new Date().toISOString() })
             .eq('id', id)
             .select()
             .single();
