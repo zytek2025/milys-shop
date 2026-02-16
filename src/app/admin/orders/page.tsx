@@ -12,7 +12,10 @@ import {
     Eye,
     Printer,
     Loader2,
-    Info
+    Info,
+    RefreshCcw,
+    Shirt,
+    AlertCircle
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -25,12 +28,13 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogFooter,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -42,6 +46,15 @@ export default function AdminOrdersPage() {
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [processingOrders, setProcessingOrders] = useState<Set<string>>(new Set());
+
+    // Exchange States
+    const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
+    const [itemToExchange, setItemToExchange] = useState<any | null>(null);
+    const [allVariants, setAllVariants] = useState<any[]>([]);
+    const [exchangeVariantId, setExchangeVariantId] = useState('');
+    const [exchangeQty, setExchangeQty] = useState(1);
+    const [exchangeReason, setExchangeReason] = useState('');
+    const [isExchanging, setIsExchanging] = useState(false);
 
     useEffect(() => {
         fetchOrders();
@@ -88,6 +101,159 @@ export default function AdminOrdersPage() {
         }
     };
 
+    const handleDeleteOrder = async (id: string) => {
+        if (!confirm('¿Estás seguro de que deseas eliminar este pedido por completo? Esta acción no se puede deshacer.')) return;
+
+        setProcessingOrders(prev => new Set(prev).add(id));
+        try {
+            const res = await fetch(`/api/admin/orders/${id}`, {
+                method: 'DELETE',
+            });
+            if (res.ok) {
+                toast.success('Pedido eliminado correctamente');
+                setOrders(prev => prev.filter(o => o.id !== id));
+                setIsDetailsOpen(false);
+            } else {
+                const data = await res.json();
+                toast.error(data.error || 'Error al eliminar pedido');
+            }
+        } catch (error: any) {
+            toast.error(error.message || 'Error al conectar con la API');
+        } finally {
+            setProcessingOrders(prev => {
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            });
+        }
+    };
+
+    const handleUpdateItemQuantity = async (orderId: string, itemId: string, newQty: number) => {
+        try {
+            const res = await fetch(`/api/admin/orders/${orderId}/items/${itemId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quantity: newQty }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                toast.success('Cantidad actualizada');
+                setOrders(prev => prev.map(o => o.id === orderId
+                    ? {
+                        ...o,
+                        total: data.newTotal,
+                        order_items: o.order_items.map((item: any) =>
+                            item.id === itemId ? { ...item, quantity: newQty } : item
+                        )
+                    }
+                    : o
+                ));
+                if (selectedOrder?.id === orderId) {
+                    setSelectedOrder((prev: any) => ({
+                        ...prev,
+                        total: data.newTotal,
+                        order_items: prev.order_items.map((item: any) =>
+                            item.id === itemId ? { ...item, quantity: newQty } : item
+                        )
+                    }));
+                }
+            }
+        } catch (error: any) {
+            toast.error('Error al actualizar item');
+        }
+    };
+
+    const handleDeleteItem = async (orderId: string, itemId: string) => {
+        if (!confirm('¿Eliminar este item del pedido?')) return;
+        try {
+            const res = await fetch(`/api/admin/orders/${orderId}/items/${itemId}`, {
+                method: 'DELETE',
+            });
+            if (res.ok) {
+                const data = await res.json();
+                toast.success('Item eliminado');
+
+                if (data.orderDeleted) {
+                    setOrders(prev => prev.filter(o => o.id !== orderId));
+                    setIsDetailsOpen(false);
+                } else {
+                    setOrders(prev => prev.map(o => o.id === orderId
+                        ? {
+                            ...o,
+                            total: data.newTotal,
+                            order_items: o.order_items.filter((item: any) => item.id !== itemId)
+                        }
+                        : o
+                    ));
+                    if (selectedOrder?.id === orderId) {
+                        setSelectedOrder((prev: any) => ({
+                            ...prev,
+                            total: data.newTotal,
+                            order_items: prev.order_items.filter((item: any) => item.id !== itemId)
+                        }));
+                    }
+                }
+            }
+        } catch (error: any) {
+            toast.error('Error al eliminar item');
+        }
+    };
+
+    const handleExchangeItem = async () => {
+        if (!exchangeVariantId) return toast.error('Selecciona el nuevo producto');
+        setIsExchanging(true);
+        try {
+            const res = await fetch(`/api/admin/orders/${selectedOrder.id}/items/${itemToExchange.id}/exchange`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    newVariantId: exchangeVariantId,
+                    newQuantity: exchangeQty,
+                    reason: exchangeReason
+                })
+            });
+
+            if (res.ok) {
+                toast.success('Intercambio realizado');
+                setIsExchangeModalOpen(false);
+                setExchangeVariantId('');
+                setExchangeQty(1);
+                setExchangeReason('');
+                // Refresh order
+                fetchOrders();
+                const updated = await fetch(`/api/admin/orders/${selectedOrder.id}`).then(r => r.json());
+                setSelectedOrder(updated);
+            } else {
+                const data = await res.json();
+                toast.error(data.error || 'Error al procesar intercambio');
+            }
+        } catch (error) {
+            toast.error('Error de conexión');
+        } finally {
+            setIsExchanging(false);
+        }
+    };
+
+    const fetchAllVariants = async () => {
+        try {
+            const res = await fetch('/api/admin/products');
+            const data = await res.json();
+            const flattened = data.flatMap((p: any) =>
+                (p.product_variants || []).map((v: any) => ({
+                    ...v,
+                    product_name: p.name
+                }))
+            );
+            setAllVariants(flattened);
+        } catch (error) {
+            console.error('Error fetching variants');
+        }
+    };
+
+    useEffect(() => {
+        if (isExchangeModalOpen) fetchAllVariants();
+    }, [isExchangeModalOpen]);
+
     const statusMap: any = {
         pending: { label: 'Pendiente', color: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-500', icon: Clock },
         processing: { label: 'En Proceso', color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-500', icon: Loader2 },
@@ -104,9 +270,11 @@ export default function AdminOrdersPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">Seguimiento de Pedidos</h1>
-                <p className="text-muted-foreground">Gestiona los pedidos y estados de envío.</p>
+            <div className="flex justify-between items-end">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Seguimiento de Pedidos</h1>
+                    <p className="text-muted-foreground">Gestiona los pedidos y estados de envío.</p>
+                </div>
             </div>
 
             <Card className="border-none shadow-sm">
@@ -152,8 +320,6 @@ export default function AdminOrdersPage() {
                                     </TableRow>
                                 ) : (
                                     filteredOrders.map((order) => {
-                                        // Assuming personalization data is directly on the order object or within a metadata field
-                                        // Adjust this logic based on your actual data structure
                                         const personalization = order.metadata?.personalization || order.personalization || null;
                                         const personalizationText = personalization?.text || (typeof personalization === 'string' ? personalization : null);
                                         const personalizationSize = personalization?.size || null;
@@ -304,6 +470,15 @@ export default function AdminOrdersPage() {
                                                                     </a>
                                                                 </Button>
                                                             )}
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                                                                onClick={() => handleDeleteOrder(order.id)}
+                                                                disabled={processingOrders.has(order.id)}
+                                                            >
+                                                                <XCircle size={16} />
+                                                            </Button>
                                                         </div>
                                                     </div>
                                                 </TableCell>
@@ -324,89 +499,20 @@ export default function AdminOrdersPage() {
                             <ShoppingBag className="text-primary" />
                             Detalles del Pedido #{selectedOrder?.id?.slice(0, 8)}
                         </DialogTitle>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="mr-8 rounded-xl gap-2 font-bold uppercase text-[10px]"
-                            onClick={() => window.print()}
-                        >
-                            <Printer size={14} /> Imprimir Hoja de Producción
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="mr-8 rounded-xl gap-2 font-bold uppercase text-[10px]"
+                                onClick={() => window.print()}
+                            >
+                                <Printer size={14} /> Imprimir Hoja de Producción
+                            </Button>
+                        </div>
                     </DialogHeader>
 
                     {selectedOrder && (
                         <div className="space-y-6 py-4 print:p-0">
-                            {/* PRODUCTION SHEET PRINTABLE SECTION */}
-                            <div className="hidden print:block space-y-8 p-8 bg-white text-black">
-                                <div className="border-b-2 border-black pb-4 flex justify-between items-end">
-                                    <div>
-                                        <h1 className="text-3xl font-black uppercase italic tracking-tighter">HOJA DE PRODUCCIÓN</h1>
-                                        <p className="text-sm font-bold">PEDIDO: #{selectedOrder.id}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xs font-bold uppercase">FECHA: {new Date(selectedOrder.created_at).toLocaleString()}</p>
-                                        <p className="text-xs font-bold uppercase">CLIENTE: {selectedOrder.profiles?.full_name}</p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    {selectedOrder.order_items?.map((item: any, idx: number) => {
-                                        const metadata = item.custom_metadata || {};
-                                        const isNewFormat = !Array.isArray(metadata) && metadata.designs;
-                                        const designs = isNewFormat ? metadata.designs : (Array.isArray(metadata) ? metadata : []);
-                                        const personalization = isNewFormat ? metadata.personalization : null;
-                                        const personalizationText = personalization?.text || personalization;
-                                        const personalizationSize = personalization?.size || null;
-
-                                        return (
-                                            <div key={idx} className="border-2 border-black p-4 space-y-4">
-                                                <div className="flex justify-between border-b border-black pb-2">
-                                                    <span className="text-xl font-black uppercase">{item.products?.name}</span>
-                                                    <span className="text-2xl font-black">CANT: {item.quantity}</span>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div className="bg-slate-100 p-2">
-                                                        <p className="text-[10px] font-black uppercase mb-1">Especificaciones Prenda</p>
-                                                        <p className="text-lg font-bold">Talla: {item.product_variants?.size || 'N/A'}</p>
-                                                        <p className="text-lg font-bold">Color: {item.product_variants?.color || 'N/A'}</p>
-                                                    </div>
-
-                                                    {personalizationText && (
-                                                        <div className="bg-slate-100 p-2 border-l-2 border-black">
-                                                            <p className="text-[10px] font-black uppercase mb-1">Personalización Texto</p>
-                                                            <p className="text-lg font-bold italic">"{personalizationText}"</p>
-                                                            <p className="text-xs font-black uppercase mt-1">Tamaño: {personalizationSize === 'small' ? 'PEQUEÑO' : 'GRANDE'}</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {designs.length > 0 && (
-                                                    <div className="space-y-2">
-                                                        <p className="text-[10px] font-black uppercase border-b border-black">Diseños / Logos Aplicados</p>
-                                                        <div className="grid grid-cols-2 gap-2">
-                                                            {designs.map((d: any, dIdx: number) => (
-                                                                <div key={dIdx} className="border border-black p-2 flex gap-3 items-center">
-                                                                    <div className="w-12 h-12 bg-white border border-slate-200">
-                                                                        <img src={d.image_url} className="w-full h-full object-contain" alt="" />
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-xs font-black uppercase leading-tight">{d.name}</p>
-                                                                        <p className="text-[10px] font-bold">TAMAÑO: <span className="bg-black text-white px-1">{d.size?.toUpperCase() || 'BASE'}</span></p>
-                                                                        <p className="text-[10px] font-bold">UBICACIÓN: {d.location?.toUpperCase()}</p>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            {/* PREVIEW SECTION (Standard UI) */}
                             <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Cliente</p>
@@ -417,13 +523,25 @@ export default function AdminOrdersPage() {
                                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">WhatsApp</p>
                                     <p className="text-xs">{selectedOrder.profiles?.whatsapp || 'No proporcionado'}</p>
                                 </div>
+                                <div className="col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Saldo a Favor Acumulado</p>
+                                    <p className={cn(
+                                        "text-sm font-black italic",
+                                        (selectedOrder.profiles?.balance || 0) > 0 ? "text-emerald-600" : "text-slate-400"
+                                    )}>
+                                        ${(selectedOrder.profiles?.balance || 0).toFixed(2)}
+                                    </p>
+                                </div>
                             </div>
 
                             <div className="space-y-4">
-                                <h3 className="text-sm font-bold flex items-center gap-2">
-                                    <span className="w-1 h-3 bg-primary rounded-full"></span>
-                                    Artículos en el Pedido
-                                </h3>
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-sm font-bold flex items-center gap-2">
+                                        <span className="w-1 h-3 bg-primary rounded-full"></span>
+                                        Artículos en el Pedido
+                                    </h3>
+                                    <p className="text-sm font-black text-primary">Total: ${selectedOrder.total?.toFixed(2)}</p>
+                                </div>
                                 <div className="space-y-3">
                                     {selectedOrder.order_items?.map((item: any) => {
                                         const metadata = item.custom_metadata || {};
@@ -434,7 +552,7 @@ export default function AdminOrdersPage() {
                                         const personalizationSize = personalization?.size || null;
 
                                         return (
-                                            <div key={item.id} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 space-y-3 shadow-sm">
+                                            <div key={item.id} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 space-y-3 shadow-sm group/item relative">
                                                 <div className="flex justify-between items-start">
                                                     <div>
                                                         <p className="font-bold">{item.products?.name || 'Producto'}</p>
@@ -442,12 +560,49 @@ export default function AdminOrdersPage() {
                                                             {item.product_variants ? `Talla: ${item.product_variants.size} | Color: ${item.product_variants.color}` : 'Sin variantes'}
                                                         </p>
                                                         {metadata.on_request && (
-                                                            <Badge variant="warning" className="mt-1 bg-amber-100 text-amber-700 border-amber-200 text-[8px] font-black uppercase py-0 px-1.5 h-4">
+                                                            <Badge variant="outline" className="mt-1 bg-amber-100 text-amber-700 border-amber-200 text-[8px] font-black uppercase py-0 px-1.5 h-4">
                                                                 Bajo Pedido
                                                             </Badge>
                                                         )}
                                                     </div>
-                                                    <p className="font-bold text-primary">qty: {item.quantity}</p>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 rounded-lg px-2 py-1 border border-slate-100 dark:border-slate-800">
+                                                            <button
+                                                                onClick={() => handleUpdateItemQuantity(selectedOrder.id, item.id, Math.max(1, item.quantity - 1))}
+                                                                className="text-primary hover:bg-white p-1 rounded transition-colors"
+                                                            >
+                                                                -
+                                                            </button>
+                                                            <span className="font-bold text-xs w-4 text-center">{item.quantity}</span>
+                                                            <button
+                                                                onClick={() => handleUpdateItemQuantity(selectedOrder.id, item.id, item.quantity + 1)}
+                                                                className="text-primary hover:bg-white p-1 rounded transition-colors"
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-primary hover:bg-primary/5 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                                                            onClick={() => {
+                                                                setItemToExchange(item);
+                                                                setExchangeQty(item.quantity);
+                                                                setIsExchangeModalOpen(true);
+                                                            }}
+                                                            title="Intercambiar producto"
+                                                        >
+                                                            <RefreshCcw size={14} />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-rose-500 hover:bg-rose-50 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                                                            onClick={() => handleDeleteItem(selectedOrder.id, item.id)}
+                                                        >
+                                                            <XCircle size={14} />
+                                                        </Button>
+                                                    </div>
                                                 </div>
 
                                                 {designs.length > 0 && (
@@ -481,6 +636,124 @@ export default function AdminOrdersPage() {
                             </div>
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+            {/* Exchange Modal */}
+            <Dialog open={isExchangeModalOpen} onOpenChange={setIsExchangeModalOpen}>
+                <DialogContent className="sm:max-w-[450px] rounded-3xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 italic font-black uppercase tracking-tighter">
+                            <RefreshCcw className="text-primary" />
+                            Intercambio de Producto
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p className="text-[10px] uppercase font-bold text-slate-400">Producto Actual</p>
+                            <p className="font-bold text-sm tracking-tight">{itemToExchange?.products?.name}</p>
+                            <p className="text-xs uppercase font-black text-primary">
+                                {itemToExchange?.product_variants?.size} / {itemToExchange?.product_variants?.color}
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase italic">Nuevo Producto / Talla / Color</label>
+                            <select
+                                className="w-full rounded-xl border-2 h-10 px-3 text-xs bg-white dark:bg-slate-950 font-medium"
+                                value={exchangeVariantId}
+                                onChange={(e) => setExchangeVariantId(e.target.value)}
+                            >
+                                <option value="">Selecciona una variante...</option>
+                                {allVariants.map(v => (
+                                    <option key={v.id} value={v.id}>
+                                        {v.product_name} - {v.size} / {v.color} (${v.price || 0})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase italic">Cantidad</label>
+                                <Input
+                                    type="number"
+                                    value={exchangeQty}
+                                    onChange={(e) => setExchangeQty(Number(e.target.value))}
+                                    className="rounded-xl border-2"
+                                    min={1}
+                                />
+                            </div>
+                            <div className="flex items-end">
+                                <Badge variant="outline" className="h-10 w-full flex items-center justify-center text-[8px] bg-amber-50 text-amber-700 italic border-amber-200">
+                                    Mantiene precio o mayor
+                                </Badge>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase italic">Motivo del Cambio</label>
+                            <Input
+                                placeholder="Ej: Error de talla, defecto de fábrica..."
+                                value={exchangeReason}
+                                onChange={(e) => setExchangeReason(e.target.value)}
+                                className="rounded-xl border-2"
+                            />
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/20 flex flex-col gap-2">
+                            <div className="flex gap-2">
+                                <AlertCircle className="text-blue-500 shrink-0" size={16} />
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-blue-700 dark:text-blue-400 font-black uppercase italic">Resumen de Ajuste</p>
+                                    {exchangeVariantId ? (() => {
+                                        const selected = allVariants.find(v => v.id === exchangeVariantId);
+                                        const oldVal = (itemToExchange?.unit_price || 0) * (itemToExchange?.quantity || 1);
+                                        const newVal = (selected?.price || 0) * (exchangeQty || 1);
+                                        const diff = oldVal - newVal;
+
+                                        return (
+                                            <div className="space-y-1">
+                                                <p className="text-[11px] font-bold">
+                                                    Valor Original: <span className="text-slate-500">${oldVal.toFixed(2)}</span>
+                                                </p>
+                                                <p className="text-[11px] font-bold">
+                                                    Nuevo Valor: <span className="text-slate-500">${newVal.toFixed(2)}</span>
+                                                </p>
+                                                <div className="pt-1 border-t border-blue-200 dark:border-blue-800">
+                                                    {diff > 0 ? (
+                                                        <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-400">
+                                                            A FAVOR CLIENTE: ${diff.toFixed(2)} (Se creará crédito)
+                                                        </p>
+                                                    ) : diff < 0 ? (
+                                                        <p className="text-[11px] font-black text-rose-600 dark:text-rose-400">
+                                                            EXCEDENTE A PAGAR: ${Math.abs(diff).toFixed(2)}
+                                                        </p>
+                                                    ) : (
+                                                        <p className="text-[11px] font-black text-blue-600 dark:text-blue-400">
+                                                            CAMBIO SIN DIFERENCIA DE COSTO
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })() : (
+                                        <p className="text-[9px] text-blue-700/70 dark:text-blue-400/70 font-medium leading-normal">
+                                            Selecciona un producto para calcular la diferencia de precio y el posible saldo a favor.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            className="w-full font-black uppercase italic rounded-xl"
+                            onClick={handleExchangeItem}
+                            disabled={isExchanging || !exchangeVariantId}
+                        >
+                            {isExchanging ? <Loader2 className="animate-spin h-4 w-4" /> : 'Procesar Intercambio'}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

@@ -2,7 +2,15 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Trash2, Loader2, LogIn } from 'lucide-react';
+import {
+  ShoppingBag,
+  Trash2,
+  Loader2,
+  LogIn,
+  Info,
+  Gift,
+  Star
+} from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -21,7 +29,9 @@ import {
   useCartTotals,
   useUpdateCartItem,
   useRemoveFromCart,
-  useClearCart
+  useClearCart,
+  usePromotions,
+  useUserOrders
 } from '@/hooks/use-cart';
 import { useAuth } from '@/store/cart-store';
 import { toast } from 'sonner';
@@ -37,6 +47,8 @@ import { PaymentSelector } from '@/components/orders/payment-selector';
 export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerProps) {
   const { data: cart, isLoading } = useCart();
   const { subtotal, totalDiscount, total: apiTotal, itemCount } = useCartTotals();
+  const { data: promotions } = usePromotions();
+  const { data: userOrders } = useUserOrders();
   const { isAuthenticated } = useAuth();
   const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
 
@@ -92,6 +104,13 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
     onOpenChange(false);
     toast.success('¡Pedido realizado con éxito!');
   };
+
+  // Loyalty Logic
+  const loyaltyPromo = promotions?.find(p => p.type === 'loyalty_reward' && p.is_active);
+  const qualifyingOrders = userOrders?.orders?.filter((o: any) => o.total >= (loyaltyPromo?.min_order_value_condition || 0)) || [];
+  const orderCount = qualifyingOrders.length;
+  const nextMilestone = loyaltyPromo ? Math.ceil((orderCount + 1) / loyaltyPromo.min_orders_required) * loyaltyPromo.min_orders_required : 0;
+  const remainingForReward = nextMilestone - orderCount;
 
   const items = cart?.items ?? [];
 
@@ -152,15 +171,48 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
             </ScrollArea>
 
             <div className="mt-auto bg-slate-50/80 dark:bg-slate-900/80 p-6 border-t border-slate-100 dark:border-slate-800">
-              {/* Auth message for non-logged in users */}
-              {!isAuthenticated && (
-                <div className="mb-4 p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border-2 border-amber-100 dark:border-amber-800/20 flex items-center gap-2 text-amber-700 dark:text-amber-400">
-                  <LogIn size={16} />
-                  <span className="text-[10px] font-black uppercase italic italic">
-                    Inicia sesión para guardar tu carrito
-                  </span>
+              {/* Loyalty Progress Banner */}
+              {isAuthenticated && loyaltyPromo && remainingForReward > 0 && remainingForReward <= 3 && (
+                <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-primary text-white shadow-lg shadow-indigo-500/20 border-none relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-110 transition-transform">
+                    <Star size={48} className="rotate-12" />
+                  </div>
+                  <div className="flex items-start gap-3 relative z-10">
+                    <div className="mt-0.5 bg-white/20 p-2 rounded-xl">
+                      <Gift size={18} className="animate-bounce" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase italic tracking-widest opacity-80">Meta de Fidelidad</p>
+                      <p className="text-[11px] leading-tight font-bold">
+                        {remainingForReward === 1
+                          ? '¡Tu PRÓXIMA compra te dará un premio!'
+                          : `Solo te faltan ${remainingForReward} compras para tu bono de $${loyaltyPromo.value}`}
+                      </p>
+                      <div className="w-full h-1.5 bg-white/30 rounded-full mt-2 overflow-hidden">
+                        <div
+                          className="h-full bg-white transition-all duration-1000"
+                          style={{ width: `${((loyaltyPromo.min_orders_required - (remainingForReward % loyaltyPromo.min_orders_required)) / loyaltyPromo.min_orders_required) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
+
+              {/* Return Policy Warning */}
+              <div className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border-2 border-amber-100 dark:border-amber-800/20">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 bg-amber-100 dark:bg-amber-900/30 p-1.5 rounded-lg text-amber-600 dark:text-amber-400">
+                    <Info size={14} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase italic tracking-tight text-amber-700 dark:text-amber-400">Política de Devoluciones</p>
+                    <p className="text-[10px] leading-relaxed font-bold text-amber-700/80 dark:text-amber-400/80">
+                      No se hace devolución de dinero, solo cambio por otro producto de igual valor o mayor. Si el producto es de menor valor, quedará el saldo a favor para una próxima compra.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               {/* Cart Summary */}
               <div className="space-y-2 mb-6">

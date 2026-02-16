@@ -177,7 +177,7 @@ export interface Promotion {
   id: string;
   name: string;
   description: string | null;
-  type: 'bogo' | 'second_unit_50' | 'percentage' | 'fixed' | 'gift';
+  type: 'bogo' | 'second_unit_50' | 'percentage' | 'fixed' | 'gift' | 'loyalty_reward';
   target_type: 'all' | 'category' | 'product';
   target_id: string | null;
   value: number;

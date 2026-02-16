@@ -61,7 +61,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
     const navItems = [
         { label: 'Panel Principal', icon: LayoutDashboard, href: '/admin' },
-        { label: 'Prendas', icon: Package, href: '/admin/products' },
+        { label: 'Inventario', icon: Package, href: '/admin/inventory' },
+        { label: 'Prendas', icon: Layers, href: '/admin/products' },
         { label: 'Diseños', icon: Palette, href: '/admin/designs' },
         { label: 'Tipos de Logos', icon: Tags, href: '/admin/design-categories' },
         { label: 'Categorías', icon: Layers, href: '/admin/categories' },

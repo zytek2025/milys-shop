@@ -18,7 +18,7 @@ export async function GET() {
             .from('orders')
             .select(`
                 *,
-                profiles (email, full_name, whatsapp),
+                profiles (email, full_name, whatsapp, balance),
                 order_items (*, products(name), product_variants(size, color))
             `)
             .order('created_at', { ascending: false });

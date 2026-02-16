@@ -186,7 +186,8 @@ export default function AdminPromotionsPage() {
         second_unit_50: '50% 2da Unidad',
         percentage: 'Porcentaje (%)',
         fixed: 'Monto Fijo ($)',
-        gift: 'Obsequio / Regalo'
+        gift: 'Obsequio / Regalo',
+        loyalty_reward: 'Premio Fidelidad (Saldo)'
     };
 
     return (
@@ -390,6 +391,7 @@ export default function AdminPromotionsPage() {
                                             <SelectItem value="bogo">2x1 (BOGO)</SelectItem>
                                             <SelectItem value="second_unit_50">50% 2da Unidad</SelectItem>
                                             <SelectItem value="gift">Obsequio / Regalo</SelectItem>
+                                            <SelectItem value="loyalty_reward">Premio Fidelidad (Saldo)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
