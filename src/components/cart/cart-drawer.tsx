@@ -109,8 +109,13 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
   const loyaltyPromo = promotions?.find(p => p.type === 'loyalty_reward' && p.is_active);
   const qualifyingOrders = userOrders?.orders?.filter((o: any) => o.total >= (loyaltyPromo?.min_order_value_condition || 0)) || [];
   const orderCount = qualifyingOrders.length;
-  const nextMilestone = loyaltyPromo ? Math.ceil((orderCount + 1) / loyaltyPromo.min_orders_required) * loyaltyPromo.min_orders_required : 0;
-  const remainingForReward = nextMilestone - orderCount;
+
+  // Safety check: avoid division by zero if min_orders_required is 0 or undefined
+  const minRequired = loyaltyPromo?.min_orders_required || 0;
+  const nextMilestone = (loyaltyPromo && minRequired > 0)
+    ? Math.ceil((orderCount + 1) / minRequired) * minRequired
+    : 0;
+  const remainingForReward = nextMilestone > 0 ? nextMilestone - orderCount : 0;
 
   const items = cart?.items ?? [];
 
@@ -191,7 +196,7 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
                       <div className="w-full h-1.5 bg-white/30 rounded-full mt-2 overflow-hidden">
                         <div
                           className="h-full bg-white transition-all duration-1000"
-                          style={{ width: `${((loyaltyPromo.min_orders_required - (remainingForReward % loyaltyPromo.min_orders_required)) / loyaltyPromo.min_orders_required) * 100}%` }}
+                          style={{ width: `${minRequired > 0 ? ((minRequired - (remainingForReward % minRequired)) / minRequired) * 100 : 0}%` }}
                         />
                       </div>
                     </div>

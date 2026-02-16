@@ -208,9 +208,9 @@ export function useCartTotals() {
   const { data: cart } = useCart();
   const { data: promotions } = usePromotions();
 
-  const itemCount = cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+  const itemCount = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
-  const subtotal = cart?.items.reduce((sum, item) => {
+  const subtotal = cart?.items?.reduce((sum, item) => {
     const basePrice = item.variant?.price_override ?? item.product?.price ?? 0;
     let extraPrice = 0;
     const metadata = item.custom_metadata;
@@ -235,7 +235,7 @@ export function useCartTotals() {
   const userOrderCount = userHistory?.count || 0;
   const userValidOrders = userHistory?.orders || [];
 
-  cart?.items.forEach(item => {
+  cart?.items?.forEach(item => {
     const itemPrice = (item.variant?.price_override ?? item.product?.price ?? 0);
     const unitPrice = itemPrice + (item.custom_metadata?.designs?.reduce((s: number, d: any) => s + (d.price || 0), 0) || 0) + (item.custom_metadata?.personalization?.price || 0);
 

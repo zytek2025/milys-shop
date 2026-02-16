@@ -29,7 +29,7 @@ export function CartItemRow({
   // Estructura de metadatos (soporta formato nuevo y antiguo)
   const metadata = (item.custom_metadata || {}) as any;
   const isNewFormat = !Array.isArray(metadata) && !!metadata.designs;
-  const designList = (isNewFormat ? metadata.designs : (Array.isArray(metadata) ? metadata : [])) as any[];
+  const designList = (isNewFormat ? (metadata.designs || []) : (Array.isArray(metadata) ? metadata : [])) as any[];
   const personalization = isNewFormat ? metadata.personalization : null;
   const personalizationText = personalization?.text || personalization;
   const personalizationSize = personalization?.size || null;

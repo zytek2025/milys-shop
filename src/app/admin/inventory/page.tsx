@@ -112,9 +112,9 @@ export default function InventoryPage() {
     };
 
     const filteredVariants = variants.filter(v =>
-        v.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.size.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.color.toLowerCase().includes(searchTerm.toLowerCase())
+        v.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v.size?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v.color?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
