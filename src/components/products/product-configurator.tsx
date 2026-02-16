@@ -246,19 +246,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
 
     return (
         <div className="space-y-8">
-            {/* Visual Preview */}
-            <div className="w-full max-w-md mx-auto mb-8 animate-in fade-in zoom-in duration-500">
-                <ProductPreview
-                    color={selectedColor || 'Blanco'}
-                    colorHex={activeColorHex}
-                    designs={selectedDesigns}
-                    customText={customText}
-                    customTextSize={customTextSize}
-                    garmentImage={product.image_url}
-                />
-            </div>
-
-            {/* Price Header */}
+            {/* Price Header - Now at the top for immediate visibility */}
             <div className="flex flex-col gap-1 border-b border-lavanda/30 pb-6">
                 <div className="flex items-baseline gap-3">
                     <span className="text-6xl font-serif font-light text-foreground tracking-tighter">
@@ -557,6 +545,18 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                     </p>
                 </div>
             )}
+
+            {/* Visual Preview - Now at the bottom to avoid initial empty space */}
+            <div className="w-full max-w-sm mx-auto animate-in fade-in zoom-in duration-500">
+                <ProductPreview
+                    color={selectedColor || 'Blanco'}
+                    colorHex={activeColorHex}
+                    designs={selectedDesigns}
+                    customText={customText}
+                    customTextSize={customTextSize}
+                    garmentImage={product.image_url}
+                />
+            </div>
 
             {/* Final Action */}
             <div className="pt-6 border-t border-slate-100 dark:border-slate-900">
