@@ -270,7 +270,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <SectionLabel label={isCustomizable ? "Paso 1: Elige el color de prenda" : "Paso 1: Selecciona el color"} />
-                        {selectedColor && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">{selectedColor}</span>}
+                        {selectedColor && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-slate-100 border border-primary/20">{selectedColor}</span>}
                     </div>
                     <div className="flex flex-wrap gap-3">
                         {availableColors.map(color => (
@@ -314,7 +314,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                         >
                             <div className="flex items-center justify-between">
                                 <SectionLabel label={isCustomizable ? "Paso 2: Elige tu talla" : "Paso 2: Selecciona el tamaño"} />
-                                {selectedSize && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">{isCustomizable ? 'Talla' : 'Tamaño'} {selectedSize}</span>}
+                                {selectedSize && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-slate-100 border border-primary/20">{isCustomizable ? 'Talla' : 'Tamaño'} {selectedSize}</span>}
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {availableSizes.map(s => {
@@ -325,9 +325,9 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                                             onClick={() => setSelectedSize(s.size)}
                                             className={cn(
                                                 "min-w-[75px] h-12 rounded-2xl text-sm font-bold transition-all border-2 relative overflow-hidden",
-                                                isOutOfStock ? "border-amber-200 bg-amber-50/50 text-amber-700" : "border-slate-100 hover:border-slate-300 dark:border-slate-800",
+                                                isOutOfStock ? "border-amber-200 bg-amber-50 text-amber-700" : "border-slate-100 hover:border-slate-300 dark:border-slate-800",
                                                 selectedSize === s.size
-                                                    ? "border-primary bg-primary text-white shadow-lg shadow-primary/20"
+                                                    ? "border-primary bg-primary text-white shadow-lg"
                                                     : ""
                                             )}
                                         >
@@ -358,7 +358,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <SectionLabel label="Paso 3: Añade tus diseños (Máx 3)" />
-                        <Badge variant="secondary" className="rounded-full bg-primary/10 text-primary border-none">
+                        <Badge variant="secondary" className="rounded-full bg-slate-100 text-primary border-none">
                             {selectedDesigns.length} / 3 Seleccionados
                         </Badge>
                     </div>
@@ -367,7 +367,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                         {selectedDesigns.map(design => (
                             <div key={design.instanceId} className="group relative rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 shadow-sm animate-in fade-in slide-in-from-left duration-300">
                                 <div className="flex gap-4">
-                                    <div className="relative aspect-square w-20 rounded-xl bg-white dark:bg-black/20 overflow-hidden border">
+                                    <div className="relative aspect-square w-20 rounded-xl bg-white dark:bg-slate-900 overflow-hidden border">
                                         <img src={design.image_url} alt={design.name} className="w-full h-full object-contain p-2" />
                                         <button
                                             onClick={() => setSelectedDesigns(prev => prev.filter(d => d.instanceId !== design.instanceId))}
@@ -422,7 +422,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                         {selectedDesigns.length < 3 && (
                             <Dialog open={isGalleryOpen} onOpenChange={setIsGalleryOpen}>
                                 <DialogTrigger asChild>
-                                    <button className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-primary hover:bg-primary/5 transition-all flex flex-col items-center justify-center gap-2 group">
+                                    <button className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-primary hover:bg-slate-50 transition-all flex flex-col items-center justify-center gap-2 group">
                                         <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-primary group-hover:text-white transition-colors flex items-center justify-center">
                                             <Plus size={18} />
                                         </div>
@@ -477,11 +477,11 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                                                         className={cn(
                                                             "group relative aspect-square rounded-2xl border-2 transition-all overflow-hidden flex flex-col p-2",
                                                             count > 0
-                                                                ? "border-primary bg-primary/5 shadow-inner"
+                                                                ? "border-primary bg-slate-50 shadow-inner"
                                                                 : "border-slate-100 hover:border-primary/50 dark:border-slate-800"
                                                         )}
                                                     >
-                                                        <div className="flex-1 w-full bg-white dark:bg-black/20 rounded-xl mb-2 flex items-center justify-center overflow-hidden">
+                                                        <div className="flex-1 w-full bg-white dark:bg-slate-900 rounded-xl mb-2 flex items-center justify-center overflow-hidden">
                                                             <img src={design.image_url} alt={design.name} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" />
                                                         </div>
                                                         <div className="text-[10px] font-black uppercase truncate text-center mb-0.5">{design.name}</div>
@@ -496,7 +496,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                                             })}
                                         </div>
                                     </ScrollArea>
-                                    <div className="p-6 border-t bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+                                    <div className="p-6 border-t bg-slate-50 dark:bg-slate-900 flex justify-between items-center">
                                         <p className="text-xs font-medium text-slate-500">
                                             Has seleccionado {selectedDesigns.length} de 3 diseños
                                         </p>

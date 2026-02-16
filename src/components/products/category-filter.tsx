@@ -51,8 +51,8 @@ export function CategoryFilter({ categories: dbCategories }: CategoryFilterProps
                     group relative px-6 py-2.5 rounded-2xl text-sm font-black transition-all duration-300
                     flex items-center gap-2 overflow-hidden
                     ${isActive
-                      ? 'text-white bg-primary shadow-[0_10px_20px_-5px_rgba(var(--primary),0.3)]'
-                      : 'bg-white dark:bg-slate-900 text-muted-foreground hover:text-foreground border border-border/50 shadow-sm hover:shadow-md'
+                      ? 'text-white bg-primary shadow-sm'
+                      : 'bg-white dark:bg-slate-900 text-muted-foreground hover:text-foreground border border-border shadow-sm hover:shadow-md'
                     }
                   `}
                 >
@@ -60,7 +60,7 @@ export function CategoryFilter({ categories: dbCategories }: CategoryFilterProps
                   {isActive && (
                     <motion.div
                       layoutId="activeCategory"
-                      className="absolute inset-0 bg-gradient-to-tr from-primary via-primary/95 to-secondary -z-10"
+                      className="absolute inset-0 bg-primary -z-10"
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
@@ -71,11 +71,11 @@ export function CategoryFilter({ categories: dbCategories }: CategoryFilterProps
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: 4 }}
-                      className="h-1 w-1 rounded-full bg-white/50"
+                      className="h-1 w-1 rounded-full bg-white"
                     />
                   )}
 
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                  <div className="absolute inset-0 bg-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 </button>
               </motion.div>
             );

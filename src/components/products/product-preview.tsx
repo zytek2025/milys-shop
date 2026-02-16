@@ -49,7 +49,7 @@ export function ProductPreview({
     };
 
     return (
-        <div className="w-full aspect-square relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-primary/5">
+        <div className="w-full aspect-square relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl">
             {/* Background Grid Pattern */}
             <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:16px_16px]" />
 
@@ -66,11 +66,11 @@ export function ProductPreview({
                                 <path
                                     d="M20 30 L30 10 L40 15 L50 10 L60 15 L70 10 L80 30 L70 40 L70 90 L30 90 L30 40 Z"
                                     fill={colorHex || '#f1f5f9'}
-                                    stroke="rgba(0,0,0,0.1)"
+                                    stroke="#E2E8F0"
                                     strokeWidth="0.5"
                                     className="transition-[fill] duration-500"
                                 />
-                                <path d="M40 15 Q50 25 60 15" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="1" />
+                                <path d="M40 15 Q50 25 60 15" fill="none" stroke="#E2E8F0" strokeWidth="1" />
                             </svg>
                         ) : (
                             <div className="absolute inset-0 w-full h-full">
@@ -79,7 +79,7 @@ export function ProductPreview({
 
                                 {/* Color Tint Overlay - Masked by the garment image itself */}
                                 <div
-                                    className="absolute inset-0 w-full h-full mix-blend-multiply transition-colors duration-300"
+                                    className="absolute inset-0 w-full h-full mix-blend-normal transition-colors duration-300"
                                     style={{
                                         backgroundColor: colorHex,
                                         maskImage: `url(${garmentImage})`,
@@ -148,7 +148,7 @@ export function ProductPreview({
 
             {/* Info Badge */}
             <div className="absolute bottom-4 left-4 right-4 flex justify-center">
-                <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-full shadow-lg flex items-center gap-3">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-full shadow-lg flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full border shadow-sm" style={{ backgroundColor: colorHex || '#fff' }} />
                     <span className="text-[10px] uppercase font-bold text-slate-500">
                         {color || 'Color Base'}

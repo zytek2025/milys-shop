@@ -47,8 +47,8 @@ export function ProductGrid({
 
   if (!products || products.length === 0) {
     return (
-      <div className="text-center py-24 bg-slate-50 dark:bg-slate-900/50 rounded-[2.5rem] border border-dashed border-border/50">
-        <div className="h-16 w-16 bg-muted/20 rounded-full flex items-center justify-center mx-auto mb-6">
+      <div className="text-center py-24 bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] border border-dashed border-border">
+        <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
           <ShoppingCart className="text-muted-foreground/40" size={32} />
         </div>
         <h3 className="text-2xl font-black tracking-tight mb-2 italic">Sin Tesoros por Ahora</h3>
