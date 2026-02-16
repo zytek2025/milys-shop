@@ -72,9 +72,9 @@ export function CartItemRow({
         {/* Talla y Color si hay variante */}
         {(variant?.size || variant?.color) && (
           <p className="text-[10px] uppercase font-bold text-slate-400 tracking-tight">
-            {variant.color && <span>{variant.color}</span>}
-            {variant.color && variant.size && <span> / </span>}
-            {variant.size && <span>Talla {variant.size}</span>}
+            {variant?.color && <span>{variant.color}</span>}
+            {variant?.color && variant?.size && <span> / </span>}
+            {variant?.size && <span>Talla {variant.size}</span>}
           </p>
         )}
 

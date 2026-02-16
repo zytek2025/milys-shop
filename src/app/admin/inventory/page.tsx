@@ -60,6 +60,14 @@ export default function InventoryPage() {
             const products = await vRes.json();
             const moves = await mRes.json();
 
+            if (!vRes.ok || !Array.isArray(products)) {
+                throw new Error(products.error || 'No se pudieron cargar productos');
+            }
+
+            if (!mRes.ok || !Array.isArray(moves)) {
+                throw new Error(moves.error || 'No se pudieron cargar movimientos');
+            }
+
             // Flatten variants from all products
             const allVariants = products.flatMap((p: any) =>
                 (p.product_variants || []).map((v: any) => ({
@@ -70,8 +78,10 @@ export default function InventoryPage() {
 
             setVariants(allVariants);
             setMovements(moves);
-        } catch (error) {
-            toast.error('Error al cargar datos de inventario');
+        } catch (error: any) {
+            toast.error(error.message || 'Error al cargar datos de inventario');
+            setVariants([]);
+            setMovements([]);
         } finally {
             setLoading(false);
         }
