@@ -115,7 +115,7 @@ export function ProductPreview({
                                             rotate: `${pos.rotate}deg`
                                         }}
                                     >
-                                        <img src={design.image_url} alt="design" className="w-full h-full object-contain drop-shadow-sm filter brightness-95" />
+                                        <img src={design.image_url} alt="design" className="w-full h-full object-contain drop-shadow-sm" />
                                     </motion.div>
                                 );
                             })}
