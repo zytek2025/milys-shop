@@ -269,7 +269,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
             {hasVariants && (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <SectionLabel label="Paso 1: Elige el color de prenda" />
+                        <SectionLabel label={isCustomizable ? "Paso 1: Elige el color de prenda" : "Paso 1: Selecciona el color"} />
                         {selectedColor && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">{selectedColor}</span>}
                     </div>
                     <div className="flex flex-wrap gap-3">
@@ -313,8 +313,8 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                             className="space-y-4"
                         >
                             <div className="flex items-center justify-between">
-                                <SectionLabel label="Paso 2: Elige tu talla" />
-                                {selectedSize && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">Talla {selectedSize}</span>}
+                                <SectionLabel label={isCustomizable ? "Paso 2: Elige tu talla" : "Paso 2: Selecciona el tamaño"} />
+                                {selectedSize && <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">{isCustomizable ? 'Talla' : 'Tamaño'} {selectedSize}</span>}
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {availableSizes.map(s => {

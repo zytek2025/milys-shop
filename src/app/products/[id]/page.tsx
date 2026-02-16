@@ -72,19 +72,30 @@ export default async function ProductPage(props: {
                             />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-300">
-                                Sin diseño disponible
+                                Sin imagen disponible
                             </div>
                         )}
                     </div>
 
-                    <div className="p-6 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
-                        <h3 className="font-bold flex items-center gap-2 mb-2 text-primary">
-                            <Info size={16} /> Sobre este diseño
-                        </h3>
-                        <p className="text-sm text-muted-foreground leading-relaxed italic">
-                            Este es un diseño exclusivo para sublimación de alta calidad. El estampado no se agrieta ni se desvanece con el tiempo.
-                        </p>
-                    </div>
+                    {product.category_data?.is_customizable ? (
+                        <div className="p-6 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
+                            <h3 className="font-bold flex items-center gap-2 mb-2 text-primary">
+                                <Info size={16} /> Sobre este diseño
+                            </h3>
+                            <p className="text-sm text-muted-foreground leading-relaxed italic">
+                                Este es un diseño exclusivo para sublimación de alta calidad. El estampado no se agrieta ni se desvanece con el tiempo.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="p-6 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
+                            <h3 className="font-bold flex items-center gap-2 mb-2 text-emerald-600 dark:text-emerald-400">
+                                <Check size={16} /> Producto Original
+                            </h3>
+                            <p className="text-sm text-muted-foreground leading-relaxed italic">
+                                Este es un producto de reventa 100% original y garantizado. Seleccionamos solo lo mejor para ti.
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Configuration Column */}
