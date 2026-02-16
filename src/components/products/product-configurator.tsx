@@ -154,12 +154,12 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
         const category = categories.find(c => c.id === design.category_id);
 
         if (size === 'small') {
-            return category?.price_small ?? storeSettings?.design_price_small ?? 2.00;
+            return category?.price_small ?? 2.00;
         }
         if (size === 'medium') {
-            return category?.price_medium ?? storeSettings?.design_price_medium ?? 5.00;
+            return category?.price_medium ?? 5.00;
         }
-        return category?.price_large ?? storeSettings?.design_price_large ?? 10.00;
+        return category?.price_large ?? 10.00;
     };
 
     // Price Calculation
@@ -169,9 +169,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     }, 0) : 0;
 
     const personalizationPrice = customText ? (
-        customTextSize === 'small'
-            ? (storeSettings?.personalization_price_small ?? 1.00)
-            : (storeSettings?.personalization_price_large ?? 3.00)
+        customTextSize === 'small' ? 1.00 : 3.00
     ) : 0;
 
     const totalPrice = garmentPrice + designsPrice + personalizationPrice;
