@@ -60,15 +60,7 @@ export function ProductPreview({
                 <div className="relative w-full max-w-[320px] aspect-[3/4]">
                     {/* Base Shirt Shape (CSS Only for now, replacing image) */}
                     {/* In production, we would use a real transparent PNG of a white shirt */}
-                    <div
-                        className="absolute inset-0 w-full h-full transition-colors duration-500 ease-in-out"
-                        style={{
-                            backgroundColor: '#fff',
-                            maskImage: 'url(/images/shirt-mask.png)', // Placeholder for mask
-                            WebkitMaskImage: 'url(/images/shirt-mask.png)'
-                        }}
-                    >
-                        {/* If we don't have a real image yet, use an SVG placeholder */}
+                    <div className="absolute inset-0 w-full h-full transition-colors duration-500 ease-in-out">
                         {!garmentImage ? (
                             <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl filter">
                                 <path
@@ -78,19 +70,29 @@ export function ProductPreview({
                                     strokeWidth="0.5"
                                     className="transition-[fill] duration-500"
                                 />
-                                {/* Neck shadow */}
                                 <path d="M40 15 Q50 25 60 15" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="1" />
                             </svg>
                         ) : (
-                            <>
+                            <div className="absolute inset-0 w-full h-full">
                                 {/* Base Image */}
                                 <img src={garmentImage} alt="Base" className="absolute inset-0 w-full h-full object-contain" />
-                                {/* Color Tint Overlay */}
+
+                                {/* Color Tint Overlay - Masked by the garment image itself */}
                                 <div
                                     className="absolute inset-0 w-full h-full mix-blend-multiply transition-colors duration-300"
-                                    style={{ backgroundColor: colorHex }} // Tint
+                                    style={{
+                                        backgroundColor: colorHex,
+                                        maskImage: `url(${garmentImage})`,
+                                        WebkitMaskImage: `url(${garmentImage})`,
+                                        maskSize: 'contain',
+                                        WebkitMaskSize: 'contain',
+                                        maskRepeat: 'no-repeat',
+                                        WebkitMaskRepeat: 'no-repeat',
+                                        maskPosition: 'center',
+                                        WebkitMaskPosition: 'center'
+                                    }}
                                 />
-                            </>
+                            </div>
                         )}
                     </div>
 
