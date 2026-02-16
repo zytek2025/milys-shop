@@ -53,7 +53,7 @@ export function ProductCard({ product, promotion }: ProductCardProps) {
       className="h-full"
     >
       <Link href={`/products/${product.id}`} className="block h-full group">
-        <Card className="h-full overflow-hidden border-border/50 bg-white/60 dark:bg-slate-900/60 transition-all duration-700 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 relative">
+        <Card className="h-full overflow-hidden border-border/50 bg-white dark:bg-slate-950 transition-all duration-700 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 relative">
           {/* Product Image */}
           <div className="relative aspect-square overflow-hidden bg-slate-100 dark:bg-slate-800">
             {promotion && (

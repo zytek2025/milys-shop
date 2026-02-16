@@ -55,7 +55,7 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                     onOpenChange={setIsAuthModalOpen}
                 />
 
-                <footer className="border-t border-border/40 py-16 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm mt-auto">
+                <footer className="border-t border-border/40 py-16 bg-slate-50 dark:bg-slate-950 mt-auto shadow-inner">
                     <div className="container mx-auto px-6">
                         <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-12">
                             <div className="flex flex-col items-center md:items-start gap-4">

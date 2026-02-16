@@ -33,12 +33,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
     // Guard: if not admin, redirect or show error
     // Note: In real production, this should also be done in middleware for better security
-    if (!isAuthenticated || !isAdmin) {
-        // redirect('/'); // Or show an unauthorized page
+    if (isAuthenticated && !isAdmin) {
+        redirect('/');
+    } else if (!isAuthenticated) {
+        // If not logged in at all, maybe let them see it or redirect to login? 
+        // usually redirect to home or open login modal. 
+        // For now, redirect to home to be safe.
+        redirect('/');
     }
 
     const navItems = [
         { label: 'Panel Principal', icon: LayoutDashboard, href: '/admin' },
+        { label: 'Crear Diseño (Canva)', icon: Palette, href: '/admin/designs/create' },
         { label: 'Prendas/Productos', icon: Package, href: '/admin/products' },
         { label: 'Colección de Logos', icon: Palette, href: '/admin/designs' },
         { label: 'Categorías de Logos', icon: Tags, href: '/admin/design-categories' },
