@@ -39,10 +39,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
     const navItems = [
         { label: 'Panel Principal', icon: LayoutDashboard, href: '/admin' },
-        { label: 'Prendas', icon: Package, href: '/admin/products' },
-        { label: 'Diseños', icon: Palette, href: '/admin/designs' },
-        { label: 'Tipos de Logos', icon: Tags, href: '/admin/design-categories' },
-        { label: 'Categorías', icon: Layers, href: '/admin/categories' },
+        { label: 'Prendas/Productos', icon: Package, href: '/admin/products' },
+        { label: 'Colección de Logos', icon: Palette, href: '/admin/designs' },
+        { label: 'Categorías de Logos', icon: Tags, href: '/admin/design-categories' },
+        { label: 'Categorías de Productos', icon: Layers, href: '/admin/categories' },
         { label: 'Pedidos', icon: ShoppingBag, href: '/admin/orders' },
         { label: 'Clientes', icon: Users, href: '/admin/customers' },
         { label: 'Ajustes', icon: SettingsIcon, href: '/admin/settings' },

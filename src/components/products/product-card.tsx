@@ -20,13 +20,24 @@ export function ProductCard({ product }: ProductCardProps) {
   const addToCart = useAddToCart();
   const [isAdding, setIsAdding] = useState(false);
 
+  // Calculate price range and stock from variants
+  const variants = product.product_variants || [];
+  const prices = [product.price, ...variants.map(v => v.price_override).filter(p => p !== null)] as number[];
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const hasMultiplePrices = minPrice !== maxPrice;
+
+  const totalStock = variants.length > 0
+    ? variants.reduce((sum, v) => sum + (v.stock || 0), 0)
+    : (product.stock || 0);
+
   const handleAddToCart = async () => {
     setIsAdding(true);
     try {
       await addToCart.mutateAsync({ productId: product.id, quantity: 1 });
-      toast.success(`Added ${product.name} to cart`);
+      toast.success(`Añadido ${product.name} al carrito`);
     } catch (error) {
-      toast.error('Failed to add to cart');
+      toast.error('Error al añadir al carrito');
       console.error(error);
     } finally {
       setIsAdding(false);
@@ -67,8 +78,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
             {/* Price Tag Overlay */}
             <div className="absolute bottom-4 right-4 z-10">
-              <div className="bg-primary text-primary-foreground font-black text-xl px-4 py-2 rounded-2xl shadow-xl shadow-primary/20 transform group-hover:scale-110 transition-transform duration-500 italic">
-                ${product.price ? product.price.toFixed(0) : '0'}
+              <div className="bg-primary text-primary-foreground font-black px-4 py-2 rounded-2xl shadow-xl shadow-primary/20 transform group-hover:scale-110 transition-transform duration-500 italic flex flex-col items-end">
+                {hasMultiplePrices && <span className="text-[10px] uppercase tracking-wider opacity-80 leading-none">Desde</span>}
+                <span className="text-xl leading-tight">${minPrice.toFixed(0)}</span>
               </div>
             </div>
 
@@ -89,9 +101,12 @@ export function ProductCard({ product }: ProductCardProps) {
           <CardContent className="px-6 pb-8 pt-2">
             <div className="flex items-center justify-between gap-4">
               <div className="flex flex-col">
-                <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${product.stock > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {product.stock > 0 ? 'Stock Disponible' : 'Agotado'}
+                <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${totalStock > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {totalStock > 0 ? 'Stock Disponible' : 'Bajo Pedido'}
                 </span>
+                {totalStock > 0 && totalStock < 5 && (
+                  <span className="text-[8px] font-bold text-amber-500 uppercase">¡Últimas unidades!</span>
+                )}
               </div>
 
               <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">

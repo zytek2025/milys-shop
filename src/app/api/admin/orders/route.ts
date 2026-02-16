@@ -19,7 +19,7 @@ export async function GET() {
             .select(`
                 *,
                 profiles (email, full_name, whatsapp),
-                order_items (*, products(name), product_variants(size, color))
+                order_items (*, products(name), product_variants(size, color, color_hex))
             `)
             .order('created_at', { ascending: false });
 

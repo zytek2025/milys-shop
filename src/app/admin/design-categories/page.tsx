@@ -37,6 +37,9 @@ interface DesignCategory {
     id: string;
     name: string;
     description: string | null;
+    price_small: number;
+    price_medium: number;
+    price_large: number;
     created_at: string;
 }
 
@@ -46,7 +49,13 @@ export default function AdminDesignCategoriesPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<DesignCategory | null>(null);
-    const [formData, setFormData] = useState({ name: '', description: '' });
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        price_small: '0',
+        price_medium: '0',
+        price_large: '0'
+    });
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -72,10 +81,19 @@ export default function AdminDesignCategoriesPage() {
             setFormData({
                 name: category.name,
                 description: category.description || '',
+                price_small: category.price_small?.toString() || '0',
+                price_medium: category.price_medium?.toString() || '0',
+                price_large: category.price_large?.toString() || '0',
             });
         } else {
             setEditingCategory(null);
-            setFormData({ name: '', description: '' });
+            setFormData({
+                name: '',
+                description: '',
+                price_small: '0',
+                price_medium: '0',
+                price_large: '0'
+            });
         }
         setIsDialogOpen(true);
     };
@@ -92,7 +110,12 @@ export default function AdminDesignCategoriesPage() {
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    ...formData,
+                    price_small: parseFloat(formData.price_small),
+                    price_medium: parseFloat(formData.price_medium),
+                    price_large: parseFloat(formData.price_large),
+                }),
             });
 
             if (!res.ok) {
@@ -130,85 +153,96 @@ export default function AdminDesignCategoriesPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Tipos de Logos</h1>
-                    <p className="text-muted-foreground">Clasifica tus diseños por temas o estilos.</p>
+                    <h1 className="text-3xl font-black italic uppercase tracking-tighter">Categorías de Logos</h1>
+                    <p className="text-muted-foreground">Define los precios por tamaño para cada tipo de diseño.</p>
                 </div>
                 <Button
-                    className="shrink-0 gap-2 rounded-xl h-11 px-6 shadow-lg shadow-primary/20"
+                    className="shrink-0 gap-2 rounded-2xl h-12 px-8 shadow-lg shadow-primary/20 font-bold italic uppercase"
                     onClick={() => handleOpenDialog()}
                 >
                     <Plus size={18} />
-                    Nuevo Tipo
+                    Nueva Categoría
                 </Button>
             </div>
 
-            <Card className="border-none shadow-sm">
-                <CardHeader className="pb-0">
+            <Card className="border-none shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden rounded-[2rem]">
+                <CardHeader className="pb-0 pt-8 px-8">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
                         <Input
-                            placeholder="Buscar tipos..."
-                            className="pl-10 h-11 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-none"
+                            placeholder="Buscar categorías de logos..."
+                            className="pl-12 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border-none text-lg font-medium"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                 </CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-8">
                     <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
-                                    <TableHead>Nombre</TableHead>
-                                    <TableHead>Descripción</TableHead>
-                                    <TableHead className="text-right">Acciones</TableHead>
+                                    <TableHead className="font-bold text-slate-800 dark:text-slate-200">Categoría</TableHead>
+                                    <TableHead className="font-bold text-slate-800 dark:text-slate-200">Pequeño</TableHead>
+                                    <TableHead className="font-bold text-slate-800 dark:text-slate-200">Mediano</TableHead>
+                                    <TableHead className="font-bold text-slate-800 dark:text-slate-200">Grande</TableHead>
+                                    <TableHead className="text-right font-bold text-slate-800 dark:text-slate-200">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="h-48 text-center text-muted-foreground">
+                                        <TableCell colSpan={5} className="h-48 text-center text-muted-foreground">
                                             <div className="flex flex-col items-center gap-2">
-                                                <Loader2 className="h-8 w-8 animate-spin" />
-                                                <span>Cargando datos...</span>
+                                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                                <span className="font-bold italic uppercase tracking-widest text-[10px]">Cargando Datos</span>
                                             </div>
                                         </TableCell>
                                     </TableRow>
                                 ) : filteredCategories.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="h-48 text-center text-muted-foreground">
-                                            No se encontraron categorías.
+                                        <TableCell colSpan={5} className="h-48 text-center text-muted-foreground font-medium">
+                                            No se encontraron categorías de logos.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     filteredCategories.map((category) => (
                                         <TableRow key={category.id} className="group border-slate-100 dark:border-slate-800">
-                                            <TableCell className="font-medium">
-                                                <div className="flex items-center gap-2">
-                                                    <Tags size={14} className="text-primary" />
-                                                    {category.name}
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-black text-slate-900 dark:text-white flex items-center gap-2">
+                                                        <Tags size={14} className="text-primary" />
+                                                        {category.name}
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground italic line-clamp-1">{category.description || 'Sin descripción'}</span>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-muted-foreground max-w-xs truncate">
-                                                {category.description || '-'}
+                                            <TableCell>
+                                                <span className="font-black text-lg text-primary">${Number(category.price_small || 0).toFixed(2)}</span>
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="font-black text-lg text-primary">${Number(category.price_medium || 0).toFixed(2)}</span>
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="font-black text-lg text-primary">${Number(category.price_large || 0).toFixed(2)}</span>
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="rounded-lg h-8 w-8"
+                                                        className="rounded-xl h-10 w-10 hover:bg-primary/10 hover:text-primary transition-all"
                                                         onClick={() => handleOpenDialog(category)}
                                                     >
-                                                        <Edit2 size={16} className="text-slate-600" />
+                                                        <Edit2 size={18} />
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="rounded-lg h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                                                        className="rounded-xl h-10 w-10 hover:bg-destructive/10 hover:text-destructive transition-all"
                                                         onClick={() => handleDelete(category.id)}
                                                     >
-                                                        <Trash2 size={16} />
+                                                        <Trash2 size={18} />
                                                     </Button>
                                                 </div>
                                             </TableCell>
@@ -222,39 +256,78 @@ export default function AdminDesignCategoriesPage() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[425px] rounded-3xl">
+                <DialogContent className="sm:max-w-[500px] rounded-[2.5rem] p-8 border-none shadow-2xl">
                     <DialogHeader>
-                        <DialogTitle>{editingCategory ? 'Editar Tipo' : 'Nuevo Tipo'}</DialogTitle>
+                        <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter">
+                            {editingCategory ? 'Editar Categoría' : 'Nueva Categoría de Logos'}
+                        </DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+                    <form onSubmit={handleSubmit} className="space-y-6 pt-4">
                         <div className="space-y-2">
-                            <Label htmlFor="cat-name">Nombre del Grupo</Label>
+                            <Label htmlFor="cat-name" className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Nombre de la Categoría</Label>
                             <Input
                                 id="cat-name"
-                                placeholder="Ej: Superhéroes, Logos Minimalistas..."
+                                placeholder="Ej: Premium, Estándar, Bordados..."
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 required
-                                className="rounded-xl h-11"
+                                className="rounded-2xl h-14 bg-slate-50 dark:bg-slate-900 border-none text-lg font-bold"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="cat-desc">Descripción (Opcional)</Label>
+                            <Label htmlFor="cat-desc" className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Descripción</Label>
                             <Textarea
                                 id="cat-desc"
                                 value={formData.description}
                                 onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                className="rounded-xl min-h-[100px]"
+                                placeholder="Detalles sobre este tipo de logos..."
+                                className="rounded-2xl min-h-[80px] bg-slate-50 dark:bg-slate-900 border-none font-medium"
                             />
                         </div>
 
-                        <DialogFooter className="pt-4">
-                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
+                        <div className="grid grid-cols-3 gap-4 p-6 bg-slate-50 dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800">
+                            <div className="space-y-2">
+                                <Label htmlFor="price_s" className="text-[10px] font-black uppercase tracking-wider text-center block">Pequeño ($)</Label>
+                                <Input
+                                    id="price_s"
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.price_small}
+                                    onChange={e => setFormData({ ...formData, price_small: e.target.value })}
+                                    className="h-12 text-center rounded-xl bg-white dark:bg-slate-950 border-2 border-primary/20 font-black text-lg focus:border-primary transition-all"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="price_m" className="text-[10px] font-black uppercase tracking-wider text-center block">Mediano ($)</Label>
+                                <Input
+                                    id="price_m"
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.price_medium}
+                                    onChange={e => setFormData({ ...formData, price_medium: e.target.value })}
+                                    className="h-12 text-center rounded-xl bg-white dark:bg-slate-950 border-2 border-primary/20 font-black text-lg focus:border-primary transition-all"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="price_l" className="text-[10px] font-black uppercase tracking-wider text-center block">Grande ($)</Label>
+                                <Input
+                                    id="price_l"
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.price_large}
+                                    onChange={e => setFormData({ ...formData, price_large: e.target.value })}
+                                    className="h-12 text-center rounded-xl bg-white dark:bg-slate-950 border-2 border-primary/20 font-black text-lg focus:border-primary transition-all"
+                                />
+                            </div>
+                        </div>
+
+                        <DialogFooter className="pt-6">
+                            <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-2xl h-14 px-8 font-bold text-muted-foreground hover:bg-slate-100">
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={saving} className="rounded-xl gap-2 shadow-lg shadow-primary/20">
-                                {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                                {editingCategory ? 'Actualizar' : 'Crear Grupo'}
+                            <Button type="submit" disabled={saving} className="rounded-2xl h-14 px-10 gap-3 shadow-xl shadow-primary/30 font-black italic uppercase tracking-tighter">
+                                {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                                {editingCategory ? 'Actualizar' : 'Crear Categoría'}
                             </Button>
                         </DialogFooter>
                     </form>

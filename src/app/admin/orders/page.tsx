@@ -152,7 +152,9 @@ export default function AdminOrdersPage() {
                                     filteredOrders.map((order) => {
                                         // Assuming personalization data is directly on the order object or within a metadata field
                                         // Adjust this logic based on your actual data structure
-                                        const personalization = order.metadata?.personalization || order.personalization || null;
+                                        const metadata = order.metadata || {};
+                                        const isNewFormat = !Array.isArray(metadata) && !!metadata.designs;
+                                        const personalization = isNewFormat ? metadata.personalization : (metadata.personalization || order.personalization || null);
                                         const personalizationText = personalization?.text || (typeof personalization === 'string' ? personalization : null);
                                         const personalizationSize = personalization?.size || null;
                                         const personalizationPrice = personalization?.price || 0;
@@ -342,31 +344,35 @@ export default function AdminOrdersPage() {
                                 <div className="space-y-6">
                                     {selectedOrder.order_items?.map((item: any, idx: number) => {
                                         const metadata = item.custom_metadata || {};
-                                        const isNewFormat = !Array.isArray(metadata) && metadata.designs;
+                                        const isNewFormat = !Array.isArray(metadata) && !!metadata.designs;
                                         const designs = isNewFormat ? metadata.designs : (Array.isArray(metadata) ? metadata : []);
                                         const personalization = isNewFormat ? metadata.personalization : null;
                                         const personalizationText = personalization?.text || personalization;
                                         const personalizationSize = personalization?.size || null;
+                                        const personalizationPrice = personalization?.price || 0;
 
                                         return (
-                                            <div key={idx} className="border-2 border-black p-4 space-y-4">
-                                                <div className="flex justify-between border-b border-black pb-2">
+                                            <div key={idx} className="border-2 border-black p-4 space-y-4 break-inside-avoid mb-6">
+                                                <div className="flex justify-between border-b-2 border-black pb-2">
                                                     <span className="text-xl font-black uppercase">{item.products?.name}</span>
                                                     <span className="text-2xl font-black">CANT: {item.quantity}</span>
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-4">
-                                                    <div className="bg-slate-100 p-2">
+                                                    <div className="bg-slate-100 p-3 border border-black">
                                                         <p className="text-[10px] font-black uppercase mb-1">Especificaciones Prenda</p>
                                                         <p className="text-lg font-bold">Talla: {item.product_variants?.size || 'N/A'}</p>
                                                         <p className="text-lg font-bold">Color: {item.product_variants?.color || 'N/A'}</p>
                                                     </div>
 
                                                     {personalizationText && (
-                                                        <div className="bg-slate-100 p-2 border-l-2 border-black">
+                                                        <div className="bg-slate-100 p-3 border border-black">
                                                             <p className="text-[10px] font-black uppercase mb-1">Personalización Texto</p>
                                                             <p className="text-lg font-bold italic">"{personalizationText}"</p>
-                                                            <p className="text-xs font-black uppercase mt-1">Tamaño: {personalizationSize === 'small' ? 'PEQUEÑO' : 'GRANDE'}</p>
+                                                            <p className="text-xs font-black uppercase mt-1">
+                                                                TAMAÑO: {personalizationSize === 'small' ? 'PEQUEÑO' : 'GRANDE'}
+                                                                <span className="ml-2 font-normal text-[10px]">(${personalizationPrice.toFixed(2)})</span>
+                                                            </p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -374,16 +380,17 @@ export default function AdminOrdersPage() {
                                                 {designs.length > 0 && (
                                                     <div className="space-y-2">
                                                         <p className="text-[10px] font-black uppercase border-b border-black">Diseños / Logos Aplicados</p>
-                                                        <div className="grid grid-cols-2 gap-2">
+                                                        <div className="grid grid-cols-2 gap-3">
                                                             {designs.map((d: any, dIdx: number) => (
-                                                                <div key={dIdx} className="border border-black p-2 flex gap-3 items-center">
-                                                                    <div className="w-12 h-12 bg-white border border-slate-200">
+                                                                <div key={dIdx} className="border border-black p-2 flex gap-3 items-center bg-white">
+                                                                    <div className="w-16 h-16 bg-white border border-slate-200 flex-shrink-0">
                                                                         <img src={d.image_url} className="w-full h-full object-contain" alt="" />
                                                                     </div>
-                                                                    <div>
-                                                                        <p className="text-xs font-black uppercase leading-tight">{d.name}</p>
-                                                                        <p className="text-[10px] font-bold">TAMAÑO: <span className="bg-black text-white px-1">{d.size?.toUpperCase() || 'BASE'}</span></p>
-                                                                        <p className="text-[10px] font-bold">UBICACIÓN: {d.location?.toUpperCase()}</p>
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-[11px] font-black uppercase leading-tight truncate">{d.name}</p>
+                                                                        <p className="text-[10px] font-bold mt-1 tracking-tight">TAMAÑO: <span className="bg-black text-white px-1 tracking-normal">{d.size?.toUpperCase() || 'BASE'}</span></p>
+                                                                        <p className="text-[10px] font-bold truncate">POSICIÓN: {d.location?.toUpperCase()}</p>
+                                                                        <p className="text-[9px] font-black text-primary mt-1">${(d.price || 0).toFixed(2)}</p>
                                                                     </div>
                                                                 </div>
                                                             ))}
@@ -422,43 +429,68 @@ export default function AdminOrdersPage() {
                                         const personalization = isNewFormat ? metadata.personalization : null;
                                         const personalizationText = personalization?.text || personalization;
                                         const personalizationSize = personalization?.size || null;
+                                        const personalizationPrice = personalization?.price || 0;
+
+                                        const basePrice = item.price || item.product_variants?.price_override || item.products?.price || 0;
+                                        const designsPrice = designs.reduce((sum: number, d: any) => sum + (d.price || 0), 0);
+                                        const itemTotal = (basePrice + designsPrice + personalizationPrice) * item.quantity;
 
                                         return (
                                             <div key={item.id} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 space-y-3 shadow-sm">
                                                 <div className="flex justify-between items-start">
                                                     <div>
-                                                        <p className="font-bold">{item.products?.name || 'Producto'}</p>
-                                                        <p className="text-[10px] uppercase font-bold text-slate-400">
-                                                            {item.product_variants ? `Talla: ${item.product_variants.size} | Color: ${item.product_variants.color}` : 'Sin variantes'}
-                                                        </p>
-                                                    </div>
-                                                    <p className="font-bold text-primary">qty: {item.quantity}</p>
-                                                </div>
-
-                                                {designs.length > 0 && (
-                                                    <div className="pt-2 border-t border-dashed">
-                                                        <p className="text-[9px] uppercase font-black text-slate-500 mb-2">Diseños Aplicados:</p>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {designs.map((d: any, idx: number) => (
-                                                                <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border border-slate-100 dark:border-slate-800 min-w-[120px]">
-                                                                    <p className="text-[10px] font-bold truncate">{d.name}</p>
-                                                                    <p className="text-[8px] text-primary uppercase font-black mt-0.5">
-                                                                        {d.size || 'Base'} @ {d.location || 'Centro'}
-                                                                    </p>
-                                                                </div>
-                                                            ))}
+                                                        <p className="font-bold text-lg">{item.products?.name || 'Producto'}</p>
+                                                        <div className="flex gap-2 mt-1">
+                                                            {item.product_variants?.size && (
+                                                                <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-black uppercase">Talla {item.product_variants.size}</span>
+                                                            )}
+                                                            {item.product_variants?.color && (
+                                                                <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-black uppercase flex items-center gap-1">
+                                                                    <div className="w-2 h-2 rounded-full border border-white" style={{ backgroundColor: item.product_variants.color_hex || '#000' }} />
+                                                                    {item.product_variants.color}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                )}
-
-                                                {personalizationText && (
-                                                    <div className="mt-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
-                                                        <p className="text-[9px] uppercase font-black text-primary mb-1">
-                                                            Texto de Personalización {personalizationSize && `(${personalizationSize === 'small' ? 'Pequeño' : 'Grande'})`}:
-                                                        </p>
-                                                        <p className="text-sm font-medium italic">"{personalizationText}"</p>
+                                                    <div className="text-right">
+                                                        <p className="font-bold text-primary">CANT: {item.quantity}</p>
+                                                        <p className="text-xs font-black">${itemTotal.toFixed(2)}</p>
                                                     </div>
-                                                )}
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-dashed">
+                                                    {designs.length > 0 && (
+                                                        <div>
+                                                            <p className="text-[9px] uppercase font-black text-slate-500 mb-2 tracking-widest">Diseños Aplicados:</p>
+                                                            <div className="space-y-2">
+                                                                {designs.map((d: any, idx: number) => (
+                                                                    <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                                                        <div>
+                                                                            <p className="text-[10px] font-bold truncate">{d.name}</p>
+                                                                            <p className="text-[8px] text-slate-400 uppercase font-black mt-0.5">
+                                                                                {d.size || 'Base'} @ {d.location || 'Centro'}
+                                                                            </p>
+                                                                        </div>
+                                                                        <span className="text-[9px] font-black text-primary">${(d.price || 0).toFixed(2)}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {personalizationText && (
+                                                        <div className="p-3 rounded-xl bg-primary/5 border border-primary/10 h-fit">
+                                                            <div className="flex justify-between items-start mb-1">
+                                                                <p className="text-[9px] uppercase font-black text-primary">Personalización:</p>
+                                                                <span className="text-[9px] font-black text-primary">${personalizationPrice.toFixed(2)}</span>
+                                                            </div>
+                                                            <p className="text-sm font-medium italic">"{personalizationText}"</p>
+                                                            <p className="text-[8px] font-bold text-primary/60 uppercase mt-1">
+                                                                Tam: {personalizationSize === 'small' ? 'Pequeño' : 'Grande'}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         );
                                     })}

@@ -25,7 +25,7 @@ export async function GET() {
 
         const { data, error } = await supabase
             .from('products')
-            .select('*')
+            .select('*, product_variants(*)')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -54,19 +54,26 @@ export async function POST(request: NextRequest) {
 
         if (error) throw error;
 
-        // Bulk insert variants
-        if (variants && variants.length > 0) {
-            const variantData = variants.map((v: any) => ({
+        // Bulk insert variants or create a default one
+        const variantData = (variants && variants.length > 0)
+            ? variants.map((v: any) => ({
                 product_id: product.id,
                 size: v.size,
-                color: v.color_name,
+                color: v.color_name || v.color,
                 color_hex: v.color,
                 stock: parseInt(v.stock || 0),
                 price_override: v.price_override ? parseFloat(v.price_override) : null
-            }));
+            }))
+            : [{
+                product_id: product.id,
+                size: 'Único',
+                color: 'Único',
+                color_hex: '#000000',
+                stock: parseInt(stock || 0),
+                price_override: null
+            }];
 
-            await supabase.from('product_variants').insert(variantData);
-        }
+        await supabase.from('product_variants').insert(variantData);
 
         return NextResponse.json(product);
     } catch (error: any) {

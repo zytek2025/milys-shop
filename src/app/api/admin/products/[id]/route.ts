@@ -36,19 +36,26 @@ export async function PUT(
             // Eliminar variantes anteriores
             await supabase.from('product_variants').delete().eq('product_id', id);
 
-            if (variants.length > 0) {
-                const variantData = variants.map((v: any) => ({
+            const variantData = (variants.length > 0)
+                ? variants.map((v: any) => ({
                     product_id: id,
                     size: v.size,
-                    color: v.color_name,
+                    color: v.color_name || v.color,
                     color_hex: v.color,
                     stock: parseInt(v.stock || 0),
                     price_override: v.price_override ? parseFloat(v.price_override) : null
-                }));
+                }))
+                : [{
+                    product_id: id,
+                    size: 'Único',
+                    color: 'Único',
+                    color_hex: '#000000',
+                    stock: parseInt(stock || 0),
+                    price_override: null
+                }];
 
-                const { error: insertError } = await supabase.from('product_variants').insert(variantData);
-                if (insertError) throw insertError;
-            }
+            const { error: insertError } = await supabase.from('product_variants').insert(variantData);
+            if (insertError) throw insertError;
         }
 
         return NextResponse.json(data);

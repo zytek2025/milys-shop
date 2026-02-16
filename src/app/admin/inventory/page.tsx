@@ -68,13 +68,26 @@ export default function InventoryPage() {
                 throw new Error(moves.error || 'No se pudieron cargar movimientos');
             }
 
-            // Flatten variants from all products
-            const allVariants = (products || []).flatMap((p: any) =>
-                (p?.product_variants || []).map((v: any) => ({
+            // Flatten variants from all products, including those without variants
+            const allVariants = (products || []).flatMap((p: any) => {
+                const pVariants = p?.product_variants || [];
+                if (pVariants.length === 0) {
+                    // Fallback for products without variants
+                    return [{
+                        id: `product-${p.id}`,
+                        product_id: p.id,
+                        product_name: p.name || 'Producto sin nombre',
+                        size: 'N/A',
+                        color: 'N/A',
+                        stock: p.stock || 0,
+                        is_legacy: true
+                    }];
+                }
+                return pVariants.map((v: any) => ({
                     ...v,
-                    product_name: p?.name || 'Producto sin nombre'
-                }))
-            );
+                    product_name: p.name || 'Producto sin nombre'
+                }));
+            });
 
             setVariants(allVariants);
             setMovements(moves);
@@ -93,15 +106,22 @@ export default function InventoryPage() {
         setSubmitting(true);
         try {
             const finalQty = modalType === 'in' ? qty : -qty;
+            const payload: any = {
+                quantity: finalQty,
+                type: 'manual',
+                reason: reason || (modalType === 'in' ? 'Ingreso manual' : 'Egreso manual')
+            };
+
+            if (selectedVariant.is_legacy) {
+                payload.product_id = selectedVariant.product_id;
+            } else {
+                payload.variant_id = selectedVariant.id;
+            }
+
             const res = await fetch('/api/admin/inventory/movements', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    variant_id: selectedVariant.id,
-                    quantity: finalQty,
-                    type: 'manual',
-                    reason: reason || (modalType === 'in' ? 'Ingreso manual' : 'Egreso manual')
-                }),
+                body: JSON.stringify(payload),
             });
 
             if (res.ok) {
@@ -121,11 +141,12 @@ export default function InventoryPage() {
         }
     };
 
-    const filteredVariants = variants.filter(v =>
-        (v.product_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (v.size || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (v.color || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredVariants = variants.filter(v => {
+        const nameMatch = (v.product_name || '').toLowerCase().includes(searchTerm.toLowerCase());
+        const sizeMatch = (v.size || '').toLowerCase().includes(searchTerm.toLowerCase());
+        const colorMatch = (v.color || v.color_name || '').toLowerCase().includes(searchTerm.toLowerCase());
+        return nameMatch || sizeMatch || colorMatch;
+    });
 
     return (
         <div className="space-y-6">

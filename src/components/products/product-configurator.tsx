@@ -35,6 +35,9 @@ interface Design {
 interface DesignCategory {
     id: string;
     name: string;
+    price_small?: number;
+    price_medium?: number;
+    price_large?: number;
 }
 
 interface Variant {
@@ -145,13 +148,24 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
         return variant?.color_hex || '#f1f5f9';
     }, [selectedColor, variants]);
 
+    // Price Helper for Design
+    const getDesignPrice = (design: Design, size: 'small' | 'medium' | 'large') => {
+        // Find category
+        const category = categories.find(c => c.id === design.category_id);
+
+        if (size === 'small') {
+            return category?.price_small ?? storeSettings?.design_price_small ?? 2.00;
+        }
+        if (size === 'medium') {
+            return category?.price_medium ?? storeSettings?.design_price_medium ?? 5.00;
+        }
+        return category?.price_large ?? storeSettings?.design_price_large ?? 10.00;
+    };
+
     // Price Calculation
     const garmentPrice = hasVariants ? (activeVariant?.price_override || product.price) : product.price;
     const designsPrice = isCustomizable ? selectedDesigns.reduce((sum, d) => {
-        const sizePrice = d.selectedSize === 'small' ? (storeSettings?.design_price_small ?? 2.00) :
-            d.selectedSize === 'medium' ? (storeSettings?.design_price_medium ?? 5.00) :
-                (storeSettings?.design_price_large ?? 10.00);
-        return sum + sizePrice;
+        return sum + getDesignPrice(d, d.selectedSize);
     }, 0) : 0;
 
     const personalizationPrice = customText ? (
@@ -203,9 +217,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                         name: d.name,
                         size: d.selectedSize,
                         location: d.selectedLocation,
-                        price: d.selectedSize === 'small' ? (storeSettings?.design_price_small ?? 2.00) :
-                            d.selectedSize === 'medium' ? (storeSettings?.design_price_medium ?? 5.00) :
-                                (storeSettings?.design_price_large ?? 10.00)
+                        price: getDesignPrice(d, d.selectedSize)
                     })),
                     personalization: customText ? {
                         text: customText,
@@ -295,9 +307,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                                         <div className="flex justify-between items-start">
                                             <div className="font-bold text-sm uppercase truncate max-w-[150px]">{design.name}</div>
                                             <div className="text-primary font-black text-xs">
-                                                ${(design.selectedSize === 'small' ? (storeSettings?.design_price_small ?? 2.00) :
-                                                    design.selectedSize === 'medium' ? (storeSettings?.design_price_medium ?? 5.00) :
-                                                        (storeSettings?.design_price_large ?? 10.00)).toFixed(2)}
+                                                ${getDesignPrice(design, design.selectedSize).toFixed(2)}
                                             </div>
                                         </div>
 

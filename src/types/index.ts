@@ -9,6 +9,7 @@ export interface Product {
   stock: number;
   created_at: string;
   updated_at: string;
+  product_variants?: ProductVariant[];
 }
 
 export interface Design {

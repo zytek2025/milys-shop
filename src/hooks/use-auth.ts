@@ -182,3 +182,33 @@ export function useAuthCheck() {
     checkAuth();
   }, [isAuthenticated, setUser, setAuthenticated]);
 }
+
+// Update password mutation
+export function useUpdatePassword() {
+  return useMutation<void, Error, { password: string }>({
+    mutationFn: async ({ password }) => {
+      const supabase = createClient();
+      const { error } = await supabase.auth.updateUser({ password });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+  });
+}
+
+// Request password reset mutation
+export function useResetPassword() {
+  return useMutation<void, Error, { email: string }>({
+    mutationFn: async ({ email }) => {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+  });
+}
