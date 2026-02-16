@@ -69,10 +69,10 @@ export default function InventoryPage() {
             }
 
             // Flatten variants from all products
-            const allVariants = products.flatMap((p: any) =>
-                (p.product_variants || []).map((v: any) => ({
+            const allVariants = (products || []).flatMap((p: any) =>
+                (p?.product_variants || []).map((v: any) => ({
                     ...v,
-                    product_name: p.name
+                    product_name: p?.name || 'Producto sin nombre'
                 }))
             );
 
@@ -122,9 +122,9 @@ export default function InventoryPage() {
     };
 
     const filteredVariants = variants.filter(v =>
-        v.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.size?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.color?.toLowerCase().includes(searchTerm.toLowerCase())
+        (v.product_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (v.size || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (v.color || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -145,7 +145,7 @@ export default function InventoryPage() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-2xl font-black italic">
-                            {movements.filter(m => m.quantity > 0).slice(0, 5).length} <span className="text-xs font-bold text-muted-foreground uppercase">registros</span>
+                            {(movements || []).filter(m => (m?.quantity || 0) > 0).slice(0, 5).length} <span className="text-xs font-bold text-muted-foreground uppercase">registros</span>
                         </p>
                     </CardContent>
                 </Card>
@@ -157,7 +157,7 @@ export default function InventoryPage() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-2xl font-black italic">
-                            {movements.filter(m => m.quantity < 0).slice(0, 5).length} <span className="text-xs font-bold text-muted-foreground uppercase">registros</span>
+                            {(movements || []).filter(m => (m?.quantity || 0) < 0).slice(0, 5).length} <span className="text-xs font-bold text-muted-foreground uppercase">registros</span>
                         </p>
                     </CardContent>
                 </Card>
@@ -169,7 +169,7 @@ export default function InventoryPage() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-2xl font-black italic">
-                            {variants.filter(v => v.stock <= 5).length} <span className="text-xs font-bold text-muted-foreground uppercase">variantes</span>
+                            {(variants || []).filter(v => (v?.stock || 0) <= 5).length} <span className="text-xs font-bold text-muted-foreground uppercase">variantes</span>
                         </p>
                     </CardContent>
                 </Card>
@@ -207,19 +207,19 @@ export default function InventoryPage() {
                             <TableBody>
                                 {loading ? (
                                     <TableRow><TableCell colSpan={4} className="text-center py-8"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow>
-                                ) : filteredVariants.map((v) => (
-                                    <TableRow key={v.id}>
+                                ) : (filteredVariants || []).map((v, idx) => (
+                                    <TableRow key={v?.id || idx}>
                                         <TableCell>
-                                            <p className="font-bold text-xs truncate max-w-[150px]">{v.product_name}</p>
+                                            <p className="font-bold text-xs truncate max-w-[150px]">{v?.product_name || 'Sin nombre'}</p>
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className="text-[9px] uppercase font-black px-1 h-4">
-                                                {v.size} / {v.color}
+                                                {v?.size || '-'} / {v?.color || '-'}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <span className={`font-black tracking-tighter ${v.stock <= 5 ? 'text-rose-500' : 'text-emerald-500'}`}>
-                                                {v.stock}
+                                            <span className={`font-black tracking-tighter ${(v?.stock || 0) <= 5 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                                {v?.stock || 0}
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-right">
@@ -277,26 +277,26 @@ export default function InventoryPage() {
                             <TableBody>
                                 {loading ? (
                                     <TableRow><TableCell colSpan={4} className="text-center py-8"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow>
-                                ) : movements.map((m) => (
-                                    <TableRow key={m.id} className="text-[10px]">
+                                ) : (movements || []).map((m, idx) => (
+                                    <TableRow key={m?.id || idx} className="text-[10px]">
                                         <TableCell className="text-muted-foreground">
-                                            {new Date(m.created_at).toLocaleDateString()}
+                                            {m?.created_at ? new Date(m.created_at).toLocaleDateString() : '--'}
                                         </TableCell>
                                         <TableCell>
                                             <p className="font-bold leading-tight">
-                                                {m.product_variants?.products?.name}
+                                                {m?.product_variants?.products?.name || 'Producto desconocido'}
                                                 <span className="block text-[9px] text-muted-foreground uppercase">
-                                                    {m.product_variants?.size} / {m.product_variants?.color}
+                                                    {m?.product_variants?.size || '-'} / {m?.product_variants?.color || '-'}
                                                 </span>
                                             </p>
                                         </TableCell>
                                         <TableCell>
-                                            <span className={`font-black ${m.quantity > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                {m.quantity > 0 ? '+' : ''}{m.quantity}
+                                            <span className={`font-black ${(m?.quantity || 0) > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                {(m?.quantity || 0) > 0 ? '+' : ''}{m?.quantity || 0}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="max-w-[120px] truncate italic" title={m.reason}>
-                                            {m.reason}
+                                        <TableCell className="max-w-[120px] truncate italic" title={m?.reason || ''}>
+                                            {m?.reason || '--'}
                                         </TableCell>
                                     </TableRow>
                                 ))}
