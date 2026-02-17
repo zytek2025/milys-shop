@@ -21,6 +21,7 @@ export async function GET() {
                 avatar_url,
                 role,
                 crm_status,
+                store_credit,
                 notes,
                 created_at,
                 orders (
@@ -45,6 +46,7 @@ export async function GET() {
                 full_name: p.full_name,
                 avatar_url: p.avatar_url,
                 crm_status: p.crm_status || 'lead',
+                store_credit: p.store_credit || 0,
                 notes: p.notes,
                 ltv,
                 orderCount: p.orders?.length || 0,

@@ -87,6 +87,25 @@ export async function POST(request: NextRequest) {
 
         if (historyError) throw historyError;
 
+        // E. Registrar en la nueva tabla de devoluciones para seguimiento detallado
+        const { error: returnTableError } = await supabase
+            .from('returns')
+            .insert({
+                order_id,
+                customer_id: profile_id,
+                product_variant_id: variant_id,
+                quantity,
+                amount_credited: amount_to_credit,
+                reason: reason || 'Devolución de producto',
+                created_by: adminUser?.id,
+                status: 'completed'
+            });
+
+        if (returnTableError) {
+            console.error('Error recording in returns table:', returnTableError);
+            // Non-blocking for now if other steps succeeded
+        }
+
         return NextResponse.json({ success: true, new_balance: currentCredit + Number(amount_to_credit) });
     } catch (error: any) {
         console.error('Return processing error:', error);

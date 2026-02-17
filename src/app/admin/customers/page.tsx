@@ -57,6 +57,7 @@ interface CustomerLead {
     notes: string;
     ltv: number;
     orderCount: number;
+    store_credit: number;
     lastActive: string;
 }
 
@@ -276,6 +277,7 @@ export default function AdminCRMPage() {
                                     <TableHead>Estado</TableHead>
                                     <TableHead>LTV (Valor)</TableHead>
                                     <TableHead>Pedidos</TableHead>
+                                    <TableHead>Saldo Disp.</TableHead>
                                     <TableHead>Últ. Actividad</TableHead>
                                     <TableHead className="text-right">Acciones</TableHead>
                                 </TableRow>
@@ -322,6 +324,11 @@ export default function AdminCRMPage() {
                                             </TableCell>
                                             <TableCell>
                                                 <span className="text-xs text-muted-foreground">{lead.orderCount} pedidos</span>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className="rounded-lg bg-emerald-50 text-emerald-700 border-emerald-100 font-bold">
+                                                    ${(lead.store_credit || 0).toFixed(2)}
+                                                </Badge>
                                             </TableCell>
                                             <TableCell className="text-xs text-muted-foreground">
                                                 {format(new Date(lead.lastActive), 'd MMM, yyyy', { locale: es })}
