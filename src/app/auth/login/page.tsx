@@ -45,7 +45,13 @@ export default function LoginPage() {
                             Inicia sesión para acceder a tu cuenta
                         </p>
                     </div>
-                    <LoginForm onSuccess={() => router.push('/')} />
+                    <LoginForm onSuccess={(user) => {
+                        if (user?.role === 'admin') {
+                            router.push('/admin');
+                        } else {
+                            router.push('/');
+                        }
+                    }} />
                     <p className="px-8 text-center text-sm text-muted-foreground">
                         <Link
                             href="/auth/register"

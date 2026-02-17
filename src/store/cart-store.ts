@@ -90,13 +90,15 @@ export const useAuthStore = create<AuthState>()(
 
 // Combined hook for auth
 export function useAuth() {
-  const { user, isAuthenticated, userId, isAdmin } = useCartStore();
+  const { user, isAuthenticated, userId, isAdmin, setUser, setAuthenticated } = useCartStore();
 
   return {
     user,
     isAuthenticated,
     userId,
     isAdmin,
+    setUser,
+    setAuthenticated,
     is_super_admin: user?.is_super_admin || false,
     permissions: user?.permissions || {
       can_manage_prices: false,

@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/form';
 import { useLogin } from '@/hooks/use-auth';
 import { toast } from 'sonner';
+import type { UserProfile } from '@/types';
 
 const loginSchema = z.object({
   email: z.string().email('Por favor introduce un email válido'),
@@ -27,7 +28,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 interface LoginFormProps {
-  onSuccess?: () => void;
+  onSuccess?: (user: UserProfile) => void;
   onSwitchToRegister?: () => void;
 }
 
@@ -46,9 +47,11 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      await login.mutateAsync(data);
+      const result = await login.mutateAsync(data);
       toast.success('¡Bienvenido de nuevo!');
-      onSuccess?.();
+      if (result.data) {
+        onSuccess?.(result.data);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Inicio de sesión fallido';
       toast.error(message);

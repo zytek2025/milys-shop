@@ -10,18 +10,29 @@ export async function POST() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Force update role to admin
-        const { error: updateError } = await supabase
+        // Force set this user as admin
+        const { data, error } = await supabase
             .from('profiles')
-            .update({ role: 'admin' })
-            .eq('id', user.id);
+            .update({
+                role: 'admin',
+                is_super_admin: true, // Emergency promote
+                permissions: {
+                    can_manage_prices: true,
+                    can_view_metrics: true,
+                    can_manage_users: true,
+                    can_manage_designs: true,
+                    can_view_settings: true
+                },
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', user.id)
+            .select()
+            .single();
 
-        if (updateError) {
-            return NextResponse.json({ error: updateError.message }, { status: 500 });
-        }
+        if (error) throw error;
 
-        return NextResponse.json({ success: true, message: 'Role updated to admin' });
-    } catch (error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ success: true, profile: data });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

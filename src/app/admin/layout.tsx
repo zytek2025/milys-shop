@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -28,10 +28,35 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
     const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const { isAdmin, isAuthenticated, isLoading, is_super_admin, permissions } = useAuth();
+    const { isAdmin, isAuthenticated, isLoading: isHydrating, is_super_admin, permissions, setUser, setAuthenticated } = useAuth();
+    const [isCheckingServer, setIsCheckingServer] = useState(true);
 
-    // Show loading state while rehydrating
-    if (isLoading) {
+    // Force a fresh check on mount to bypass stale localStorage
+    useEffect(() => {
+        const checkProfile = async () => {
+            try {
+                const res = await fetch('/api/auth/profile');
+                if (res.ok) {
+                    const profile = await res.json();
+                    setUser(profile);
+                    setAuthenticated(true);
+                }
+            } catch (error) {
+                console.error('Error refreshing admin profile:', error);
+            } finally {
+                setIsCheckingServer(false);
+            }
+        };
+
+        if (isAuthenticated) {
+            checkProfile();
+        } else {
+            setIsCheckingServer(false);
+        }
+    }, [isAuthenticated, setUser, setAuthenticated]);
+
+    // Show loading state while rehydrating or checking server
+    if (isHydrating || isCheckingServer) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
                 <div className="flex flex-col items-center gap-4">
