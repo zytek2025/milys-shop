@@ -18,6 +18,7 @@ interface StoreSettings {
     pago_movil_info: string;
     zelle_info: string;
     crm_webhook_url: string;
+    canva_api_key?: string;
 }
 
 export default function AdminSettingsPage() {
@@ -31,7 +32,8 @@ export default function AdminSettingsPage() {
         design_price_large: 10.00,
         pago_movil_info: '',
         zelle_info: '',
-        crm_webhook_url: ''
+        crm_webhook_url: '',
+        canva_api_key: ''
     });
 
     useEffect(() => {
@@ -51,7 +53,8 @@ export default function AdminSettingsPage() {
                     design_price_large: Number(data.design_price_large ?? 10.00),
                     pago_movil_info: data.pago_movil_info || '',
                     zelle_info: data.zelle_info || '',
-                    crm_webhook_url: data.crm_webhook_url || ''
+                    crm_webhook_url: data.crm_webhook_url || '',
+                    canva_api_key: data.canva_api_key || ''
                 });
             } else {
                 toast.error(data.error || 'Error al cargar ajustes');
@@ -138,6 +141,25 @@ export default function AdminSettingsPage() {
                             value={settings.zelle_info}
                             onChange={(e) => handleUpdateField('zelle_info', e.target.value)}
                             className="min-h-[100px] font-mono text-sm bg-slate-50 dark:bg-slate-900 border-none"
+                        />
+                    </CardContent>
+                </Card>
+
+                {/* Canva Integration */}
+                <Card className="border-2">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Palette className="text-primary h-5 w-5" /> Integración Canva
+                        </CardTitle>
+                        <CardDescription>API Key de Canva para habilitar el botón de diseño en el panel.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Input
+                            type="password"
+                            placeholder="Canva API Key"
+                            value={settings.canva_api_key || ''}
+                            onChange={(e) => handleUpdateField('canva_api_key', e.target.value)}
+                            className="font-mono text-sm bg-slate-50 dark:bg-slate-900 border-none h-12"
                         />
                     </CardContent>
                 </Card>

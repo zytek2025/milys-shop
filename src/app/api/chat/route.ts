@@ -35,12 +35,47 @@ INSTRUCCIONES:
         // Para que el usuario pueda probarlo de inmediato, implementaremos una lógica base
         // que use el SDK si está disponible o un mock realista si falta la Key.
 
-        const lastMessage = messages[messages.length - 1].content;
+        // 3. Buscar la URL del Webhook en los ajustes
+        const { data: settings } = await supabase
+            .from('store_settings')
+            .select('crm_webhook_url')
+            .eq('id', 'global')
+            .single();
 
-        // NOTA: Para producción, el usuario debe configurar su GOOGLE_GENERATIVE_AI_API_KEY
-        // o usar el servicio de IA configurado en el sistema.
+        const webhookUrl = settings?.crm_webhook_url;
+        const lastMessage = messages[messages.length - 1];
 
-        // Por ahora, retornaremos una respuesta que demuestre que la IA conoce los productos.
+        if (webhookUrl) {
+            try {
+                // Enviar a n8n y esperar respuesta (IA Centralizada)
+                const n8nResponse = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        event: 'virtual_assistant',
+                        data: {
+                            messages: messages, // Historial completo
+                            user_id: (await supabase.auth.getUser()).data.user?.id,
+                            system_context: productContext // Contexto de productos
+                        }
+                    })
+                });
+
+                if (n8nResponse.ok) {
+                    const aiData = await n8nResponse.json();
+                    // Esperamos que n8n devuelva { response: "Texto de la IA" } o similar
+                    return NextResponse.json({
+                        role: 'assistant',
+                        content: aiData.response || aiData.content || aiData.message || "¡Entendido! 🌸"
+                    });
+                }
+            } catch (err) {
+                console.error('Error calling n8n for chat:', err);
+            }
+        }
+
+        // Fallback si no hay webhook o falla
+        console.warn('Using fallback chat response');
         return NextResponse.json({
             role: 'assistant',
             content: `¡Hola! Soy Mily. ✨ Veo que te interesas por nuestra colección. Basado en lo que tenemos, te recomendaría explorar nuestros productos de ${products?.[0]?.category || 'moda'}. ¿Buscas algo para tu estilo personal o quizás un regalo especial? 🌸`

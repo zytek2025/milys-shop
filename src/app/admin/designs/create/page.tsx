@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,77 @@ export default function AdminDesignCreatePage() {
     // Form fields
     const [name, setName] = useState('');
     const [price, setPrice] = useState('0');
+    const [canvaKey, setCanvaKey] = useState<string | null>(null);
+
+    // Load Canva SDK
+    useEffect(() => {
+        const initCanva = async () => {
+            // 1. Get API Key
+            try {
+                const res = await fetch('/api/admin/settings');
+                const data = await res.json();
+                if (data.canva_api_key) {
+                    setCanvaKey(data.canva_api_key);
+                    loadCanvaScript(data.canva_api_key);
+                }
+            } catch (e) {
+                console.error("Error fetching settings for Canva", e);
+            }
+        };
+        initCanva();
+    }, []);
+
+    const loadCanvaScript = (apiKey: string) => {
+        if ((window as any).Canva || document.getElementById('canva-sdk')) return;
+
+        const script = document.createElement('script');
+        script.id = 'canva-sdk';
+        script.src = 'https://sdk.canva.com/designbutton/v2/api.js';
+        script.async = true;
+        script.onload = () => {
+            if ((window as any).Canva && (window as any).Canva.DesignButton) {
+                (window as any).Canva.DesignButton.initialize({
+                    apiKey: apiKey,
+                }).then((api: any) => {
+                    const button = document.createElement('button');
+                    button.style.width = '100%';
+                    button.style.height = '50px';
+                    button.style.borderRadius = '1rem';
+                    button.style.background = 'linear-gradient(to right, #7D2AE8, #00C4CC)';
+                    button.style.color = 'white';
+                    button.style.fontWeight = 'bold';
+                    button.style.border = 'none';
+                    button.style.cursor = 'pointer';
+                    button.style.marginTop = '10px';
+                    button.innerText = 'Diseñar en Canva';
+
+                    button.onclick = () => {
+                        api.createDesign({
+                            design: {
+                                type: 'Poster',
+                            },
+                            onDesignPublish: (result: any) => {
+                                // Canva returns an object with exportUrl
+                                const downloadUrl = result.exportUrl;
+                                fetch(downloadUrl)
+                                    .then(res => res.blob())
+                                    .then(blob => {
+                                        const file = new File([blob], `canva-design-${Date.now()}.png`, { type: 'image/png' });
+                                        setDesignFile(file);
+                                        setPreviewUrl(URL.createObjectURL(file));
+                                        if (!name) setName(`Diseño Canva ${new Date().toLocaleDateString()}`);
+                                        toast.success("Diseño importado de Canva exitosamente");
+                                    });
+                            },
+                        });
+                    };
+
+                    document.getElementById('canva-design-button-container')?.appendChild(button);
+                });
+            }
+        };
+        document.body.appendChild(script);
+    };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -152,7 +223,10 @@ export default function AdminDesignCreatePage() {
                                 </div>
                             </div>
 
-                            <div className="pt-4">
+                            <div className="pt-4 space-y-4">
+                                {/* Canva Integration */}
+                                <div id="canva-design-button-container" className="w-full"></div>
+
                                 <Button
                                     onClick={handleSaveDesign}
                                     disabled={saving || !designFile}

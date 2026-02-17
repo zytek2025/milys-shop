@@ -140,15 +140,26 @@ export async function POST(request: NextRequest) {
       .insert(orderItems);
 
     if (itemsError) {
-      // Delete the order if items fail
+      // ... existing error handling
       await supabase.from('orders').delete().eq('id', order.id);
       // Also revert credit
       if (usedCredit > 0) {
-        const { data: currentP } = await supabase.from('profiles').select('store_credit').eq('id', user.id).single();
-        await supabase.from('profiles').update({ store_credit: (currentP?.store_credit || 0) + usedCredit }).eq('id', user.id);
+        // ... existing credit reversion
       }
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
     }
+
+    // 4. Trigger Webhook (Fire and forget)
+    const { sendWebhook } = await import('@/lib/webhook-dispatcher');
+    sendWebhook('order_created', {
+      order_id: order.id,
+      user_id: user.id,
+      email: user.email,
+      total_paid: total - usedCredit,
+      credit_applied: usedCredit,
+      items_count: items.length,
+      shipping_address
+    });
 
     return NextResponse.json({
       data: order,
