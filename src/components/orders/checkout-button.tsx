@@ -81,8 +81,8 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
           }),
           total: cartTotal,
           credit_applied: usedCredit,
-          payment_method_id: selectedPaymentMethod?.id,
-          payment_discount_amount: paymentDiscount
+          payment_method_id: null,
+          payment_discount_amount: 0
         }),
       });
 
@@ -164,11 +164,6 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
         </div>
       )}
 
-      <PaymentSelector
-        onSelect={setSelectedPaymentMethod}
-        selectedId={selectedPaymentMethod?.id}
-      />
-
       <div className="space-y-2 py-2">
         <div className="flex justify-between text-xs font-bold uppercase italic text-muted-foreground px-1">
           <span>Subtotal</span>
@@ -180,34 +175,22 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
             <span>-${Math.min(store_credit, currentCartTotal).toFixed(2)}</span>
           </div>
         )}
-        {selectedPaymentMethod?.is_discount_active && (
-          <div className="flex justify-between text-xs font-black uppercase italic text-emerald-600 px-1">
-            <span>Dto. {selectedPaymentMethod.name} (-{selectedPaymentMethod.discount_percentage}%)</span>
-            <span>-${((currentCartTotal - (applyCredit ? Math.min(store_credit, currentCartTotal) : 0)) * (selectedPaymentMethod.discount_percentage / 100)).toFixed(2)}</span>
-          </div>
-        )}
       </div>
 
       <Button
         className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 h-14 rounded-2xl shadow-lg font-black uppercase italic tracking-wider transition-all hover:scale-[1.02] active:scale-95"
         onClick={handleCheckout}
-        disabled={isProcessing || !cart || cart.items.length === 0 || !selectedPaymentMethod}
+        disabled={isProcessing || !cart || cart.items.length === 0}
       >
         {isProcessing ? (
           <>
             <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-            Procesando Pago...
+            Procesando Pedido...
           </>
         ) : (
           <>
             <CreditCard className="h-5 w-5 mr-2" />
-            {!selectedPaymentMethod ? 'Elige Método de Pago' : (
-              `Pagar $${Math.max(0,
-                currentCartTotal
-                - (applyCredit ? Math.min(store_credit, currentCartTotal) : 0)
-                - (selectedPaymentMethod.is_discount_active ? (currentCartTotal - (applyCredit ? Math.min(store_credit, currentCartTotal) : 0)) * (selectedPaymentMethod.discount_percentage / 100) : 0)
-              ).toFixed(2)}`
-            )}
+            Confirmar Pedido
           </>
         )}
       </Button>

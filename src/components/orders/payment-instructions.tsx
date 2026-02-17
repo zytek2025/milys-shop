@@ -11,7 +11,7 @@ export function PaymentInstructions({ paymentMethodId }: { paymentMethodId?: str
     const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch('/api/admin/settings')
+        fetch('/api/settings')
             .then(res => res.json())
             .then(data => {
                 if (data.payment_methods) {

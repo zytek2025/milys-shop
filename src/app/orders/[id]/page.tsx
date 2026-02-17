@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag, Calendar, Package, CreditCard, ChevronLeft, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
-import { PaymentInstructions } from '@/components/orders/payment-instructions';
+import { OrderPaymentSection } from '@/components/orders/order-payment-section';
 import { PaymentConfirmationForm } from '@/components/orders/payment-confirmation-form';
 
 async function getOrder(id: string) {
@@ -128,7 +128,7 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
                         {/* Payment Instructions Card */}
                         {(order.status === 'pending' || order.status === 'evaluating') && (
                             <div id="payment-info" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <PaymentInstructions paymentMethodId={order.payment_method_id} />
+                                <OrderPaymentSection order={order} />
                             </div>
                         )}
                     </div>

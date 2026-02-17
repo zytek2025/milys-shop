@@ -1,7 +1,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-type WebhookEvent = 'welcome' | 'order_created' | 'order_shipped' | 'virtual_assistant';
+type WebhookEvent = 'welcome' | 'order_created' | 'order_updated' | 'order_shipped' | 'virtual_assistant';
 
 interface WebhookPayload {
     event: WebhookEvent;

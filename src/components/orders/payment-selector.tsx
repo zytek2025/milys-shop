@@ -38,7 +38,7 @@ export function PaymentSelector({ onSelect, selectedId }: PaymentSelectorProps) 
     useEffect(() => {
         const fetchMethods = async () => {
             try {
-                const res = await fetch('/api/admin/settings');
+                const res = await fetch('/api/settings');
                 const data = await res.json();
                 if (res.ok && data.payment_methods) {
                     setMethods(data.payment_methods);
