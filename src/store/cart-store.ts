@@ -97,6 +97,14 @@ export function useAuth() {
     isAuthenticated,
     userId,
     isAdmin,
+    is_super_admin: user?.is_super_admin || false,
+    permissions: user?.permissions || {
+      can_manage_prices: false,
+      can_view_metrics: false,
+      can_manage_users: false,
+      can_manage_designs: false,
+      can_view_settings: false,
+    },
     isLoggedIn: !!user && isAuthenticated,
     isLoading: !useCartStore.getState()._hasHydrated
   };

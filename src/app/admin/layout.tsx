@@ -28,7 +28,7 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
     const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const { isAdmin, isAuthenticated, isLoading } = useAuth();
+    const { isAdmin, isAuthenticated, isLoading, is_super_admin, permissions } = useAuth();
 
     // Show loading state while rehydrating
     if (isLoading) {
@@ -78,16 +78,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
 
     const navItems = [
-        { label: 'Panel Principal', icon: LayoutDashboard, href: '/admin' },
-        { label: 'Crear Diseño (Canva)', icon: Palette, href: '/admin/designs/create' },
-        { label: 'Prendas/Productos', icon: Package, href: '/admin/products' },
-        { label: 'Colección de Logos', icon: Palette, href: '/admin/designs' },
-        { label: 'Categorías de Logos', icon: Tags, href: '/admin/design-categories' },
-        { label: 'Categorías de Productos', icon: Layers, href: '/admin/categories' },
-        { label: 'Pedidos', icon: ShoppingBag, href: '/admin/orders' },
-        { label: 'Clientes', icon: Users, href: '/admin/customers' },
-        { label: 'Ajustes', icon: SettingsIcon, href: '/admin/settings' },
+        { label: 'Panel Principal', icon: LayoutDashboard, href: '/admin', requiredPermission: null }, // Dashboard is always visible if admin
+        { label: 'Crear Diseño (Canva)', icon: Palette, href: '/admin/designs/create', requiredPermission: 'can_manage_designs' },
+        { label: 'Prendas/Productos', icon: Package, href: '/admin/products', requiredPermission: 'can_manage_prices' },
+        { label: 'Colección de Logos', icon: Palette, href: '/admin/designs', requiredPermission: 'can_manage_designs' },
+        { label: 'Categorías de Logos', icon: Layers, href: '/admin/design-categories', requiredPermission: 'can_manage_designs' },
+        { label: 'Categorías de Productos', icon: Layers, href: '/admin/categories', requiredPermission: 'can_manage_prices' },
+        { label: 'Pedidos', icon: ShoppingBag, href: '/admin/orders', requiredPermission: 'can_view_metrics' },
+        { label: 'Clientes', icon: Users, href: '/admin/customers', requiredPermission: 'can_manage_users' },
+        { label: 'Gestión Usuaros', icon: Users, href: '/admin/users', requiredPermission: 'can_manage_users' },
+        { label: 'Ajustes', icon: SettingsIcon, href: '/admin/settings', requiredPermission: 'can_view_settings' },
     ];
+
+    const filteredNavItems = navItems.filter(item => {
+        if (!item.requiredPermission) return true;
+        if (is_super_admin) return true;
+        return (permissions as any)[item.requiredPermission];
+    });
 
     return <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 font-sans relative overflow-x-hidden">
 
@@ -124,7 +131,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </div>
 
                 <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto custom-scrollbar">
-                    {navItems.map((item) => {
+                    {filteredNavItems.map((item) => {
                         const isActive = pathname === item.href;
                         return (
                             <Link

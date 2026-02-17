@@ -121,6 +121,14 @@ export interface UserProfile {
   full_name?: string;
   avatar_url?: string;
   role?: 'user' | 'admin';
+  is_super_admin?: boolean;
+  permissions?: {
+    can_manage_prices: boolean;
+    can_view_metrics: boolean;
+    can_manage_users: boolean;
+    can_manage_designs: boolean;
+    can_view_settings: boolean;
+  };
   created_at: string;
   updated_at: string;
 }
