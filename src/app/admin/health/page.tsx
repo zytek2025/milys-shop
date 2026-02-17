@@ -69,22 +69,38 @@ export default function HealthPage() {
                     <div className="divide-y-2">
                         {loading ? (
                             <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
-                        ) : envVars.map((v) => (
-                            <div key={v.name} className="p-6 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                <span className="font-bold text-sm tracking-tight">{v.name}</span>
-                                <div className="flex items-center gap-2">
-                                    {v.status ? (
-                                        <Badge className="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-100 font-bold gap-1.5 px-3">
-                                            <CheckCircle2 size={14} /> Configurado
-                                        </Badge>
-                                    ) : (
-                                        <Badge variant="destructive" className="font-bold gap-1.5 px-3">
-                                            <XCircle size={14} /> Faltante
-                                        </Badge>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+                        ) : (
+                            <>
+                                {envVars.map((v) => (
+                                    <div key={v.name} className="p-6 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <span className="font-bold text-sm tracking-tight">{v.name}</span>
+                                        <div className="flex items-center gap-2">
+                                            {v.status ? (
+                                                <Badge className="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-100 font-bold gap-1.5 px-3">
+                                                    <CheckCircle2 size={14} /> Configurado
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="destructive" className="font-bold gap-1.5 px-3">
+                                                    <XCircle size={14} /> Faltante
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                                {status?.available_keys && status.available_keys.length > 0 && (
+                                    <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-3">Claves detectadas en el servidor:</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {status.available_keys.map((k: string) => (
+                                                <Badge key={k} variant="secondary" className="font-mono text-[10px] bg-white border-2">
+                                                    {k}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 </CardContent>
             </Card>

@@ -12,8 +12,8 @@ export async function GET() {
             NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
             SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
             SERVICE_ROLE_LENGTH: process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0,
-            DATABASE_URL: !!process.env.DATABASE_URL,
             NODE_ENV: process.env.NODE_ENV,
+            available_keys: Object.keys(process.env).filter(k => k.includes('SUPA') || k.includes('KEY') || k.includes('URL'))
         };
 
         return NextResponse.json(envStatus);
