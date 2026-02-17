@@ -149,6 +149,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
     }
 
+    // EDGE CASE: Handle Stock Deduction for Simple Products (No Variant)
+    // The DB trigger 'decrement_stock_on_order_item' handles variants.
+    // We handle 'simple products' here to be safe.
+    for (const item of orderItems) {
+      if (!item.variant_id) {
+        const { error: rpcError } = await supabase.rpc('decrement_product_stock', { p_id: item.product_id, qty: item.quantity });
+
+        if (rpcError) {
+          // Fallback if RPC missing
+          const { data: p } = await supabase.from('products').select('stock').eq('id', item.product_id).single();
+          if (p) {
+            await supabase.from('products').update({ stock: p.stock - item.quantity }).eq('id', item.product_id);
+          }
+        }
+      }
+    }
+
     // 4. Trigger Webhook (Fire and forget)
     const { sendWebhook } = await import('@/lib/webhook-dispatcher');
     sendWebhook('order_created', {
