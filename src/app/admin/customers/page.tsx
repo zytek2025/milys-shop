@@ -12,7 +12,9 @@ import {
     DollarSign,
     Filter,
     Edit3,
-    Loader2
+    Loader2,
+    Trash2,
+    Save
 } from 'lucide-react';
 import {
     Table,
@@ -32,6 +34,16 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -53,6 +65,10 @@ export default function AdminCRMPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+
+    const [updating, setUpdating] = useState<string | null>(null);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [selectedCustomer, setSelectedCustomer] = useState<CustomerLead | null>(null);
 
     useEffect(() => {
         fetchLeads();
@@ -89,6 +105,60 @@ export default function AdminCRMPage() {
         }
     };
 
+    const handleUpdateCustomer = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedCustomer) return;
+
+        setUpdating(selectedCustomer.id);
+        try {
+            const res = await fetch('/api/admin/crm', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: selectedCustomer.id,
+                    full_name: selectedCustomer.full_name,
+                    email: selectedCustomer.email
+                }),
+            });
+
+            if (res.ok) {
+                toast.success('Datos actualizados');
+                setLeads(leads.map(l => l.id === selectedCustomer.id ? selectedCustomer! : l));
+                setEditModalOpen(false);
+            } else {
+                const data = await res.json();
+                toast.error(data.error || 'Error al actualizar');
+            }
+        } catch (error) {
+            toast.error('Error de conexión');
+        } finally {
+            setUpdating(null);
+        }
+    };
+
+    const handleDeleteCustomer = async (userId: string) => {
+        if (!confirm('¿Estás seguro de que deseas eliminar este cliente? Se eliminará su cuenta de acceso y todo su historial. Esta acción no se puede deshacer.')) return;
+
+        setUpdating(userId);
+        try {
+            const res = await fetch(`/api/admin/crm?id=${userId}`, {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                toast.success('Cliente eliminado');
+                setLeads(leads.filter(l => l.id !== userId));
+            } else {
+                const data = await res.json();
+                toast.error(data.error || 'Error al eliminar');
+            }
+        } catch (error) {
+            toast.error('Error de conexión');
+        } finally {
+            setUpdating(null);
+        }
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'vip': return 'bg-amber-100 text-amber-700 border-amber-200';
@@ -101,7 +171,7 @@ export default function AdminCRMPage() {
 
     const filteredLeads = leads.filter(l => {
         const matchesSearch = l.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            l.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
+            (l.full_name || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'all' || l.crm_status === statusFilter;
         return matchesSearch && matchesStatus;
     });
@@ -264,10 +334,21 @@ export default function AdminCRMPage() {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="rounded-xl">
-                                                        <DropdownMenuItem onClick={() => updateStatus(lead.id, 'lead')}>Marcar como Lead</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => updateStatus(lead.id, 'cliente')}>Marcar como Cliente</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => updateStatus(lead.id, 'vip')}>Marcar como VIP</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => updateStatus(lead.id, 'inactivo')}>Marcar como Inactivo</DropdownMenuItem>
+                                                        <DropdownMenuItem className="gap-2" onClick={() => { setSelectedCustomer(lead); setEditModalOpen(true); }}>
+                                                            <Edit3 size={14} /> Modificar Datos
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => updateStatus(lead.id, 'lead')}>Cambiar a Lead</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => updateStatus(lead.id, 'cliente')}>Cambiar a Cliente</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => updateStatus(lead.id, 'vip')}>Cambiar a VIP</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => updateStatus(lead.id, 'inactivo')}>Cambiar a Inactivo</DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            className="text-destructive focus:text-destructive gap-2"
+                                                            onClick={() => handleDeleteCustomer(lead.id)}
+                                                            disabled={updating === lead.id}
+                                                        >
+                                                            {updating === lead.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                                                            Eliminar Cliente
+                                                        </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </TableCell>
@@ -279,6 +360,49 @@ export default function AdminCRMPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+                <DialogContent className="sm:max-w-[425px] rounded-[2rem] border-2">
+                    <form onSubmit={handleUpdateCustomer}>
+                        <DialogHeader>
+                            <DialogTitle className="text-2xl font-black italic uppercase tracking-tight">Modificar Cliente</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-6">
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-name" className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Nombre Completo</Label>
+                                <Input
+                                    id="edit-name"
+                                    className="rounded-xl border-2 h-11"
+                                    value={selectedCustomer?.full_name || ''}
+                                    onChange={(e) => setSelectedCustomer(prev => prev ? { ...prev, full_name: e.target.value } : null)}
+                                    required
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-email" className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Correo Electrónico</Label>
+                                <Input
+                                    id="edit-email"
+                                    type="email"
+                                    className="rounded-xl border-2 h-11"
+                                    value={selectedCustomer?.email || ''}
+                                    onChange={(e) => setSelectedCustomer(prev => prev ? { ...prev, email: e.target.value } : null)}
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                type="submit"
+                                className="w-full font-black italic uppercase tracking-wider rounded-xl h-11"
+                                disabled={!!updating}
+                            >
+                                {updating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                Guardar Cambios
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
