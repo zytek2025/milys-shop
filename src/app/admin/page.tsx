@@ -48,7 +48,6 @@ export default function AdminDashboardPage() {
                 ? `$${stats.totalRevenue.toFixed(2)}`
                 : '$0.00',
             icon: TrendingUp,
-            icon: TrendingUp,
             color: 'text-emerald-600',
             bg: 'bg-emerald-50 dark:bg-emerald-950'
         },
