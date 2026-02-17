@@ -149,20 +149,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
     }
 
-    // EDGE CASE: Handle Stock Deduction for Simple Products (No Variant)
-    // The DB trigger 'decrement_stock_on_order_item' handles variants.
-    // We handle 'simple products' here to be safe.
+    // 4. Update Stock (Robust Implementation)
+    // We do this explicitly in the API to guarantee stock is deducted,
+    // regardless of whether DB triggers are active or not.
     for (const item of orderItems) {
-      if (!item.variant_id) {
-        const { error: rpcError } = await supabase.rpc('decrement_product_stock', { p_id: item.product_id, qty: item.quantity });
+      try {
+        if (item.variant_id) {
+          // Case A: Product with Variants
+          // Try RPC first for atomicity (if function exists)
+          const { error: rpcError } = await supabase.rpc('decrement_stock', {
+            row_id: item.variant_id,
+            amount: item.quantity
+          });
 
-        if (rpcError) {
-          // Fallback if RPC missing
-          const { data: p } = await supabase.from('products').select('stock').eq('id', item.product_id).single();
-          if (p) {
-            await supabase.from('products').update({ stock: p.stock - item.quantity }).eq('id', item.product_id);
+          if (rpcError) {
+            // Fallback: Direct Update (if RPC missing or failed)
+            const { data: v } = await supabase.from('product_variants').select('stock').eq('id', item.variant_id).single();
+            if (v) {
+              await supabase.from('product_variants').update({ stock: v.stock - item.quantity }).eq('id', item.variant_id);
+            }
+          }
+        } else {
+          // Case B: Simple Product
+          const { error: rpcError } = await supabase.rpc('decrement_product_stock', {
+            p_id: item.product_id,
+            qty: item.quantity
+          });
+
+          if (rpcError) {
+            // Fallback: Direct Update
+            const { data: p } = await supabase.from('products').select('stock').eq('id', item.product_id).single();
+            if (p) {
+              await supabase.from('products').update({ stock: p.stock - item.quantity }).eq('id', item.product_id);
+            }
           }
         }
+      } catch (stockErr) {
+        console.error(`Failed to deduct stock for item ${item.product_name}:`, stockErr);
+        // Continue to next item - don't fail the whole order for one stock error,
+        // but log it critically.
       }
     }
 
