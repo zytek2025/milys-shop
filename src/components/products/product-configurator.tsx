@@ -198,7 +198,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     const handleAddToCart = async () => {
         if (hasVariants && !activeVariant) return;
 
-        const isOutOfStock = activeVariant && activeVariant.stock <= 0;
+        const isOutOfStock = activeVariant ? activeVariant.stock <= 0 : (product.stock <= 0);
 
         setIsAdding(true);
         try {

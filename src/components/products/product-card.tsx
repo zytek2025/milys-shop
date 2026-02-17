@@ -111,8 +111,8 @@ export function ProductCard({ product, promotion }: ProductCardProps) {
           <CardContent className="px-6 pb-6 pt-2">
             <div className="flex items-center justify-between gap-4">
               <div className="flex flex-col">
-                <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${totalStock > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                  {totalStock > 0 ? 'Disponible' : 'Agotado'}
+                <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${totalStock > 0 ? 'text-emerald-600' : 'text-amber-500'}`}>
+                  {totalStock > 0 ? 'Disponible' : 'Bajo Pedido'}
                 </span>
               </div>
 

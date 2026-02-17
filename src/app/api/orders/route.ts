@@ -125,20 +125,16 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Create order items
-    const orderItems = items.map((item: any) => {
-      // Precio total = base (o override) + logos
-      const itemPrice = item.price;
-
-      return {
-        order_id: order.id,
-        product_id: item.product_id,
-        variant_id: item.variant_id,
-        product_name: item.product_name,
-        quantity: item.quantity,
-        price: itemPrice,
-        custom_metadata: item.custom_metadata || [],
-      };
-    });
+    const orderItems = items.map((item: any) => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      variant_id: item.variant_id,
+      product_name: item.product_name,
+      quantity: item.quantity,
+      price: item.price,
+      custom_metadata: item.custom_metadata || [],
+      on_request: item.custom_metadata?.on_request || false
+    }));
 
     const { error: itemsError } = await supabase
       .from('order_items')
@@ -211,10 +207,12 @@ export async function POST(request: NextRequest) {
       payment_method_id,
       payment_method_name: pm?.name || 'Desconocido',
       payment_instructions: pm?.instructions || '',
+      has_backorder: orderItems.some((i: any) => i.on_request),
       items: orderItems.map((i: any) => ({
         name: i.product_name,
         quantity: i.quantity,
-        price: i.price
+        price: i.price,
+        on_request: i.on_request
       })),
       shipping_address
     });
