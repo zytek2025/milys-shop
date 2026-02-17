@@ -28,7 +28,21 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
     const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const { isAdmin, isAuthenticated } = useAuth();
+    const { isAdmin, isAuthenticated, isLoading } = useAuth();
+
+    // Show loading state while rehydrating
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-primary animate-pulse flex items-center justify-center text-primary-foreground font-black shadow-lg shadow-primary/20">
+                        M
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground animate-pulse">Verificando credenciales...</p>
+                </div>
+            </div>
+        );
+    }
 
     // Guard: if not admin, show fix button instead of redirecting
     if (isAuthenticated && !isAdmin) {

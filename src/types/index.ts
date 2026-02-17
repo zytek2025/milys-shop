@@ -203,4 +203,6 @@ export interface CartState {
   setAuthenticated: (auth: boolean) => void;
   setAdmin: (isAdmin: boolean) => void;
   clearAuth: () => void;
+  _hasHydrated?: boolean;
+  setHasHydrated?: (state: boolean) => void;
 }

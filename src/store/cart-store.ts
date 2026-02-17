@@ -11,6 +11,14 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
+// Add to CartState definition implicitly by extending the store creation
+// But since CartState is imported, we should probably update it there or locally cast it if we can't edit types.d.ts easily.
+// Let's assume CartState is defined in @/types/index.ts or similar. 
+// Wait, the file imports `CartState` from `@/types`. I need to verify that file. 
+// If I can't edit it easily, I can extend the interface here if I change the create call.
+// `export const useCartStore = create<CartState & { _hasHydrated: boolean; setHasHydrated: (state: boolean) => void }>()(`
+
+
 export const useCartStore = create<CartState>()(
   persist(
     (set) => ({
@@ -26,6 +34,8 @@ export const useCartStore = create<CartState>()(
       setAuthenticated: (auth: boolean) => set({ isAuthenticated: auth }),
       setAdmin: (isAdmin: boolean) => set({ isAdmin }),
       clearAuth: () => set({ userId: null, user: null, isAuthenticated: false, isAdmin: false }),
+      _hasHydrated: false,
+      setHasHydrated: (state: boolean) => set({ _hasHydrated: state }),
     }),
     {
       name: CART_SESSION_KEY,
@@ -36,6 +46,9 @@ export const useCartStore = create<CartState>()(
         isAuthenticated: state.isAuthenticated,
         isAdmin: state.isAdmin
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated?.(true);
+      },
     }
   )
 );
@@ -84,6 +97,7 @@ export function useAuth() {
     isAuthenticated,
     userId,
     isAdmin,
-    isLoggedIn: !!user && isAuthenticated
+    isLoggedIn: !!user && isAuthenticated,
+    isLoading: !useCartStore.getState()._hasHydrated
   };
 }
