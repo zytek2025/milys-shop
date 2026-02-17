@@ -22,6 +22,21 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'store_settings' AND column_name = 'facebook_url') THEN
         ALTER TABLE store_settings ADD COLUMN facebook_url TEXT;
     END IF;
+
+    -- Email
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'store_settings' AND column_name = 'contact_email') THEN
+        ALTER TABLE store_settings ADD COLUMN contact_email TEXT;
+    END IF;
+
+    -- TikTok
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'store_settings' AND column_name = 'tiktok_handle') THEN
+        ALTER TABLE store_settings ADD COLUMN tiktok_handle TEXT;
+    END IF;
+
+    -- Pinterest
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'store_settings' AND column_name = 'pinterest_handle') THEN
+        ALTER TABLE store_settings ADD COLUMN pinterest_handle TEXT;
+    END IF;
 END $$;
 
 -- Notify schema change

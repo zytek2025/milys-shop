@@ -8,6 +8,7 @@ import { useCart, useClearCart } from '@/hooks/use-cart';
 import { useAuth } from '@/store/cart-store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { PaymentSelector } from './payment-selector';
 
 interface CheckoutButtonProps {
   onLoginRequired?: () => void;
@@ -19,6 +20,7 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
   const { data: cart } = useCart();
   const { isAuthenticated, store_credit } = useAuth();
   const [applyCredit, setApplyCredit] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<any>(null);
   const clearCart = useClearCart();
 
   const handleCheckout = async () => {
@@ -54,6 +56,9 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
     }, 0);
 
     const usedCredit = applyCredit ? Math.min(store_credit, cartTotal) : 0;
+    const paymentDiscount = selectedPaymentMethod?.is_discount_active
+      ? (cartTotal - usedCredit) * (selectedPaymentMethod.discount_percentage / 100)
+      : 0;
 
     setIsProcessing(true);
     try {
@@ -76,6 +81,8 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
           }),
           total: cartTotal,
           credit_applied: usedCredit,
+          payment_method_id: selectedPaymentMethod?.id,
+          payment_discount_amount: paymentDiscount
         }),
       });
 
@@ -154,10 +161,34 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
         </div>
       )}
 
+      <PaymentSelector
+        onSelect={setSelectedPaymentMethod}
+        selectedId={selectedPaymentMethod?.id}
+      />
+
+      <div className="space-y-2 py-2">
+        <div className="flex justify-between text-xs font-bold uppercase italic text-muted-foreground px-1">
+          <span>Subtotal</span>
+          <span>${currentCartTotal.toFixed(2)}</span>
+        </div>
+        {applyCredit && store_credit > 0 && (
+          <div className="flex justify-between text-xs font-bold uppercase italic text-primary px-1">
+            <span>Saldo Aplicado</span>
+            <span>-${Math.min(store_credit, currentCartTotal).toFixed(2)}</span>
+          </div>
+        )}
+        {selectedPaymentMethod?.is_discount_active && (
+          <div className="flex justify-between text-xs font-black uppercase italic text-emerald-600 px-1">
+            <span>Dto. {selectedPaymentMethod.name} (-{selectedPaymentMethod.discount_percentage}%)</span>
+            <span>-${((currentCartTotal - (applyCredit ? Math.min(store_credit, currentCartTotal) : 0)) * (selectedPaymentMethod.discount_percentage / 100)).toFixed(2)}</span>
+          </div>
+        )}
+      </div>
+
       <Button
         className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 h-14 rounded-2xl shadow-lg font-black uppercase italic tracking-wider transition-all hover:scale-[1.02] active:scale-95"
         onClick={handleCheckout}
-        disabled={isProcessing || !cart || cart.items.length === 0}
+        disabled={isProcessing || !cart || cart.items.length === 0 || !selectedPaymentMethod}
       >
         {isProcessing ? (
           <>
@@ -167,7 +198,13 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
         ) : (
           <>
             <CreditCard className="h-5 w-5 mr-2" />
-            Pagar {applyCredit && store_credit > 0 ? `$${Math.max(0, currentCartTotal - store_credit).toFixed(2)}` : 'Completar Compra'}
+            {!selectedPaymentMethod ? 'Elige Método de Pago' : (
+              `Pagar $${Math.max(0,
+                currentCartTotal
+                - (applyCredit ? Math.min(store_credit, currentCartTotal) : 0)
+                - (selectedPaymentMethod.is_discount_active ? (currentCartTotal - (applyCredit ? Math.min(store_credit, currentCartTotal) : 0)) * (selectedPaymentMethod.discount_percentage / 100) : 0)
+              ).toFixed(2)}`
+            )}
           </>
         )}
       </Button>

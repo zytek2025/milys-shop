@@ -6,16 +6,16 @@ import { Landmark, Smartphone, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
-export function PaymentInstructions() {
-    const [settings, setSettings] = useState<any[]>([]);
+export function PaymentInstructions({ paymentMethodId }: { paymentMethodId?: string }) {
+    const [methods, setMethods] = useState<any[]>([]);
     const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch('/api/admin/settings') // Usamos el mismo endpoint ya que es público para lectura (según RLS)
+        fetch('/api/admin/settings')
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data)) {
-                    setSettings(data);
+                if (data.payment_methods) {
+                    setMethods(data.payment_methods);
                 }
             });
     }, []);
@@ -27,62 +27,43 @@ export function PaymentInstructions() {
         setTimeout(() => setCopiedKey(null), 2000);
     };
 
-    const pagoMovil = settings.find(s => s.key === 'pago_movil_info')?.value;
-    const zelle = settings.find(s => s.key === 'zelle_info')?.value;
+    // Si tenemos un methodId específico lo buscamos, si no mostramos todos (compatibilidad)
+    const activeMethods = paymentMethodId
+        ? methods.filter(m => m.id === paymentMethodId)
+        : methods;
 
-    if (!pagoMovil && !zelle) return null;
+    if (activeMethods.length === 0) return null;
 
     return (
         <div className="space-y-4 my-6">
             <h3 className="text-lg font-black italic uppercase tracking-tighter text-primary">Información de Pago</h3>
-            <p className="text-sm text-muted-foreground">Por favor, realiza el pago usando uno de los siguientes métodos:</p>
+            <p className="text-sm text-muted-foreground">
+                {paymentMethodId ? 'Realiza el pago siguiendo estas instrucciones:' : 'Por favor, realiza el pago usando uno de los siguientes métodos:'}
+            </p>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-                {pagoMovil && (
-                    <Card className="border-2 border-primary/10">
+            <div className="grid gap-4 sm:grid-cols-1">
+                {activeMethods.map((method) => (
+                    <Card key={method.id} className="border-2 border-primary/20 shadow-sm bg-primary/5">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm flex items-center gap-2">
-                                <Smartphone className="h-4 w-4 text-primary" /> Pago Móvil
+                            <CardTitle className="text-sm flex items-center gap-2 uppercase italic font-black">
+                                <Landmark className="h-4 w-4 text-primary" /> {method.name}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg relative group">
-                                <p className="text-xs font-mono whitespace-pre-wrap">{pagoMovil}</p>
+                            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl relative group border-2 border-slate-100 dark:border-slate-800">
+                                <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed">{method.instructions}</p>
                                 <Button
                                     size="icon"
                                     variant="ghost"
                                     className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={() => copyToClipboard(pagoMovil, 'pm')}
+                                    onClick={() => copyToClipboard(method.instructions, method.id)}
                                 >
-                                    {copiedKey === 'pm' ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                                    {copiedKey === method.id ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
                                 </Button>
                             </div>
                         </CardContent>
                     </Card>
-                )}
-
-                {zelle && (
-                    <Card className="border-2 border-primary/10">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm flex items-center gap-2">
-                                <Landmark className="h-4 w-4 text-primary" /> Zelle
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg relative group">
-                                <p className="text-xs font-mono whitespace-pre-wrap">{zelle}</p>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={() => copyToClipboard(zelle, 'zelle')}
-                                >
-                                    {copiedKey === 'zelle' ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
+                ))}
             </div>
 
             <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800">

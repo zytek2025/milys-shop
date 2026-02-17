@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Calendar, Package, CreditCard, ChevronLeft } from 'lucide-react';
+import { ShoppingBag, Calendar, Package, CreditCard, ChevronLeft, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import { PaymentInstructions } from '@/components/orders/payment-instructions';
 import { PaymentConfirmationForm } from '@/components/orders/payment-confirmation-form';
@@ -126,9 +126,9 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
                         </Card>
 
                         {/* Payment Instructions Card */}
-                        {order.status === 'pending' && (
-                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <PaymentInstructions />
+                        {(order.status === 'pending' || order.status === 'evaluating') && (
+                            <div id="payment-info" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <PaymentInstructions paymentMethodId={order.payment_method_id} />
                             </div>
                         )}
                     </div>
@@ -150,6 +150,43 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
                                             Tu pago está siendo procesado o ya fue verificado.
                                         </p>
                                     </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {order.status !== 'pending' && order.status !== 'evaluating' && (
+                            <Card className="border-2 shadow-sm bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-xs font-black uppercase italic tracking-tighter flex items-center gap-2">
+                                        <CreditCard size={14} className="text-primary" /> Detalles de Pago
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full rounded-xl border-2 font-bold uppercase italic text-xs h-10 gap-2 mb-2"
+                                        onClick={() => {
+                                            const element = document.getElementById('payment-info-section');
+                                            if (element) element.scrollIntoView({ behavior: 'smooth' });
+                                        }}
+                                        asChild
+                                    >
+                                        <Link href={`/orders/${order.id}#payment-info`}>
+                                            Ver Formas de Pago
+                                        </Link>
+                                    </Button>
+
+                                    {order.status === 'delivered' || order.status === 'shipped' || order.status === 'completed' && (
+                                        <Button
+                                            variant="ghost"
+                                            className="w-full rounded-xl font-bold uppercase italic text-[10px] h-10 gap-2 opacity-60 hover:opacity-100"
+                                            asChild
+                                        >
+                                            <Link href={`/returns/request/${order.id}`}>
+                                                <RotateCcw size={14} /> Solicitar Devolución
+                                            </Link>
+                                        </Button>
+                                    )}
                                 </CardContent>
                             </Card>
                         )}

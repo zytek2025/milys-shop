@@ -59,9 +59,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { items, total, shipping_address, credit_applied } = body;
+    const { items, total, shipping_address, credit_applied, payment_method_id, payment_discount_amount } = body;
 
     const usedCredit = Number(credit_applied || 0);
+    const paymentDiscount = Number(payment_discount_amount || 0);
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'No items in order' }, { status: 400 });
@@ -97,12 +98,16 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Create order
+    const finalTotal = total - usedCredit - paymentDiscount;
+
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
         user_id: user.id,
-        total: total - usedCredit, // Total que el usuario PAGARÁ externamente
+        total: finalTotal, // Total que el usuario PAGARÁ externamente
         credit_applied: usedCredit,
+        payment_method_id,
+        payment_discount_amount: paymentDiscount,
         status: 'pending',
         shipping_address,
       })
