@@ -49,27 +49,38 @@ export function useLogin() {
     mutationFn: async ({ email, password }) => {
       const supabase = createClient();
 
+      console.log('Login: Starting sign in for', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error('Login: Auth error', error);
         throw new Error(error.message);
       }
 
       if (!data.user) {
-        throw new Error('Login failed');
+        throw new Error('Login failed: No user returned');
       }
+
+      console.log('Login: Auth success, fetching profile...');
 
       // Get profile
-      const profileResponse = await fetch(`${API_BASE}/auth/profile`);
-      if (!profileResponse.ok) {
-        throw new Error('No se pudo cargar el perfil del usuario');
+      try {
+        const profileResponse = await fetch(`${API_BASE}/auth/profile`);
+        if (!profileResponse.ok) {
+          console.warn('Login: Profile fetch failed, redirection might be needed');
+          // Don't throw here, allow login if auth succeeded but profile fetch failed
+          return { data: { id: data.user.id, email: data.user.email, role: 'customer', created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as unknown as UserProfile };
+        }
+        const profile = await profileResponse.json();
+        console.log('Login: Profile loaded', profile?.role);
+        return { data: profile };
+      } catch (profileError) {
+        console.error('Login: Profile system error', profileError);
+        return { data: { id: data.user.id, email: data.user.email, role: 'customer', created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as unknown as UserProfile };
       }
-      const profile = await profileResponse.json();
-
-      return { data: profile };
     },
     onSuccess: (data) => {
       if (data.data) {
@@ -180,7 +191,7 @@ export function useAuthCheck() {
   useEffect(() => {
     const checkAuth = async () => {
       if (!isAuthenticated) {
-        const supabase = createClient();
+        const supabase = createClient(); // This should remain createClient for client-side
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
