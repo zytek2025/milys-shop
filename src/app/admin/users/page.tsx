@@ -6,16 +6,43 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Shield, User as UserIcon, Loader2, Save, Trash2, ShieldCheck, Mail } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import {
+    Shield,
+    User as UserIcon,
+    Loader2,
+    Save,
+    Trash2,
+    ShieldCheck,
+    Mail,
+    Plus,
+    Key,
+    UserPlus
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { UserProfile } from '@/types';
 import { useAuth } from '@/store/cart-store';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 
 export default function AdminUsersPage() {
-    const { is_super_admin } = useAuth();
+    const { is_super_admin, user: currentUser } = useAuth();
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState<string | null>(null);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [newStaff, setNewStaff] = useState({
+        email: '',
+        password: '',
+        full_name: '',
+    });
 
     useEffect(() => {
         fetchUsers();
@@ -34,6 +61,55 @@ export default function AdminUsersPage() {
             toast.error('Error de conexión');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleCreateStaff = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setUpdating('creating');
+        try {
+            const res = await fetch('/api/admin/users/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newStaff)
+            });
+
+            if (res.ok) {
+                toast.success('Miembro del staff creado correctamente');
+                setIsAddModalOpen(false);
+                setNewStaff({ email: '', password: '', full_name: '' });
+                fetchUsers();
+            } else {
+                const data = await res.json();
+                toast.error(data.error || 'Error al crear usuario');
+            }
+        } catch (error) {
+            toast.error('Error de conexión');
+        } finally {
+            setUpdating(null);
+        }
+    };
+
+    const handleDeleteUser = async (userId: string) => {
+        if (!confirm('¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.')) return;
+
+        setUpdating(userId);
+        try {
+            const res = await fetch(`/api/admin/users?id=${userId}`, {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                toast.success('Usuario eliminado');
+                setUsers(users.filter(u => u.id !== userId));
+            } else {
+                const data = await res.json();
+                toast.error(data.error || 'Error al eliminar');
+            }
+        } catch (error) {
+            toast.error('Error de conexión');
+        } finally {
+            setUpdating(null);
         }
     };
 
@@ -77,33 +153,6 @@ export default function AdminUsersPage() {
         }
     };
 
-    const handleToggleAdmin = async (userId: string, currentRole: string) => {
-        const newRole = currentRole === 'admin' ? 'user' : 'admin';
-        setUpdating(userId);
-        try {
-            const res = await fetch('/api/admin/users', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id: userId,
-                    role: newRole
-                })
-            });
-
-            if (res.ok) {
-                toast.success(`Usuario cambiado a ${newRole}`);
-                setUsers(users.map(u => u.id === userId ? { ...u, role: newRole as any } : u));
-            } else {
-                const data = await res.json();
-                toast.error(data.error || 'Error al actualizar rol');
-            }
-        } catch (error) {
-            toast.error('Error de conexión');
-        } finally {
-            setUpdating(null);
-        }
-    };
-
     if (loading) {
         return (
             <div className="flex h-[400px] items-center justify-center">
@@ -114,9 +163,80 @@ export default function AdminUsersPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-black italic uppercase tracking-tighter">Gestión de Usuarios</h1>
-                <p className="text-muted-foreground font-medium">Administra los accesos y permisos del personal de la tienda.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col gap-2">
+                    <h1 className="text-3xl font-black italic uppercase tracking-tighter">Personal del Sistema</h1>
+                    <p className="text-muted-foreground font-medium">Gestiona las cuentas y permisos de los administradores.</p>
+                </div>
+
+                {is_super_admin && (
+                    <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="font-black italic uppercase tracking-wider gap-2 h-12 rounded-2xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90">
+                                <Plus size={18} />
+                                Nuevo Miembro
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px] rounded-[2rem] border-2">
+                            <form onSubmit={handleCreateStaff}>
+                                <DialogHeader>
+                                    <DialogTitle className="text-2xl font-black italic uppercase tracking-tight">Agregar Staff</DialogTitle>
+                                    <DialogDescription className="font-medium text-muted-foreground">
+                                        Crea una nueva cuenta de administrador. Podrás configurar sus permisos después.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-6">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="name" className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Nombre Completo</Label>
+                                        <Input
+                                            id="name"
+                                            placeholder="Vanessa Pérez"
+                                            className="rounded-xl border-2 h-11"
+                                            value={newStaff.full_name}
+                                            onChange={(e) => setNewStaff({ ...newStaff, full_name: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="email" className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Correo Electrónico</Label>
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            placeholder="vanessa@example.com"
+                                            className="rounded-xl border-2 h-11"
+                                            value={newStaff.email}
+                                            onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="pass" className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Contraseña Inicial</Label>
+                                        <Input
+                                            id="pass"
+                                            type="password"
+                                            placeholder="••••••••"
+                                            className="rounded-xl border-2 h-11"
+                                            value={newStaff.password}
+                                            onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
+                                            required
+                                            minLength={6}
+                                        />
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button
+                                        type="submit"
+                                        className="w-full font-black italic uppercase tracking-wider rounded-xl h-11"
+                                        disabled={updating === 'creating'}
+                                    >
+                                        {updating === 'creating' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                                        Crear Cuenta
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                )}
             </div>
 
             <div className="grid gap-6">
@@ -143,23 +263,21 @@ export default function AdminUsersPage() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                {!user.is_super_admin && (
+                                {is_super_admin && !user.is_super_admin && (
                                     <Button
-                                        variant={user.role === 'admin' ? "destructive" : "default"}
-                                        size="sm"
-                                        className="font-black italic uppercase tracking-wider"
-                                        onClick={() => handleToggleAdmin(user.id, user.role || 'user')}
+                                        variant="destructive"
+                                        size="icon"
+                                        className="rounded-xl h-10 w-10 shadow-lg shadow-destructive/20"
+                                        onClick={() => handleDeleteUser(user.id)}
                                         disabled={updating === user.id}
                                     >
-                                        {user.role === 'admin' ? 'Quitar Admin' : 'Hacer Admin'}
+                                        {updating === user.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                                     </Button>
                                 )}
-                                {updating === user.id && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
                             </div>
                         </CardHeader>
                         <CardContent className="p-6">
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {/* Granular Permissions Section */}
                                 <div className="flex flex-col gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                                         <Shield size={14} className="text-primary" /> Permisos de Gestión

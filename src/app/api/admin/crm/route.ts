@@ -28,6 +28,7 @@ export async function GET() {
                     status
                 )
             `)
+            .eq('role', 'user')
             .order('created_at', { ascending: false });
 
         if (profileError) throw profileError;
