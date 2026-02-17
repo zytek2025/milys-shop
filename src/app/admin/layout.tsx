@@ -83,8 +83,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return (
         <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 font-sans relative overflow-x-hidden">
             {/* Premium Background Decorative Elements - Simplified for Solid Look */}
+            {/* Premium Background Decorative Elements - Simplified for Solid Look */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-slate-50 dark:bg-slate-950">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] opacity-20" />
             </div>
 
             {/* Sidebar for Desktop */}
@@ -103,59 +103,61 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
                         <div className="flex items-center gap-4">
                             <div className="relative group">
-                                <div className="absolute -inset-1 bg-gradient-to-tr from-primary to-secondary rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                                <div className="relative h-12 w-12 rounded-2xl bg-white dark:bg-slate-950 flex items-center justify-center text-primary-foreground font-black text-2xl shadow-sm">
-                                    M
+                                <div className="relative group">
+                                    <div className="absolute -inset-1 bg-primary rounded-2xl opacity-0 group-hover:opacity-10 transition duration-200"></div>
+                                    <div className="relative h-12 w-12 rounded-2xl bg-white dark:bg-slate-950 flex items-center justify-center text-primary-foreground font-black text-2xl shadow-sm">
+                                        M
+                                    </div>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="font-black text-xl tracking-tighter italic uppercase text-slate-800 dark:text-white">Admin</span>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Mily's Store</span>
                                 </div>
                             </div>
-                            <div className="flex flex-col">
-                                <span className="font-black text-xl tracking-tighter italic uppercase text-slate-800 dark:text-white">Admin</span>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Mily's Store</span>
+                        </div>
+
+                        <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto custom-scrollbar">
+                            {navItems.map((item) => {
+                                const isActive = pathname === item.href;
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={cn(
+                                            "group flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300",
+                                            isActive
+                                                ? "bg-primary text-primary-foreground shadow-[0_10px_20px_-5px_rgba(var(--primary),0.3)] ring-1 ring-primary/20"
+                                                : "text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/50"
+                                        )}
+                                        onClick={() => setIsSidebarOpen(false)}
+                                    >
+                                        <div className={cn(
+                                            "p-1.5 rounded-lg transition-colors group-hover:scale-110 duration-300",
+                                            "p-1.5 rounded-lg transition-colors group-hover:scale-110 duration-300",
+                                            isActive ? "bg-white" : "bg-slate-50 dark:bg-slate-800 group-hover:bg-white dark:group-hover:bg-slate-700"
+                                        )}>
+                                            <item.icon size={18} />
+                                        </div>
+                                        <span className="flex-1 tracking-tight">{item.label}</span>
+                                        {isActive && (
+                                            <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground/50 animate-pulse" />
+                                        )}
+                                    </Link>
+                                );
+                            })}
+                        </nav>
+
+                        <div className="p-6">
+                            <div className="p-5 bg-slate-100 dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 -mr-4 -mt-4 h-16 w-16 bg-primary/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000" />
+                                <p className="text-[9px] font-black mb-2 uppercase tracking-[0.2em] text-muted-foreground relative z-10">Estado del Sistema</p>
+                                <div className="flex items-center gap-3 relative z-10">
+                                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
+                                    <span className="text-sm font-bold tracking-tight">Cloud Online</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto custom-scrollbar">
-                        {navItems.map((item) => {
-                            const isActive = pathname === item.href;
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={cn(
-                                        "group flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300",
-                                        isActive
-                                            ? "bg-primary text-primary-foreground shadow-[0_10px_20px_-5px_rgba(var(--primary),0.3)] ring-1 ring-primary/20"
-                                            : "text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/50"
-                                    )}
-                                    onClick={() => setIsSidebarOpen(false)}
-                                >
-                                    <div className={cn(
-                                        "p-1.5 rounded-lg transition-colors group-hover:scale-110 duration-300",
-                                        isActive ? "bg-white/20" : "bg-slate-50 dark:bg-slate-800 group-hover:bg-white dark:group-hover:bg-slate-700"
-                                    )}>
-                                        <item.icon size={18} />
-                                    </div>
-                                    <span className="flex-1 tracking-tight">{item.label}</span>
-                                    {isActive && (
-                                        <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground/50 animate-pulse" />
-                                    )}
-                                </Link>
-                            );
-                        })}
-                    </nav>
-
-                    <div className="p-6">
-                        <div className="p-5 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-900/50 rounded-[2rem] border border-white/50 dark:border-white/5 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 -mr-4 -mt-4 h-16 w-16 bg-primary/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000" />
-                            <p className="text-[9px] font-black mb-2 uppercase tracking-[0.2em] text-muted-foreground relative z-10">Estado del Sistema</p>
-                            <div className="flex items-center gap-3 relative z-10">
-                                <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
-                                <span className="text-sm font-bold tracking-tight">Cloud Online</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </aside>
 
             {/* Overlay for mobile sidebar */}
@@ -167,7 +169,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             )}
 
             {/* Main Content */}
-            <main className="flex-1 md:ml-72 min-h-screen flex flex-col bg-transparent ring-1 ring-white/10 relative z-10 transition-all duration-500">
+            <main className="flex-1 md:ml-72 min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 relative z-10 transition-all duration-500">
                 {/* Mobile Header */}
                 <header className="md:hidden flex items-center justify-between p-6 border-b bg-white dark:bg-slate-900 sticky top-0 z-30">
                     <div className="flex items-center gap-3">

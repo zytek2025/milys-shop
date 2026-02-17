@@ -48,22 +48,23 @@ export default function AdminDashboardPage() {
                 ? `$${stats.totalRevenue.toFixed(2)}`
                 : '$0.00',
             icon: TrendingUp,
+            icon: TrendingUp,
             color: 'text-emerald-600',
-            bg: 'bg-emerald-50 dark:bg-emerald-500/10'
+            bg: 'bg-emerald-50 dark:bg-emerald-950'
         },
         {
             label: 'Pedidos',
             value: stats?.ordersCount || 0,
             icon: ShoppingBag,
             color: 'text-blue-600',
-            bg: 'bg-blue-50 dark:bg-blue-500/10'
+            bg: 'bg-blue-50 dark:bg-blue-950'
         },
         {
             label: 'Productos',
             value: stats?.productsCount || 0,
             icon: Package,
             color: 'text-amber-600',
-            bg: 'bg-amber-50 dark:bg-amber-500/10'
+            bg: 'bg-amber-50 dark:bg-amber-950'
         },
     ];
 
@@ -140,10 +141,9 @@ export default function AdminDashboardPage() {
                             </div>
                             <div className="flex items-center justify-between py-2 border-b last:border-0 border-slate-100 dark:border-slate-800">
                                 <div className="flex items-center gap-3">
-                                    <ExternalLink size={16} className="text-muted-foreground" />
                                     <span className="text-sm">Supabase Connection</span>
                                 </div>
-                                <Badge variant="outline" className="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200">Online</Badge>
+                                <Badge variant="outline" className="text-emerald-600 bg-emerald-50 dark:bg-emerald-950 border-emerald-200">Online</Badge>
                             </div>
                         </div>
                     </CardContent>
