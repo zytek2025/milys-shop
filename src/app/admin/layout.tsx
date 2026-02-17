@@ -33,13 +33,39 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
     // Guard: if not admin, redirect or show error
     // Note: In real production, this should also be done in middleware for better security
+    // If not admin, show fix button instead of redirecting
     if (isAuthenticated && !isAdmin) {
-        redirect('/');
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+                <div className="max-w-md w-full text-center space-y-4">
+                    <h1 className="text-2xl font-bold text-destructive">Acceso Denegado</h1>
+                    <p className="text-muted-foreground">
+                        Tu usuario no tiene permisos de administrador.
+                    </p>
+                    <Button
+                        onClick={async () => {
+                            try {
+                                const res = await fetch('/api/admin/fix-access', { method: 'POST' });
+                                if (res.ok) {
+                                    window.location.reload();
+                                } else {
+                                    alert('Error al actualizar permisos');
+                                }
+                            } catch (e) {
+                                alert('Error de conexión');
+                            }
+                        }}
+                    >
+                        Reparar Permisos (Developer Mode)
+                    </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/">Volver al Inicio</Link>
+                    </Button>
+                </div>
+            </div>
+        );
     } else if (!isAuthenticated) {
-        // If not logged in at all, maybe let them see it or redirect to login? 
-        // usually redirect to home or open login modal. 
-        // For now, redirect to home to be safe.
-        redirect('/');
+        redirect('/auth/login');
     }
 
     const navItems = [
