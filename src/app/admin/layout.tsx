@@ -45,7 +45,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
 
     // Guard: if not admin, show fix button instead of redirecting
-    /*
     if (isAuthenticated && !isAdmin) {
         return <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
             <div className="max-w-md w-full text-center space-y-4">
@@ -77,7 +76,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     } else if (!isAuthenticated) {
         redirect('/auth/login');
     }
-    */
 
     const navItems = [
         { label: 'Panel Principal', icon: LayoutDashboard, href: '/admin' },
@@ -92,11 +90,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     ];
 
     return <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 font-sans relative overflow-x-hidden">
-
-        {/* DEBUG BANNER */}
-        <div className="fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white text-xs font-bold text-center py-1 uppercase tracking-widest">
-            Modo Debug Activo: Seguridad Desactivada
-        </div>
 
         {/* Premium Background Decorative Elements - Simplified for Solid Look */}
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-slate-50 dark:bg-slate-950">
