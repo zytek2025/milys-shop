@@ -12,7 +12,7 @@ import { PaymentSelector } from './payment-selector';
 
 interface CheckoutButtonProps {
   onLoginRequired?: () => void;
-  onOrderComplete?: () => void;
+  onOrderComplete?: (orderId: string) => void;
 }
 
 export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutButtonProps) {
@@ -86,16 +86,19 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
         }),
       });
 
+      const data = await orderResponse.json();
+
       if (!orderResponse.ok) {
-        const error = await orderResponse.json();
-        throw new Error(error.error || 'Failed to create order');
+        throw new Error(data.error || 'Error al crear pedido');
       }
+
+      const orderId = data.data.id;
 
       // Clear cart
       await clearCart.mutateAsync();
 
-      toast.success('Order placed successfully!');
-      onOrderComplete?.();
+      toast.success('¡Pedido realizado con éxito!');
+      onOrderComplete?.(orderId);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Checkout failed';
       toast.error(message);

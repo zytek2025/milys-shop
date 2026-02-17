@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { ShoppingBag, Trash2, Loader2, LogIn } from 'lucide-react';
 import {
   Sheet,
@@ -36,6 +37,7 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
   const { data: cart, isLoading } = useCart();
   const { total, itemCount } = useCartTotals();
   const { isAuthenticated } = useAuth();
+  const router = useRouter();
 
   const updateCartItem = useUpdateCartItem();
   const removeFromCart = useRemoveFromCart();
@@ -78,9 +80,10 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
     }
   };
 
-  const handleOrderComplete = () => {
+  const handleOrderComplete = (orderId: string) => {
     onOpenChange(false);
-    toast.success('Your order has been placed successfully!');
+    toast.success('¡Tu pedido ha sido realizado con éxito!');
+    router.push(`/orders/${orderId}`);
   };
 
   const items = cart?.items ?? [];

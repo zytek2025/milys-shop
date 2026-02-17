@@ -195,22 +195,34 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 4. Trigger Webhook (Fire and forget)
+    // 4. Fetch Payment Method Details for Notification
+    const { data: settings } = await supabase.from('store_settings').select('payment_methods').eq('id', 'global').single();
+    const pm = (settings?.payment_methods as any[])?.find((m: any) => m.id === payment_method_id);
+
+    // 5. Trigger Webhook (Fire and forget)
     const { sendWebhook } = await import('@/lib/webhook-dispatcher');
     sendWebhook('order_created', {
       order_id: order.id,
+      control_id: order.control_id,
       user_id: user.id,
       email: user.email,
-      total_paid: total - usedCredit,
+      total_paid: finalTotal,
       credit_applied: usedCredit,
-      items_count: items.length,
+      payment_method_id,
+      payment_method_name: pm?.name || 'Desconocido',
+      payment_instructions: pm?.instructions || '',
+      items: orderItems.map((i: any) => ({
+        name: i.product_name,
+        quantity: i.quantity,
+        price: i.price
+      })),
       shipping_address
     });
 
     return NextResponse.json({
       data: order,
       message: 'Order created successfully',
-    } as ApiResponse<Order>);
+    } as ApiResponse<any>);
   } catch (error) {
     console.error('Error creating order:', error);
     return NextResponse.json(
