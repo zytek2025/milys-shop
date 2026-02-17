@@ -100,6 +100,7 @@ export function useAuth() {
     setUser,
     setAuthenticated,
     is_super_admin: user?.is_super_admin || false,
+    store_credit: Number(user?.store_credit || 0),
     permissions: user?.permissions || {
       can_manage_prices: false,
       can_view_metrics: false,

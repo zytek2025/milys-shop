@@ -156,14 +156,16 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Envío</span>
-                  <span className="text-emerald-600">Gratis</span>
-                </div>
                 <Separator />
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Total</span>
                   <span>${total.toFixed(2)}</span>
+                </div>
+                <div className="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Política de Devolución</p>
+                  <p className="text-[11px] text-muted-foreground leading-tight italic font-medium">
+                    Solo se permiten cambios por otros productos. Si el nuevo artículo es de menor valor, la diferencia se acreditará a tu cuenta como saldo a favor.
+                  </p>
                 </div>
               </div>
 

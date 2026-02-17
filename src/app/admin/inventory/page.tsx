@@ -10,7 +10,10 @@ import {
     Loader2,
     ArrowUpCircle,
     ArrowDownCircle,
-    AlertCircle
+    AlertCircle,
+    RotateCcw,
+    User as UserIcon,
+    DollarSign
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,23 +35,34 @@ import {
     DialogTitle,
     DialogFooter,
 } from '@/components/ui/dialog';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { toast } from 'sonner';
 
 export default function InventoryPage() {
     const [variants, setVariants] = useState<any[]>([]);
     const [movements, setMovements] = useState<any[]>([]);
+    const [customers, setCustomers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
     const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
-    const [modalType, setModalType] = useState<'in' | 'out'>('in');
+    const [modalType, setModalType] = useState<'in' | 'out' | 'return'>('in');
     const [movementType, setMovementType] = useState<string>('manual');
     const [qty, setQty] = useState(1);
     const [reason, setReason] = useState('');
+    const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+    const [creditAmount, setCreditAmount] = useState<string>('0');
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         fetchData();
+        fetchCustomers();
     }, []);
 
     const fetchData = async () => {
@@ -82,12 +96,14 @@ export default function InventoryPage() {
                         size: 'N/A',
                         color: 'N/A',
                         stock: p.stock || 0,
-                        is_legacy: true
+                        is_legacy: true,
+                        price: p.price || 0
                     }];
                 }
                 return pVariants.map((v: any) => ({
                     ...v,
-                    product_name: p.name || 'Producto sin nombre'
+                    product_name: p.name || 'Producto sin nombre',
+                    price: v.price_override || p.price || 0
                 }));
             });
 
@@ -102,11 +118,54 @@ export default function InventoryPage() {
         }
     };
 
+    const fetchCustomers = async () => {
+        try {
+            const res = await fetch('/api/admin/crm');
+            const data = await res.json();
+            if (res.ok) {
+                setCustomers(data);
+            }
+        } catch (error) {
+            console.error('Error fetching customers:', error);
+        }
+    };
+
     const handleMovement = async () => {
         if (qty <= 0) return toast.error('La cantidad debe ser mayor a 0');
 
         setSubmitting(true);
         try {
+            if (modalType === 'return') {
+                if (!selectedCustomerId) {
+                    toast.error('Debe seleccionar un cliente para asignar el saldo');
+                    setSubmitting(false);
+                    return;
+                }
+
+                const res = await fetch('/api/admin/inventory/returns', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        profile_id: selectedCustomerId,
+                        variant_id: selectedVariant.is_legacy ? selectedVariant.product_id : selectedVariant.id,
+                        quantity: qty,
+                        amount_to_credit: Number(creditAmount),
+                        reason: reason || 'Devolución de mercancía'
+                    }),
+                });
+
+                if (res.ok) {
+                    toast.success('Devolución procesada y saldo cargado');
+                    setIsMovementModalOpen(false);
+                    resetModal();
+                    fetchData();
+                } else {
+                    const data = await res.json();
+                    toast.error(data.error || 'Error al procesar devolución');
+                }
+                return;
+            }
+
             const finalQty = modalType === 'in' ? qty : -qty;
             const payload: any = {
                 quantity: finalQty,
@@ -129,8 +188,7 @@ export default function InventoryPage() {
             if (res.ok) {
                 toast.success('Movimiento registrado');
                 setIsMovementModalOpen(false);
-                setQty(1);
-                setReason('');
+                resetModal();
                 fetchData();
             } else {
                 const data = await res.json();
@@ -143,10 +201,19 @@ export default function InventoryPage() {
         }
     };
 
+    const resetModal = () => {
+        setQty(1);
+        setReason('');
+        setSelectedCustomerId('');
+        setCreditAmount('0');
+        setMovementType('manual');
+    };
+
     const filteredVariants = variants.filter(v => {
-        const nameMatch = (v.product_name || '').toLowerCase().includes(searchTerm.toLowerCase());
-        const sizeMatch = (v.size || '').toLowerCase().includes(searchTerm.toLowerCase());
-        const colorMatch = (v.color || v.color_name || '').toLowerCase().includes(searchTerm.toLowerCase());
+        const term = searchTerm.toLowerCase();
+        const nameMatch = (v.product_name || '').toLowerCase().includes(term);
+        const sizeMatch = (v.size || '').toLowerCase().includes(term);
+        const colorMatch = (v.color || v.color_name || '').toLowerCase().includes(term);
         return nameMatch || sizeMatch || colorMatch;
     });
 
@@ -155,9 +222,9 @@ export default function InventoryPage() {
             <div className="flex justify-between items-end">
                 <div>
                     <h1 className="text-4xl font-black bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent dark:from-white dark:to-slate-400 tracking-tighter italic uppercase">
-                        Gestión de Inventario
+                        Inventario Avanzado
                     </h1>
-                    <p className="text-slate-500 font-medium italic">Control de ingresos, egresos y trazabilidad proactiva de stock.</p>
+                    <p className="text-slate-500 font-medium italic">Gestión de stock, devoluciones y saldos a favor.</p>
                 </div>
             </div>
 
@@ -201,7 +268,6 @@ export default function InventoryPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Stock List */}
                 <Card className="border-none shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden rounded-[2.5rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20">
                     <CardHeader className="border-b border-slate-100 dark:border-slate-800">
                         <div className="flex justify-between items-center">
@@ -258,6 +324,7 @@ export default function InventoryPage() {
                                                         setModalType('in');
                                                         setIsMovementModalOpen(true);
                                                     }}
+                                                    title="Ingreso"
                                                 >
                                                     <Plus size={14} />
                                                 </Button>
@@ -270,8 +337,23 @@ export default function InventoryPage() {
                                                         setModalType('out');
                                                         setIsMovementModalOpen(true);
                                                     }}
+                                                    title="Egreso"
                                                 >
                                                     <Minus size={14} />
+                                                </Button>
+                                                <Button
+                                                    size="icon"
+                                                    variant="outline"
+                                                    className="h-7 w-7 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                                    onClick={() => {
+                                                        setSelectedVariant(v);
+                                                        setModalType('return');
+                                                        setCreditAmount(v.price.toString());
+                                                        setIsMovementModalOpen(true);
+                                                    }}
+                                                    title="Devolución"
+                                                >
+                                                    <RotateCcw size={14} />
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -282,7 +364,6 @@ export default function InventoryPage() {
                     </CardContent>
                 </Card>
 
-                {/* Movements History */}
                 <Card className="border-none shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden rounded-[2.5rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20">
                     <CardHeader className="border-b border-slate-100 dark:border-slate-800">
                         <CardTitle className="text-sm font-black uppercase italic flex items-center gap-2 tracking-tight">
@@ -349,88 +430,114 @@ export default function InventoryPage() {
                 </Card>
             </div>
 
-            {/* Movement Modal */}
-            <Dialog open={isMovementModalOpen} onOpenChange={setIsMovementModalOpen}>
-                <DialogContent className="sm:max-w-[400px] rounded-3xl">
+            <Dialog open={isMovementModalOpen} onOpenChange={(v) => { setIsMovementModalOpen(v); if (!v) resetModal(); }}>
+                <DialogContent className="sm:max-w-[400px] rounded-3xl border-2 shadow-2xl">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 italic font-black uppercase tracking-tighter">
-                            {modalType === 'in' ? <Plus className="text-emerald-500" /> : <Minus className="text-rose-500" />}
-                            {modalType === 'in' ? 'Ingreso de Mercancía' : 'Egreso de Mercancía'}
+                        <DialogTitle className="flex items-center gap-2 italic font-black uppercase tracking-tighter text-2xl">
+                            {modalType === 'in' ? <Plus className="text-emerald-500" /> : modalType === 'out' ? <Minus className="text-rose-500" /> : <RotateCcw className="text-blue-500" />}
+                            {modalType === 'in' ? 'Entrada' : modalType === 'out' ? 'Salida' : 'Devolución'}
                         </DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
-                            <p className="text-[10px] uppercase font-bold text-slate-400">Variante seleccionada</p>
-                            <p className="font-bold text-sm tracking-tight">{selectedVariant?.product_name}</p>
-                            <p className="text-xs uppercase font-black text-primary">{selectedVariant?.size} / {selectedVariant?.color}</p>
+                    <div className="space-y-5 py-4">
+                        <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">Producto</p>
+                            <p className="font-black text-lg tracking-tight leading-none mb-1">{selectedVariant?.product_name}</p>
+                            <p className="text-xs uppercase font-bold text-primary">{selectedVariant?.size} / {selectedVariant?.color}</p>
                         </div>
 
-                        <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase italic text-slate-400">Tipo de Movimiento</label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {modalType === 'in' ? (
-                                    <>
-                                        <Button
-                                            variant={movementType === 'purchase' ? 'default' : 'outline'}
-                                            onClick={() => setMovementType('purchase')}
-                                            className="rounded-xl h-10 font-bold text-xs italic uppercase"
-                                        >Compra</Button>
-                                        <Button
-                                            variant={movementType === 'adjustment' ? 'default' : 'outline'}
-                                            onClick={() => setMovementType('adjustment')}
-                                            className="rounded-xl h-10 font-bold text-xs italic uppercase"
-                                        >Ajuste +</Button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Button
-                                            variant={movementType === 'manual' ? 'default' : 'outline'}
-                                            onClick={() => setMovementType('manual')}
-                                            className="rounded-xl h-10 font-bold text-xs italic uppercase"
-                                        >Salida</Button>
-                                        <Button
-                                            variant={movementType === 'return' ? 'default' : 'outline'}
-                                            onClick={() => setMovementType('return')}
-                                            className="rounded-xl h-10 font-bold text-xs italic uppercase"
-                                        >Devolución</Button>
-                                        <Button
-                                            variant={movementType === 'adjustment' ? 'default' : 'outline'}
-                                            onClick={() => setMovementType('adjustment')}
-                                            className="rounded-xl h-10 font-bold text-xs italic uppercase"
-                                        >Ajuste -</Button>
-                                    </>
-                                )}
+                        {modalType === 'return' && (
+                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                                        <UserIcon size={12} /> Cliente a Bonificar
+                                    </label>
+                                    <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                                        <SelectTrigger className="h-12 rounded-xl border-2 bg-white dark:bg-slate-950 font-medium">
+                                            <SelectValue placeholder="Seleccionar cliente..." />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-2">
+                                            {customers.map(c => (
+                                                <SelectItem key={c.id} value={c.id} className="font-medium">
+                                                    {c.full_name || c.email}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                                        <DollarSign size={12} /> Saldo a Acreditar ($)
+                                    </label>
+                                    <Input
+                                        type="number"
+                                        value={creditAmount}
+                                        onChange={(e) => setCreditAmount(e.target.value)}
+                                        className="rounded-xl border-2 h-12 px-4 font-black text-lg text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20"
+                                    />
+                                    <p className="text-[9px] text-muted-foreground italic font-medium">
+                                        * Este monto se sumará al "Store Credit" del cliente.
+                                    </p>
+                                </div>
                             </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cantidad</label>
+                                <Input
+                                    type="number"
+                                    value={qty}
+                                    onChange={(e) => setQty(Number(e.target.value))}
+                                    className="rounded-xl border-2 h-12 px-4 font-black text-lg"
+                                    min={1}
+                                />
+                            </div>
+                            {modalType !== 'return' && (
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tipo</label>
+                                    <Select value={movementType} onValueChange={setMovementType}>
+                                        <SelectTrigger className="h-12 rounded-xl border-2">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-2">
+                                            {modalType === 'in' ? (
+                                                <>
+                                                    <SelectItem value="purchase">Compra</SelectItem>
+                                                    <SelectItem value="adjustment">Ajuste +</SelectItem>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <SelectItem value="manual">Salida</SelectItem>
+                                                    <SelectItem value="return">Devolución</SelectItem>
+                                                    <SelectItem value="adjustment">Ajuste -</SelectItem>
+                                                </>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase italic text-slate-400">Cantidad</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Motivo / Notas</label>
                             <Input
-                                type="number"
-                                value={qty}
-                                onChange={(e) => setQty(Number(e.target.value))}
-                                className="rounded-xl border-none bg-slate-100 dark:bg-slate-900 h-12 px-4 font-bold"
-                                min={1}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase italic text-slate-400">Motivo / Notas</label>
-                            <Input
-                                placeholder="Ej: Compra a proveedor, Ajuste inventario..."
+                                placeholder="Ej: Error de talla, cambio por diseño..."
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
-                                className="rounded-xl border-none bg-slate-100 dark:bg-slate-900 h-12 px-4 shadow-inner"
+                                className="rounded-xl border-2 h-12 px-4 font-medium"
                             />
                         </div>
                     </div>
-                    <DialogFooter className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <DialogFooter className="pt-4 border-t-2">
                         <Button
-                            className={`w-full h-14 font-black uppercase italic rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] ${modalType === 'in' ? 'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-emerald-500/20' : 'bg-gradient-to-r from-rose-500 to-red-600 shadow-rose-500/20'}`}
+                            className={cn(
+                                "w-full h-14 font-black uppercase italic rounded-2xl shadow-xl transform transition-all active:scale-95",
+                                modalType === 'in' ? "bg-emerald-500 hover:bg-emerald-600" : modalType === 'out' ? "bg-rose-500 hover:bg-rose-600" : "bg-blue-500 hover:bg-blue-600"
+                            )}
                             onClick={handleMovement}
                             disabled={submitting}
                         >
-                            {submitting ? <Loader2 className="animate-spin h-5 w-5" /> : 'Confirmar Movimiento'}
+                            {submitting ? <Loader2 className="animate-spin h-5 w-5" /> : 'Confirmar Operación'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

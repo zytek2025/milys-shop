@@ -122,6 +122,7 @@ export interface UserProfile {
   avatar_url?: string;
   role?: 'user' | 'admin';
   is_super_admin?: boolean;
+  store_credit?: number;
   permissions?: {
     can_manage_prices: boolean;
     can_view_metrics: boolean;

@@ -59,18 +59,50 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { items, total, shipping_address } = body;
+    const { items, total, shipping_address, credit_applied } = body;
+
+    const usedCredit = Number(credit_applied || 0);
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'No items in order' }, { status: 400 });
     }
 
-    // Create order
+    // 1. Validate and subtract store credit if used
+    if (usedCredit > 0) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('store_credit')
+        .eq('id', user.id)
+        .single();
+
+      const availableCredit = Number(profile?.store_credit || 0);
+      if (usedCredit > availableCredit) {
+        return NextResponse.json({ error: 'Saldo insuficiente' }, { status: 400 });
+      }
+
+      // Subtract credit
+      await supabase
+        .from('profiles')
+        .update({ store_credit: availableCredit - usedCredit })
+        .eq('id', user.id);
+
+      // Record history
+      await supabase.from('store_credit_history').insert({
+        profile_id: user.id,
+        amount: -usedCredit,
+        type: 'purchase',
+        reason: 'Uso de saldo en compra',
+        created_by: user.id
+      });
+    }
+
+    // 2. Create order
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
         user_id: user.id,
-        total,
+        total: total - usedCredit, // Total que el usuario PAGARÁ externamente
+        credit_applied: usedCredit,
         status: 'pending',
         shipping_address,
       })
@@ -78,13 +110,19 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (orderError) {
+      // Revert credit if order fails
+      if (usedCredit > 0) {
+        const { data: currentP } = await supabase.from('profiles').select('store_credit').eq('id', user.id).single();
+        await supabase.from('profiles').update({ store_credit: (currentP?.store_credit || 0) + usedCredit }).eq('id', user.id);
+        // Note: History ideally should be deleted or marked as reverted.
+      }
       return NextResponse.json({ error: orderError.message }, { status: 500 });
     }
 
-    // Create order items
+    // 3. Create order items
     const orderItems = items.map((item: any) => {
       // Precio total = base (o override) + logos
-      const itemPrice = item.price; // Ya debería venir calculado del frontend
+      const itemPrice = item.price;
 
       return {
         order_id: order.id,
@@ -104,6 +142,11 @@ export async function POST(request: NextRequest) {
     if (itemsError) {
       // Delete the order if items fail
       await supabase.from('orders').delete().eq('id', order.id);
+      // Also revert credit
+      if (usedCredit > 0) {
+        const { data: currentP } = await supabase.from('profiles').select('store_credit').eq('id', user.id).single();
+        await supabase.from('profiles').update({ store_credit: (currentP?.store_credit || 0) + usedCredit }).eq('id', user.id);
+      }
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
     }
 

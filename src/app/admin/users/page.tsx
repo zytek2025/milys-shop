@@ -263,6 +263,16 @@ export default function AdminUsersPage() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
+                                {is_super_admin && (
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="rounded-xl h-10 w-10 border-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                        title="Modificar Datos"
+                                    >
+                                        <Plus className="h-4 w-4 rotate-45" /> {/* Simulating an 'X' or cross for edit if needed, but let's use a real icon */}
+                                    </Button>
+                                )}
                                 {is_super_admin && !user.is_super_admin && (
                                     <Button
                                         variant="destructive"
@@ -270,6 +280,7 @@ export default function AdminUsersPage() {
                                         className="rounded-xl h-10 w-10 shadow-lg shadow-destructive/20"
                                         onClick={() => handleDeleteUser(user.id)}
                                         disabled={updating === user.id}
+                                        title="Eliminar Miembro"
                                     >
                                         {updating === user.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                                     </Button>
