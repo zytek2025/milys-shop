@@ -104,6 +104,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
     const navItems = [
         { label: 'Panel Principal', icon: LayoutDashboard, href: '/admin', requiredPermission: null }, // Dashboard is always visible if admin
+        { label: 'Control Stock', icon: Package, href: '/admin/inventory', requiredPermission: 'can_manage_prices' },
+        { label: 'Finanzas & Crédito', icon: ShoppingBag, href: '/admin/finances', requiredPermission: 'can_view_metrics' },
         { label: 'Crear Diseño (Canva)', icon: Palette, href: '/admin/designs/create', requiredPermission: 'can_manage_designs' },
         { label: 'Prendas/Productos', icon: Package, href: '/admin/products', requiredPermission: 'can_manage_prices' },
         { label: 'Colección de Logos', icon: Palette, href: '/admin/designs', requiredPermission: 'can_manage_designs' },
