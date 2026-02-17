@@ -32,7 +32,7 @@ export async function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!serviceRoleKey || serviceRoleKey.length === 0) {
-    throw new Error('CONFIG_ERROR: SUPABASE_SERVICE_ROLE_KEY is missing in .env.local. Administrative actions (like deleting users) require this key.');
+    throw new Error('CONFIG_ERROR: La SUPABASE_SERVICE_ROLE_KEY no está configurada en el servidor. Por favor, verifica las variables de entorno en AWS Amplify.');
   }
 
   return createServerClient(
