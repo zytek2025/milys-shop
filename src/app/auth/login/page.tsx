@@ -1,7 +1,12 @@
+'use client';
+
 import { LoginForm } from "@/components/auth/login-form"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
+    const router = useRouter();
+
     return (
         <div className="container relative h-[800px] flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
             <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
@@ -40,7 +45,7 @@ export default function LoginPage() {
                             Inicia sesión para acceder a tu cuenta
                         </p>
                     </div>
-                    <LoginForm />
+                    <LoginForm onSuccess={() => router.push('/')} />
                     <p className="px-8 text-center text-sm text-muted-foreground">
                         <Link
                             href="/auth/register"
