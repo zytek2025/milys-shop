@@ -24,6 +24,7 @@ const registerSchema = z.object({
   whatsapp: z.string().min(10, 'Introduce un número de WhatsApp válido (min 10 dígitos)'),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   confirmPassword: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  marketingConsent: z.boolean().default(false),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
   path: ['confirmPassword'],
@@ -48,6 +49,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       whatsapp: '',
       password: '',
       confirmPassword: '',
+      marketingConsent: true,
     },
   });
 
@@ -59,6 +61,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         password: data.password,
         fullName: data.fullName,
         whatsapp: data.whatsapp,
+        marketingConsent: data.marketingConsent,
       });
       toast.success('¡Cuenta creada exitosamente!');
       onSuccess?.();
@@ -157,6 +160,31 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="marketingConsent"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border p-4 shadow-sm">
+              <FormControl>
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-600 mt-1"
+                  checked={field.value}
+                  onChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel className="text-xs font-medium cursor-pointer leading-tight">
+                  Acepto recibir ofertas exclusivas, novedades y promociones vía WhatsApp y correo electrónico.
+                </FormLabel>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
+                  Club VIP Mily's Shop
+                </p>
+              </div>
             </FormItem>
           )}
         />

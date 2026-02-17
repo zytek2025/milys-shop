@@ -87,8 +87,8 @@ export function useRegister() {
   const queryClient = useQueryClient();
   const { setUser, setAuthenticated } = useCartStore();
 
-  return useMutation<ApiResponse<UserProfile>, Error, { email: string; password: string; fullName: string; whatsapp: string }>({
-    mutationFn: async ({ email, password, fullName, whatsapp }) => {
+  return useMutation<ApiResponse<UserProfile>, Error, { email: string; password: string; fullName: string; whatsapp: string; marketingConsent: boolean }>({
+    mutationFn: async ({ email, password, fullName, whatsapp, marketingConsent }) => {
       const supabase = createClient();
 
       const { data, error } = await supabase.auth.signUp({
@@ -98,6 +98,7 @@ export function useRegister() {
           data: {
             full_name: fullName,
             whatsapp: whatsapp,
+            marketing_consent: marketingConsent,
           },
         },
       });
@@ -129,7 +130,8 @@ export function useRegister() {
             customer: {
               fullName: fullName,
               email: email,
-              whatsapp: whatsapp
+              whatsapp: whatsapp,
+              marketingConsent: marketingConsent
             }
           })
         });

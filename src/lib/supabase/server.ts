@@ -29,9 +29,15 @@ export async function createClient() {
 }
 
 export async function createAdminClient() {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey || serviceRoleKey.length === 0) {
+    throw new Error('CONFIG_ERROR: SUPABASE_SERVICE_ROLE_KEY is missing in .env.local. Administrative actions (like deleting users) require this key.');
+  }
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    serviceRoleKey,
     {
       cookies: {
         getAll() {

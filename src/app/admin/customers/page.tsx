@@ -58,6 +58,9 @@ interface CustomerLead {
     ltv: number;
     orderCount: number;
     store_credit: number;
+    marketing_consent: boolean;
+    marketing_segment: string;
+    last_marketing_contact: string | null;
     lastActive: string;
 }
 
@@ -275,6 +278,7 @@ export default function AdminCRMPage() {
                                 <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                                     <TableHead>Cliente</TableHead>
                                     <TableHead>Estado</TableHead>
+                                    <TableHead>Marketing</TableHead>
                                     <TableHead>LTV (Valor)</TableHead>
                                     <TableHead>Pedidos</TableHead>
                                     <TableHead>Saldo Disp.</TableHead>
@@ -318,6 +322,23 @@ export default function AdminCRMPage() {
                                                 <Badge className={cn("rounded-full px-2 py-0 border capitalize font-normal text-[10px]", getStatusColor(lead.crm_status))}>
                                                     {lead.crm_status}
                                                 </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-1">
+                                                    <Badge variant="outline" className={cn(
+                                                        "w-fit text-[9px] uppercase font-bold px-1.5 py-0",
+                                                        lead.marketing_consent
+                                                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                                            : "bg-slate-50 text-slate-400 border-slate-100"
+                                                    )}>
+                                                        {lead.marketing_consent ? 'Suscrito' : 'Sin Consent.'}
+                                                    </Badge>
+                                                    {lead.marketing_segment && (
+                                                        <span className="text-[10px] text-muted-foreground font-medium italic">
+                                                            #{lead.marketing_segment}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </TableCell>
                                             <TableCell className="font-medium">
                                                 <span className="text-slate-900 dark:text-slate-100">${lead.ltv.toFixed(2)}</span>
