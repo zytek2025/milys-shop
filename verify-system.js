@@ -35,7 +35,16 @@ async function verifyStockDeductionPublic() {
         });
         if (authError) throw authError;
         userId = user.id;
-        console.log('1. Customer Created:', userId);
+
+        // Check Role
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single();
+        console.log(`1. Customer Created: ${userId} | Role: ${profile?.role || 'NONE'}`);
+
+        if (profile?.role !== 'customer') {
+            console.warn('⚠️ WARNING: Default role is NOT customer. It is:', profile?.role);
+        } else {
+            console.log('✅ Default Role verified: customer');
+        }
 
         // 2. We need a product to buy. We can only buy existing products if we can't create them.
         // As ANON, we cannot create products.

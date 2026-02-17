@@ -39,14 +39,40 @@ export async function middleware(request: NextRequest) {
     const isLoginPage = request.nextUrl.pathname.startsWith('/auth/login')
     const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
 
-    if (isAdminRoute && !user) {
-        const url = new URL('/auth/login', request.url)
-        url.searchParams.set('from', request.nextUrl.pathname)
-        return NextResponse.redirect(url)
+    if (isAdminRoute) {
+        if (!user) {
+            const url = new URL('/auth/login', request.url)
+            url.searchParams.set('from', request.nextUrl.pathname)
+            return NextResponse.redirect(url)
+        }
+
+        // Enforce Role Separation: Only 'admin' role can access /admin
+        // Users (Customers) are blocked.
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+        if (profile?.role !== 'admin') {
+            // Redirect unauthorized users to the shop home
+            return NextResponse.redirect(new URL('/', request.url))
+        }
     }
 
     if (isLoginPage && user) {
-        return NextResponse.redirect(new URL('/admin', request.url))
+        // If user is logged in, check role to decide redirect
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+        if (profile?.role === 'admin') {
+            return NextResponse.redirect(new URL('/admin', request.url))
+        } else {
+            return NextResponse.redirect(new URL('/', request.url))
+        }
     }
 
     return response
