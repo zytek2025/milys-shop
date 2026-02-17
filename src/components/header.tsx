@@ -95,9 +95,6 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-sm font-bold hover:text-primary transition-colors">Tienda</Link>
             <Link href="/offers" className="text-sm font-bold hover:text-primary transition-colors">Ofertas</Link>
-            <Link href="/design/editor" className="flex items-center gap-2 text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 hover:scale-105 transition-transform">
-              <Palette size={16} className="text-pink-500" /> Custom Studio
-            </Link>
           </nav>
 
           {/* Search Bar - Hidden on mobile */}

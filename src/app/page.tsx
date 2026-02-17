@@ -81,7 +81,7 @@ export default async function Home(props: {
         <CategoryFilter categories={fetchedCategories} />
 
         <Suspense fallback={<ProductGridSkeleton />}>
-          <ProductGrid products={filteredProducts} />
+          <ProductGrid products={filteredProducts} promotions={promotions} />
         </Suspense>
       </section>
     </div>
