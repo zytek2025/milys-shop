@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -94,6 +95,12 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
             </FormItem>
           )}
         />
+
+        <div className="flex justify-end">
+          <Link href="/auth/reset-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
 
         <Button
           type="submit"
