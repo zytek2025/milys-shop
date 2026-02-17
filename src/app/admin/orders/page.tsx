@@ -30,6 +30,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -125,6 +126,7 @@ export default function AdminOrdersPage() {
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                                     <TableHead>ID Pedido</TableHead>
+                                    <TableHead>ID</TableHead>
                                     <TableHead>Cliente</TableHead>
                                     <TableHead>Estado</TableHead>
                                     <TableHead>Total</TableHead>
@@ -161,7 +163,12 @@ export default function AdminOrdersPage() {
 
                                         const status = statusMap[order.status] || statusMap.pending;
                                         return (
-                                            <TableRow key={order.id} className="border-slate-100 dark:border-slate-800 group">
+                                            <TableRow key={order.id} className="group border-slate-100 dark:border-slate-800">
+                                                <TableCell>
+                                                    <Badge variant="outline" className="font-mono text-[9px] bg-slate-50 dark:bg-slate-900">
+                                                        {order.control_id || '---'}
+                                                    </Badge>
+                                                </TableCell>
                                                 <TableCell className="font-mono text-xs text-muted-foreground">
                                                     #{order.id.slice(0, 8)}
                                                 </TableCell>

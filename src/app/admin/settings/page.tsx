@@ -19,6 +19,10 @@ interface StoreSettings {
     zelle_info: string;
     crm_webhook_url: string;
     canva_api_key?: string;
+    whatsapp_number?: string;
+    instagram_handle?: string;
+    telegram_username?: string;
+    facebook_url?: string;
 }
 
 export default function AdminSettingsPage() {
@@ -33,7 +37,11 @@ export default function AdminSettingsPage() {
         pago_movil_info: '',
         zelle_info: '',
         crm_webhook_url: '',
-        canva_api_key: ''
+        canva_api_key: '',
+        whatsapp_number: '',
+        instagram_handle: '',
+        telegram_username: '',
+        facebook_url: ''
     });
 
     useEffect(() => {
@@ -54,7 +62,11 @@ export default function AdminSettingsPage() {
                     pago_movil_info: data.pago_movil_info || '',
                     zelle_info: data.zelle_info || '',
                     crm_webhook_url: data.crm_webhook_url || '',
-                    canva_api_key: data.canva_api_key || ''
+                    canva_api_key: data.canva_api_key || '',
+                    whatsapp_number: data.whatsapp_number || '',
+                    instagram_handle: data.instagram_handle || '',
+                    telegram_username: data.telegram_username || '',
+                    facebook_url: data.facebook_url || ''
                 });
             } else {
                 toast.error(data.error || 'Error al cargar ajustes');
@@ -161,6 +173,62 @@ export default function AdminSettingsPage() {
                             onChange={(e) => handleUpdateField('canva_api_key', e.target.value)}
                             className="font-mono text-sm bg-slate-50 dark:bg-slate-900 border-none h-12"
                         />
+                    </CardContent>
+                </Card>
+
+                {/* Contact Information */}
+                <Card className="border-2 border-primary/20 bg-primary/5">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 uppercase italic font-black tracking-tighter">
+                            Información de Contacto
+                        </CardTitle>
+                        <CardDescription>Estos datos se utilizarán para que los clientes te contacten.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase flex items-center gap-2">
+                                <Smartphone className="h-3 w-3" /> WhatsApp
+                            </Label>
+                            <Input
+                                placeholder="+58 412 000 0000"
+                                value={settings.whatsapp_number}
+                                onChange={(e) => handleUpdateField('whatsapp_number', e.target.value)}
+                                className="bg-white dark:bg-slate-900 border-none h-11"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase flex items-center gap-2 font-mono">
+                                @ Instagram
+                            </Label>
+                            <Input
+                                placeholder="tu_usuario"
+                                value={settings.instagram_handle}
+                                onChange={(e) => handleUpdateField('instagram_handle', e.target.value)}
+                                className="bg-white dark:bg-slate-900 border-none h-11"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase flex items-center gap-2">
+                                Telegram
+                            </Label>
+                            <Input
+                                placeholder="usuario_telegram"
+                                value={settings.telegram_username}
+                                onChange={(e) => handleUpdateField('telegram_username', e.target.value)}
+                                className="bg-white dark:bg-slate-900 border-none h-11"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase flex items-center gap-2">
+                                Facebook (URL)
+                            </Label>
+                            <Input
+                                placeholder="https://facebook.com/tu_pagina"
+                                value={settings.facebook_url}
+                                onChange={(e) => handleUpdateField('facebook_url', e.target.value)}
+                                className="bg-white dark:bg-slate-900 border-none h-11"
+                            />
+                        </div>
                     </CardContent>
                 </Card>
 

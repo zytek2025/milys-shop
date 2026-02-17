@@ -13,7 +13,7 @@ export async function GET() {
         // Trying to be safe with selection
         const { data, error } = await supabase
             .from('categories')
-            .select('*, is_customizable')
+            .select('*, control_id')
             .order('name');
 
         if (error) throw error;

@@ -58,6 +58,7 @@ interface CustomerLead {
     ltv: number;
     orderCount: number;
     store_credit: number;
+    control_id: string;
     marketing_consent: boolean;
     marketing_segment: string;
     last_marketing_contact: string | null;
@@ -319,6 +320,7 @@ export default function AdminCRMPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
+                                    <TableHead>ID</TableHead>
                                     <TableHead>Cliente</TableHead>
                                     <TableHead>Estado</TableHead>
                                     <TableHead>Marketing</TableHead>
@@ -348,6 +350,11 @@ export default function AdminCRMPage() {
                                 ) : (
                                     filteredLeads.map((lead) => (
                                         <TableRow key={lead.id} className="group border-slate-100 dark:border-slate-800">
+                                            <TableCell>
+                                                <Badge variant="outline" className="font-mono text-[10px] bg-slate-50">
+                                                    {lead.control_id || '---'}
+                                                </Badge>
+                                            </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
                                                     <div className="h-9 w-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden text-xs">

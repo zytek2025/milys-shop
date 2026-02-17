@@ -18,6 +18,7 @@ export async function GET() {
             .from('orders')
             .select(`
                 *,
+                control_id,
                 profiles (email, full_name, whatsapp),
                 order_items (*, products(name), product_variants(size, color, color_hex))
             `)

@@ -313,6 +313,7 @@ export default function InventoryPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-[80px]">ID</TableHead>
                                     <TableHead>Producto</TableHead>
                                     <TableHead>Var.</TableHead>
                                     <TableHead>Stock</TableHead>
@@ -406,9 +407,14 @@ export default function InventoryPage() {
                             </TableHeader>
                             <TableBody>
                                 {loading ? (
-                                    <TableRow><TableCell colSpan={4} className="text-center py-8"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={5} className="text-center py-8"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow>
                                 ) : (movements || []).map((m, idx) => (
-                                    <TableRow key={m?.id || idx} className="text-[10px]">
+                                    <TableRow key={m.id} className="group border-slate-100 dark:border-slate-800">
+                                        <TableCell>
+                                            <Badge variant="outline" className="font-mono text-[9px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                                                {m.control_id || '---'}
+                                            </Badge>
+                                        </TableCell>
                                         <TableCell className="text-muted-foreground">
                                             {m?.created_at ? new Date(m.created_at).toLocaleDateString() : '--'}
                                         </TableCell>

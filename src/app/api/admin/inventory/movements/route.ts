@@ -12,10 +12,10 @@ export async function GET(request: NextRequest) {
             .from('stock_movements')
             .select(`
                 *,
-                product_variants (
+                variant:product_variants(
                     size,
                     color,
-                    products (name)
+                    product:products(name, control_id)
                 )
             `)
             .order('created_at', { ascending: false })

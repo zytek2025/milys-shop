@@ -19,6 +19,7 @@ export async function GET() {
             .from('designs')
             .select(`
                 *,
+                control_id,
                 category:design_categories(name)
             `)
             .order('created_at', { ascending: false });

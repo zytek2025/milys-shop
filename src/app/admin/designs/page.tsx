@@ -24,6 +24,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import {
     Dialog,
     DialogContent,
@@ -266,6 +268,7 @@ export default function AdminDesignsPage() {
                     <Table>
                         <TableHeader>
                             <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
+                                <TableHead className="w-[100px]">ID</TableHead>
                                 <TableHead className="w-[100px]">Arte</TableHead>
                                 <TableHead>Nombre</TableHead>
                                 <TableHead>Tipo/Categoría</TableHead>
@@ -285,6 +288,11 @@ export default function AdminDesignsPage() {
                             ) : (
                                 filteredDesigns.map((design) => (
                                     <TableRow key={design.id} className="border-slate-100 dark:border-slate-800">
+                                        <TableCell>
+                                            <Badge variant="outline" className="font-mono text-[9px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                                                {design.control_id || 'DSG-???'}
+                                            </Badge>
+                                        </TableCell>
                                         <TableCell>
                                             <div className="w-12 h-12 rounded-lg bg-slate-50 overflow-hidden border">
                                                 <img src={design.image_url} alt="" className="w-full h-full object-cover" />
