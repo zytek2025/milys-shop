@@ -72,7 +72,14 @@ export default function AdminCRMPage() {
 
     const [updating, setUpdating] = useState<string | null>(null);
     const [editModalOpen, setEditModalOpen] = useState(false);
+    const [addModalOpen, setAddModalOpen] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState<CustomerLead | null>(null);
+
+    const [newCustomer, setNewCustomer] = useState({
+        full_name: '',
+        email: '',
+        password: 'mily' + Math.floor(Math.random() * 1000)
+    });
 
     useEffect(() => {
         fetchLeads();
@@ -106,6 +113,35 @@ export default function AdminCRMPage() {
             }
         } catch (error) {
             toast.error('Error al actualizar estado');
+        }
+    };
+
+    const handleCreateCustomer = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setUpdating('creating');
+        try {
+            const res = await fetch('/api/admin/users/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...newCustomer,
+                    role: 'user'
+                }),
+            });
+
+            if (res.ok) {
+                toast.success('Cliente creado correctamente');
+                setAddModalOpen(false);
+                setNewCustomer({ full_name: '', email: '', password: 'mily' + Math.floor(Math.random() * 1000) });
+                fetchLeads();
+            } else {
+                const data = await res.json();
+                toast.error(data.error || 'Error al crear cliente');
+            }
+        } catch (error) {
+            toast.error('Error de conexión');
+        } finally {
+            setUpdating(null);
         }
     };
 
@@ -194,7 +230,14 @@ export default function AdminCRMPage() {
                     <p className="text-muted-foreground">Seguimiento y gestión de clientes registrados.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" className="rounded-xl gap-2" onClick={fetchLeads}>
+                    <Button
+                        className="rounded-xl gap-2 font-black italic uppercase tracking-tighter"
+                        onClick={() => setAddModalOpen(true)}
+                    >
+                        <UserPlus size={16} />
+                        Nuevo Cliente
+                    </Button>
+                    <Button variant="outline" className="rounded-xl gap-2 font-bold" onClick={fetchLeads}>
                         <Clock size={16} />
                         Actualizar
                     </Button>
@@ -426,6 +469,62 @@ export default function AdminCRMPage() {
                             >
                                 {updating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                                 Guardar Cambios
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
+                <DialogContent className="sm:max-w-[425px] rounded-[2rem] border-2">
+                    <form onSubmit={handleCreateCustomer}>
+                        <DialogHeader>
+                            <DialogTitle className="text-2xl font-black italic uppercase tracking-tight">Nuevo Cliente</DialogTitle>
+                            <DialogDescription>Crea una nueva cuenta de cliente manualmente.</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-6">
+                            <div className="grid gap-2">
+                                <Label htmlFor="add-name" className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Nombre Completo</Label>
+                                <Input
+                                    id="add-name"
+                                    className="rounded-xl border-2 h-11"
+                                    value={newCustomer.full_name}
+                                    onChange={(e) => setNewCustomer(prev => ({ ...prev, full_name: e.target.value }))}
+                                    placeholder="Juan Pérez"
+                                    required
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="add-email" className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Correo Electrónico</Label>
+                                <Input
+                                    id="add-email"
+                                    type="email"
+                                    className="rounded-xl border-2 h-11"
+                                    value={newCustomer.email}
+                                    onChange={(e) => setNewCustomer(prev => ({ ...prev, email: e.target.value }))}
+                                    placeholder="juan@ejemplo.com"
+                                    required
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="add-pass" className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Contraseña Temporal</Label>
+                                <Input
+                                    id="add-pass"
+                                    className="rounded-xl border-2 h-11"
+                                    value={newCustomer.password}
+                                    onChange={(e) => setNewCustomer(prev => ({ ...prev, password: e.target.value }))}
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                type="submit"
+                                className="w-full font-black italic uppercase tracking-wider rounded-xl h-11"
+                                disabled={!!updating}
+                            >
+                                {updating === 'creating' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                                Crear Cliente
                             </Button>
                         </DialogFooter>
                     </form>

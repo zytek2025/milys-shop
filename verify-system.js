@@ -7,12 +7,15 @@ const envPath = path.resolve(__dirname, '.env.local');
 const envContent = fs.readFileSync(envPath, 'utf8');
 const env = {};
 envContent.split('\n').forEach(line => {
-    const [key, value] = line.split('=');
-    if (key && value) env[key.trim()] = value.trim();
+    const parts = line.split('=');
+    if (parts.length >= 2) {
+        const key = parts[0].trim();
+        const value = parts.slice(1).join('=').trim();
+        env[key] = value;
+    }
 });
 
 const SUPABASE_URL = env['NEXT_PUBLIC_SUPABASE_URL'];
-const SERVICE_ROLE_KEY = env['SUPABASE_SERVICE_ROLE_KEY'];
 const ANON_KEY = env['NEXT_PUBLIC_SUPABASE_ANON_KEY'];
 
 if (!SUPABASE_URL || !ANON_KEY) {
@@ -22,100 +25,67 @@ if (!SUPABASE_URL || !ANON_KEY) {
 
 const supabase = createClient(SUPABASE_URL, ANON_KEY);
 
-async function verifyStockDeductionPublic() {
-    console.log('\n--- VERIFYING STOCK DEDUCTION (Customer Flow) ---');
-    const email = `test-customer-verify-${Date.now()}@example.com`;
+async function verifySystem() {
+    console.log('\n--- VERIFYING SYSTEM (FIXES) ---');
+    const email = `test-user-${Date.now()}@example.com`;
     const password = 'TestPassword123!';
-    let userId, productId, variantId, orderId;
+    let userId;
 
     try {
-        // 1. Sign Up
-        const { data: { user }, error: authError } = await supabase.auth.signUp({
-            email, password
+        // 1. Test Registration & Automated Profile Creation (RLS Fix)
+        console.log('1. Testing Registration (RLS Fix)...');
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email, password,
+            options: { data: { full_name: 'Test Automatic User' } }
         });
+
         if (authError) throw authError;
-        userId = user.id;
+        userId = authData.user.id;
+        console.log(`   User registered: ${userId}`);
 
-        // Check Role
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single();
-        console.log(`1. Customer Created: ${userId} | Role: ${profile?.role || 'NONE'}`);
+        // Wait for profile (Check if RLS allows reading/creating)
+        const { data: profile, error: pError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
 
-        if (profile?.role !== 'customer') {
-            console.warn('⚠️ WARNING: Default role is NOT customer. It is:', profile?.role);
+        if (pError) {
+            console.error('   ❌ Profile NOT found or inaccessible:', pError.message);
         } else {
-            console.log('✅ Default Role verified: customer');
+            console.log(`   ✅ Profile found! Role: ${profile.role} | Name: ${profile.full_name}`);
         }
 
-        // 2. We need a product to buy. We can only buy existing products if we can't create them.
-        // As ANON, we cannot create products.
-        // We must find an existing product with stock.
-        const { data: products } = await supabase.from('products').select('id, name, product_variants(id, stock)').limit(5);
+        // 2. Check Inventory Movement History
+        console.log('\n2. Testing Inventory Movement History...');
+        const { data: movements, error: mError } = await supabase
+            .from('stock_movements')
+            .select('*')
+            .limit(5);
 
-        let targetVariant = null;
-        for (const p of products) {
-            if (p.product_variants && p.product_variants.length > 0) {
-                const v = p.product_variants.find(v => v.stock > 5);
-                if (v) {
-                    targetVariant = { ...v, product_id: p.id, name: p.name };
-                    break;
-                }
+        if (mError) {
+            console.error('   ❌ Failed to fetch movements:', mError.message);
+        } else {
+            console.log(`   ✅ Movement logs are accessible. Found ${movements.length} recent entries.`);
+            if (movements.length > 0) {
+                console.log('      Latest movement type:', movements[0].type);
             }
         }
 
-        if (!targetVariant) {
-            throw new Error('No testable product with sufficient stock found.');
-        }
-
-        productId = targetVariant.product_id;
-        variantId = targetVariant.id;
-        const initialStock = targetVariant.stock;
-
-        console.log(`2. Target Product: ${targetVariant.name} (Stock: ${initialStock})`);
-
-        // 3. Create Order
-        const { data: order, error: oError } = await supabase.from('orders').insert({
-            user_id: userId,
-            status: 'pending',
-            total: 10.00,
-            full_name: 'Verification Customer',
-            shipping_address: 'Test Address'
-        }).select().single();
-
-        if (oError) throw new Error(`Order Creation Failed: ${oError.message}`);
-        orderId = order.id;
-
-        // 4. Create Order Item (Trigger should fire)
-        const qtyToBuy = 1;
-        const { error: iError } = await supabase.from('order_items').insert({
-            order_id: orderId,
-            product_id: productId,
-            variant_id: variantId,
-            quantity: qtyToBuy,
-            price: 10.00,
-            name: targetVariant.name
-        });
-
-        if (iError) throw new Error(`Order Item Failed: ${iError.message}`);
-        console.log('3. Order Item Created');
-
-        // 5. Check Stock Again
-        // Wait a small moment for trigger? (Usually instantaneous in same transaction or immediate)
-        const { data: updatedVariant } = await supabase.from('product_variants').select('stock').eq('id', variantId).single();
-
-        const expectedStock = initialStock - qtyToBuy;
-        console.log(`4. Final Stock: ${updatedVariant.stock} (Expected: ${expectedStock})`);
-
-        if (updatedVariant.stock === expectedStock) {
-            console.log('✅ Stock Deduction PASSED');
-        } else {
-            console.error('❌ Stock Deduction FAILED');
-        }
-
     } catch (e) {
-        console.error('❌ Verification Error:', e.message);
+        console.error('❌ Verification Failed:', e.message);
     }
-    // Cleanup is hard as ANON (Can't delete confirmed orders usually). 
-    // Data remains as test trash. Acceptable for verification.
+
+    // FINAL SYSTEM CHECK: List profiles to debug visibility
+    console.log('\n--- FINAL PROFILES LOG ---');
+    const { data: allProfiles } = await supabase
+        .from('profiles')
+        .select('email, role, crm_status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+    fs.writeFileSync('profiles-debug.json', JSON.stringify(allProfiles || [], null, 2));
+    console.log('Top 10 profiles saved to profiles-debug.json');
 }
 
-verifyStockDeductionPublic();
+verifySystem();

@@ -50,6 +50,8 @@ export default function InventoryPage() {
     const [customers, setCustomers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [categories, setCategories] = useState<any[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
     const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
     const [modalType, setModalType] = useState<'in' | 'out' | 'return'>('in');
@@ -68,13 +70,15 @@ export default function InventoryPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [vRes, mRes] = await Promise.all([
+            const [vRes, mRes, cRes] = await Promise.all([
                 fetch('/api/admin/products'),
-                fetch('/api/admin/inventory/movements')
+                fetch('/api/admin/inventory/movements'),
+                fetch('/api/admin/categories')
             ]);
 
             const products = await vRes.json();
             const moves = await mRes.json();
+            const cats = await cRes.json();
 
             if (!vRes.ok || !Array.isArray(products)) {
                 throw new Error(products.error || 'No se pudieron cargar productos');
@@ -106,6 +110,10 @@ export default function InventoryPage() {
                     price: v.price_override || p.price || 0
                 }));
             });
+
+            if (Array.isArray(cats)) {
+                setCategories(cats);
+            }
 
             setVariants(allVariants);
             setMovements(moves);
@@ -214,7 +222,10 @@ export default function InventoryPage() {
         const nameMatch = (v.product_name || '').toLowerCase().includes(term);
         const sizeMatch = (v.size || '').toLowerCase().includes(term);
         const colorMatch = (v.color || v.color_name || '').toLowerCase().includes(term);
-        return nameMatch || sizeMatch || colorMatch;
+
+        const categoryMatch = selectedCategory === 'all' || v.category === selectedCategory || v.category_id === selectedCategory;
+
+        return (nameMatch || sizeMatch || colorMatch) && categoryMatch;
     });
 
     return (
@@ -274,14 +285,27 @@ export default function InventoryPage() {
                             <CardTitle className="text-sm font-black uppercase italic italic flex items-center gap-2 tracking-tight">
                                 <Package className="text-primary" size={18} /> Existencias Actuales
                             </CardTitle>
-                            <div className="relative w-48">
-                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
-                                <Input
-                                    placeholder="Buscar..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="h-8 pl-7 text-xs rounded-lg"
-                                />
+                            <div className="flex items-center gap-2">
+                                <div className="relative w-48">
+                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
+                                    <Input
+                                        placeholder="Buscar..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="h-8 pl-7 text-xs rounded-lg"
+                                    />
+                                </div>
+                                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                    <SelectTrigger className="h-8 w-32 text-[10px] rounded-lg bg-slate-50 dark:bg-slate-800">
+                                        <SelectValue placeholder="Categoría" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl border-2">
+                                        <SelectItem value="all">Todas</SelectItem>
+                                        {categories.map(cat => (
+                                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                     </CardHeader>

@@ -149,45 +149,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
     }
 
-    // 4. Update Stock (Robust Implementation)
-    // We do this explicitly in the API to guarantee stock is deducted,
-    // regardless of whether DB triggers are active or not.
+    // 4. Update Stock & Log Movements
+    // We log to stock_movements, which triggers the automated stock deduction.
+    // This ensures consistency between history and actual stock.
     for (const item of orderItems) {
       try {
         if (item.variant_id) {
-          // Case A: Product with Variants
-          // Try RPC first for atomicity (if function exists)
-          const { error: rpcError } = await supabase.rpc('decrement_stock', {
-            row_id: item.variant_id,
-            amount: item.quantity
+          // Record movement (Trigger tr_update_stock_on_movement will deduct stock)
+          await supabase.from('stock_movements').insert({
+            variant_id: item.variant_id,
+            quantity: -item.quantity,
+            type: 'order',
+            reason: `Pedido #${order.id.slice(0, 8)}`,
+            created_by: user.id
           });
+        } else if (item.product_id) {
+          // Simple products also need stock deduction
+          // We'll try to find or create a default variant to log the movement
+          const { data: vars } = await supabase.from('product_variants').select('id').eq('product_id', item.product_id).limit(1);
+          let v_id = vars?.[0]?.id;
 
-          if (rpcError) {
-            // Fallback: Direct Update (if RPC missing or failed)
-            const { data: v } = await supabase.from('product_variants').select('stock').eq('id', item.variant_id).single();
-            if (v) {
-              await supabase.from('product_variants').update({ stock: v.stock - item.quantity }).eq('id', item.variant_id);
-            }
-          }
-        } else {
-          // Case B: Simple Product
-          const { error: rpcError } = await supabase.rpc('decrement_product_stock', {
-            p_id: item.product_id,
-            qty: item.quantity
-          });
-
-          if (rpcError) {
-            // Fallback: Direct Update
+          if (!v_id) {
+            // Fallback: If no variant, do a direct product update as before
             const { data: p } = await supabase.from('products').select('stock').eq('id', item.product_id).single();
             if (p) {
               await supabase.from('products').update({ stock: p.stock - item.quantity }).eq('id', item.product_id);
             }
+          } else {
+            await supabase.from('stock_movements').insert({
+              variant_id: v_id,
+              quantity: -item.quantity,
+              type: 'order',
+              reason: `Pedido #${order.id.slice(0, 8)}`,
+              created_by: user.id
+            });
           }
         }
       } catch (stockErr) {
-        console.error(`Failed to deduct stock for item ${item.product_name}:`, stockErr);
-        // Continue to next item - don't fail the whole order for one stock error,
-        // but log it critically.
+        console.error(`Failed to update stock/log for item ${item.product_name}:`, stockErr);
       }
     }
 

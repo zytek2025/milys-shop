@@ -22,7 +22,7 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { email, password, full_name, permissions } = body;
+        const { email, password, full_name, permissions, role } = body;
 
         if (!email || !password) {
             return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
         const { data: newProfile, error: profileError } = await adminSupabase
             .from('profiles')
             .update({
-                role: 'admin',
+                role: role || 'admin',
                 full_name: full_name || email.split('@')[0],
                 permissions: permissions || {
                     can_manage_prices: false,

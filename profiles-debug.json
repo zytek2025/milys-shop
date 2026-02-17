@@ -1,0 +1,62 @@
+[
+  {
+    "email": "test-user-1771333310941@example.com",
+    "role": "user",
+    "crm_status": "lead",
+    "created_at": "2026-02-17T13:01:51.623895+00:00"
+  },
+  {
+    "email": "test-customer-verify-1771332801956@example.com",
+    "role": "user",
+    "crm_status": "lead",
+    "created_at": "2026-02-17T12:53:22.685175+00:00"
+  },
+  {
+    "email": "dfornerino87@gmail.com",
+    "role": "user",
+    "crm_status": "lead",
+    "created_at": "2026-02-17T12:47:52.8695+00:00"
+  },
+  {
+    "email": "test-customer-verify-1771332072190@example.com",
+    "role": "user",
+    "crm_status": "lead",
+    "created_at": "2026-02-17T12:41:12.928105+00:00"
+  },
+  {
+    "email": "test-customer-verify-1771308695763@example.com",
+    "role": "user",
+    "crm_status": "lead",
+    "created_at": "2026-02-17T06:11:35.806173+00:00"
+  },
+  {
+    "email": "dfornerino@gmail.com",
+    "role": "user",
+    "crm_status": "lead",
+    "created_at": "2026-02-17T05:59:59.57969+00:00"
+  },
+  {
+    "email": "zytek.2025@gmail.com",
+    "role": "user",
+    "crm_status": "lead",
+    "created_at": "2026-02-16T13:11:46.856048+00:00"
+  },
+  {
+    "email": "vanessa@milys.shop",
+    "role": "admin",
+    "crm_status": "lead",
+    "created_at": "2026-02-15T13:13:36.020794+00:00"
+  },
+  {
+    "email": "BEJARANO.V189@GMAIL.COM",
+    "role": "admin",
+    "crm_status": "lead",
+    "created_at": "2026-02-14T05:42:18.448204+00:00"
+  },
+  {
+    "email": "dfornerino.usa@gmail.com",
+    "role": "admin",
+    "crm_status": "lead",
+    "created_at": "2026-02-14T02:37:04.121971+00:00"
+  }
+]
