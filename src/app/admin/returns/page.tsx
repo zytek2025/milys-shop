@@ -12,7 +12,8 @@ import {
     ArrowRight,
     User,
     ShoppingBag,
-    DollarSign
+    DollarSign,
+    MessageSquare
 } from 'lucide-react';
 import {
     Table,
