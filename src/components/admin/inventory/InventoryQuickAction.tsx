@@ -58,7 +58,9 @@ export function InventoryQuickAction({ onUpdate }: { onUpdate: () => void }) {
 
                 // Flatten to variants
                 const variants: ProductVariant[] = [];
-                data.forEach((p: any) => {
+                const productsList = Array.isArray(data) ? data : [];
+
+                productsList.forEach((p: any) => {
                     p.product_variants.forEach((v: any) => {
                         variants.push({
                             id: v.id,

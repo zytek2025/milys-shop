@@ -100,16 +100,17 @@ export default function InventoryPage() {
 
             // ... (rest of logic)
 
+            if (!vRes.ok) throw new Error(products.error || 'Failed to load products');
+            if (!mRes.ok) throw new Error(moves.error || 'Failed to load movements');
+
             // Fix movement name fallback
-            const processedMoves = moves.map((m: any) => ({
+            const validMoves = Array.isArray(moves) ? moves : [];
+            const processedMoves = validMoves.map((m: any) => ({
                 ...m,
                 product_name: m.variant?.product?.name || m.direct_product?.name || 'Producto desconocido',
                 product_details: m.variant ? `${m.variant.size} / ${m.variant.color}` : '---'
             }));
             setMovements(processedMoves);
-
-            if (!vRes.ok) throw new Error(products.error || 'Failed to load products');
-            if (!mRes.ok) throw new Error(moves.error || 'Failed to load movements');
 
             // Flatten variants
             const allVariants = (products || []).flatMap((p: any) => {
