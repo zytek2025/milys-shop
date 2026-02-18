@@ -203,6 +203,8 @@ export default function AdminOrdersPage() {
                                         const personalizationPrice = personalization?.price || 0;
 
                                         const status = statusMap[order.status] || statusMap.pending;
+                                        const hasReturn = order.order_items?.some((item: any) => item.custom_metadata?.is_returned);
+
                                         return (
                                             <TableRow key={order.id} className="group border-slate-100 dark:border-slate-800">
                                                 <TableCell>
@@ -247,6 +249,11 @@ export default function AdminOrdersPage() {
                                                                 </div>
                                                                 <p className="text-sm font-medium italic">"{personalizationText}"</p>
                                                             </div>
+                                                        )}
+                                                        {hasReturn && (
+                                                            <Badge className="bg-rose-50 text-rose-600 border-rose-100 text-[9px] font-black uppercase flex items-center gap-1 w-fit">
+                                                                <RotateCcw size={10} /> Devolución
+                                                            </Badge>
                                                         )}
                                                         {order.crm_synced && (
                                                             <span className="text-[9px] font-black uppercase text-emerald-500 flex items-center gap-1">
@@ -337,6 +344,20 @@ export default function AdminOrdersPage() {
                                                             >
                                                                 <Eye size={16} />
                                                             </Button>
+                                                            {order.status === 'completed' && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                                                    title="Ver Detalles / Procesar Devolución"
+                                                                    onClick={() => {
+                                                                        setSelectedOrder(order);
+                                                                        setIsDetailsOpen(true);
+                                                                    }}
+                                                                >
+                                                                    <RotateCcw size={16} />
+                                                                </Button>
+                                                            )}
                                                             {order.profiles?.whatsapp && (
                                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-500 hover:bg-emerald-50 rounded-lg" asChild>
                                                                     <a href={`https://wa.me/${order.profiles.whatsapp}`} target="_blank" rel="noreferrer">
@@ -498,8 +519,10 @@ export default function AdminOrdersPage() {
                                                                     {item.product_variants.color}
                                                                 </span>
                                                             )}
-                                                            {item.custom_metadata?.is_returned && (
-                                                                <Badge className="bg-rose-50 text-rose-600 border-rose-100 text-[8px] font-black uppercase">Devuelto</Badge>
+                                                            {metadata.is_returned && (
+                                                                <Badge className="bg-rose-50 text-rose-600 border-rose-100 text-[10px] font-black uppercase py-1 px-3 animate-pulse">
+                                                                    Artículo Devuelto
+                                                                </Badge>
                                                             )}
                                                         </div>
                                                     </div>
