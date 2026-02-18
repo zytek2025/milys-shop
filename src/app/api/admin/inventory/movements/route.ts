@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
                 variant:product_variants(
                     size,
                     color,
-                    product:products(name, control_id)
+                    product:products(name)
                 )
             `)
             .order('created_at', { ascending: false })
