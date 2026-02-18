@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
                     size,
                     color,
                     product:products(name, control_id)
-                )
+                ),
+                direct_product:products(name, control_id)
             `)
             .order('created_at', { ascending: false })
             .limit(50);
