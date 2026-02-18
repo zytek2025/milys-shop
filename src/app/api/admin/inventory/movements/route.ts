@@ -74,7 +74,12 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        const { data, error } = await supabase
+        if (type === 'return' && !variant_id && product_id) {
+            // Handle legacy returns if needed, though usually returns have a variant
+        }
+
+        // 1. Insert Movement
+        const { data: movement, error: insertError } = await supabase
             .from('stock_movements')
             .insert([{
                 variant_id,
@@ -86,8 +91,30 @@ export async function POST(request: NextRequest) {
             .select()
             .single();
 
-        if (error) throw error;
-        return NextResponse.json(data);
+        if (insertError) throw insertError;
+
+        // 2. Update Stock in Product Variant
+        // RPC or direct update? Direct update is fine for now as we don't have high concurrency
+        // We need to fetch current to be safe or use a Postgres increment if available via Supabase simple API
+        // But wait, we can just use the rpc 'decrement_stock' if it existed for generic cases, but it doesn't.
+        // Let's read current, calc new, update.
+
+        const { data: variant } = await supabase
+            .from('product_variants')
+            .select('stock')
+            .eq('id', variant_id)
+            .single();
+
+        if (variant) {
+            const newStock = (variant.stock || 0) + quantity;
+            await supabase
+                .from('product_variants')
+                .update({ stock: newStock })
+                .eq('id', variant_id);
+        }
+
+        return NextResponse.json(movement);
+
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
