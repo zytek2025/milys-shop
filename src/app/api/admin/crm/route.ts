@@ -11,26 +11,21 @@ export async function GET() {
 
         const supabase = await createClient();
 
-        // Fetch profiles with their orders to calculate LTV (Life Time Value)
+        // Fetch profiles with their orders and items to calculate complex KPIs
         const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select(`
-                id,
-                email,
-                full_name,
-                avatar_url,
-                role,
-                crm_status,
-                control_id,
-                store_credit,
-                marketing_consent,
-                marketing_segment,
-                last_marketing_contact,
-                notes,
-                created_at,
+                *,
                 orders (
+                    id,
                     total,
-                    status
+                    status,
+                    created_at,
+                    order_items (
+                        product_name,
+                        quantity,
+                        custom_metadata
+                    )
                 )
             `)
             .eq('role', 'user')
@@ -40,25 +35,61 @@ export async function GET() {
 
         // Process data for the CRM view
         const crmData = profiles.map((p: any) => {
-            const completedOrders = p.orders?.filter((o: any) => o.status === 'completed') || [];
+            const allOrders = p.orders || [];
+            const completedOrders = allOrders.filter((o: any) => o.status === 'completed');
+
+            // 1. Basic Stats
             const ltv = completedOrders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
-            const lastActive = p.created_at; // Simplify for now
+            const orderCount = allOrders.length;
+            const aov = completedOrders.length > 0 ? ltv / completedOrders.length : 0;
+
+            // 2. Recency & Activity
+            const lastOrderDate = allOrders.length > 0
+                ? new Set(allOrders.map((o: any) => o.created_at)).values().next().value // They are already ordered by desc in most cases, but let's be safe
+                : null;
+
+            // 3. Top Products Aggregation
+            const productCounts: Record<string, number> = {};
+            let returnCount = 0;
+            let totalItemsCount = 0;
+
+            allOrders.forEach((o: any) => {
+                o.order_items?.forEach((item: any) => {
+                    totalItemsCount += item.quantity || 0;
+                    if (item.custom_metadata?.is_returned) returnCount += item.quantity || 0;
+
+                    const name = item.product_name || 'Producto Desconocido';
+                    productCounts[name] = (productCounts[name] || 0) + (item.quantity || 0);
+                });
+            });
+
+            const favoriteProducts = Object.entries(productCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3)
+                .map(([name]) => name);
+
+            const returnsRatio = totalItemsCount > 0 ? (returnCount / totalItemsCount) * 100 : 0;
+
+            // 4. Segmentation Logic
+            let segment = 'Lead';
+            if (ltv > 500 && completedOrders.length >= 3) segment = 'Champion';
+            else if (completedOrders.length >= 2) segment = 'Loyal';
+            else if (completedOrders.length === 1) segment = 'New Customer';
+            else if (allOrders.length > 0 && completedOrders.length === 0) segment = 'Interested';
 
             return {
-                id: p.id,
-                email: p.email,
-                full_name: p.full_name,
-                avatar_url: p.avatar_url,
+                ...p,
                 crm_status: p.crm_status || 'lead',
-                control_id: p.control_id,
-                store_credit: p.store_credit || 0,
-                marketing_consent: p.marketing_consent || false,
-                marketing_segment: p.marketing_segment,
-                last_marketing_contact: p.last_marketing_contact,
-                notes: p.notes,
+                segment,
                 ltv,
-                orderCount: p.orders?.length || 0,
-                lastActive
+                aov,
+                orderCount,
+                favoriteProducts,
+                returnsRatio,
+                totalItemsCount,
+                lastOrderDate,
+                lastActive: p.updated_at || p.created_at,
+                full_history: allOrders // Include full history for the detailed modal
             };
         });
 

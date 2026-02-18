@@ -54,15 +54,20 @@ interface CustomerLead {
     full_name: string;
     avatar_url: string;
     crm_status: string;
-    notes: string;
+    segment: string;
     ltv: number;
+    aov: number;
     orderCount: number;
+    totalItemsCount: number;
+    favoriteProducts: string[];
+    returnsRatio: number;
     store_credit: number;
     control_id: string;
     marketing_consent: boolean;
     marketing_segment: string;
     last_marketing_contact: string | null;
     lastActive: string;
+    full_history: any[];
 }
 
 export default function AdminCRMPage() {
@@ -75,6 +80,7 @@ export default function AdminCRMPage() {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [addModalOpen, setAddModalOpen] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState<CustomerLead | null>(null);
+    const [viewDetailsOpen, setViewDetailsOpen] = useState(false);
 
     const [newCustomer, setNewCustomer] = useState({
         full_name: '',
@@ -210,6 +216,16 @@ export default function AdminCRMPage() {
         }
     };
 
+    const getSegmentStyles = (segment: string) => {
+        switch (segment) {
+            case 'Champion': return 'bg-purple-100 text-purple-700 border-purple-200 font-bold';
+            case 'Loyal': return 'bg-blue-100 text-blue-700 border-blue-200';
+            case 'New Customer': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            case 'Interested': return 'bg-amber-50 text-amber-600 border-amber-100';
+            default: return 'bg-slate-100 text-slate-500 border-slate-200';
+        }
+    };
+
     const filteredLeads = leads.filter(l => {
         const matchesSearch = l.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (l.full_name || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -323,8 +339,9 @@ export default function AdminCRMPage() {
                                     <TableHead>ID</TableHead>
                                     <TableHead>Cliente</TableHead>
                                     <TableHead>Estado</TableHead>
-                                    <TableHead>Marketing</TableHead>
+                                    <TableHead>KPI Segmento</TableHead>
                                     <TableHead>LTV (Valor)</TableHead>
+                                    <TableHead>Principal Compra</TableHead>
                                     <TableHead>Pedidos</TableHead>
                                     <TableHead>Saldo Disp.</TableHead>
                                     <TableHead>Últ. Actividad</TableHead>
@@ -374,24 +391,23 @@ export default function AdminCRMPage() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="flex flex-col gap-1">
-                                                    <Badge variant="outline" className={cn(
-                                                        "w-fit text-[9px] uppercase font-bold px-1.5 py-0",
-                                                        lead.marketing_consent
-                                                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                                                            : "bg-slate-50 text-slate-400 border-slate-100"
-                                                    )}>
-                                                        {lead.marketing_consent ? 'Suscrito' : 'Sin Consent.'}
-                                                    </Badge>
-                                                    {lead.marketing_segment && (
-                                                        <span className="text-[10px] text-muted-foreground font-medium italic">
-                                                            #{lead.marketing_segment}
-                                                        </span>
+                                                <Badge variant="outline" className={cn("text-[9px] uppercase tracking-tight", getSegmentStyles(lead.segment))}>
+                                                    {lead.segment}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="font-bold text-slate-900 dark:text-slate-100">
+                                                ${lead.ltv.toFixed(2)}
+                                                {lead.aov > 0 && <p className="text-[9px] font-normal text-muted-foreground italic">TP: ${lead.aov.toFixed(2)}</p>}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-0.5">
+                                                    {lead.favoriteProducts?.slice(0, 1).map((p, i) => (
+                                                        <span key={i} className="text-[10px] font-medium truncate max-w-[120px]">{p}</span>
+                                                    ))}
+                                                    {lead.returnsRatio > 0 && (
+                                                        <span className="text-[8px] text-rose-500 font-bold uppercase">Devolución: {lead.returnsRatio.toFixed(0)}%</span>
                                                     )}
                                                 </div>
-                                            </TableCell>
-                                            <TableCell className="font-medium">
-                                                <span className="text-slate-900 dark:text-slate-100">${lead.ltv.toFixed(2)}</span>
                                             </TableCell>
                                             <TableCell>
                                                 <span className="text-xs text-muted-foreground">{lead.orderCount} pedidos</span>
@@ -412,6 +428,9 @@ export default function AdminCRMPage() {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="rounded-xl">
+                                                        <DropdownMenuItem className="gap-2 font-bold text-primary" onClick={() => { setSelectedCustomer(lead); setViewDetailsOpen(true); }}>
+                                                            <TrendingUp size={14} /> Ver Insights & Historial
+                                                        </DropdownMenuItem>
                                                         <DropdownMenuItem className="gap-2" onClick={() => { setSelectedCustomer(lead); setEditModalOpen(true); }}>
                                                             <Edit3 size={14} /> Modificar Datos
                                                         </DropdownMenuItem>
@@ -438,6 +457,87 @@ export default function AdminCRMPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            <Dialog open={viewDetailsOpen} onOpenChange={setViewDetailsOpen}>
+                <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-2 max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-black italic uppercase tracking-tight flex items-center gap-2">
+                            <TrendingUp className="text-primary" /> Insights del Cliente
+                        </DialogTitle>
+                        <DialogDescription>Perfil de comportamiento y KPI de ventas.</DialogDescription>
+                    </DialogHeader>
+
+                    {selectedCustomer && (
+                        <div className="space-y-6 py-4">
+                            {/* Stats Summary */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="bg-slate-50 p-3 rounded-2xl border flex flex-col items-center justify-center">
+                                    <p className="text-[10px] font-black uppercase text-muted-foreground">Ticket Avg.</p>
+                                    <p className="text-lg font-black">${selectedCustomer.aov.toFixed(2)}</p>
+                                </div>
+                                <div className="bg-slate-50 p-3 rounded-2xl border flex flex-col items-center justify-center">
+                                    <p className="text-[10px] font-black uppercase text-muted-foreground">Artículos</p>
+                                    <p className="text-lg font-black">{selectedCustomer.totalItemsCount || 0}</p>
+                                </div>
+                                <div className="bg-slate-50 p-3 rounded-2xl border flex flex-col items-center justify-center">
+                                    <p className="text-[10px] font-black uppercase text-muted-foreground">Return Rate</p>
+                                    <p className={cn("text-lg font-black", selectedCustomer.returnsRatio > 20 ? "text-rose-500" : "text-emerald-500")}>
+                                        {selectedCustomer.returnsRatio.toFixed(0)}%
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Behavioral Insights */}
+                            <div className="space-y-3">
+                                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                    Favoritos <span className="h-px bg-primary/10 flex-1"></span>
+                                </h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedCustomer.favoriteProducts?.length > 0 ? selectedCustomer.favoriteProducts.map((p, i) => (
+                                        <Badge key={i} variant="outline" className="bg-primary/5 border-primary/20 text-primary rounded-xl px-3 py-1 font-bold italic">
+                                            {p}
+                                        </Badge>
+                                    )) : <span className="text-xs text-muted-foreground italic">Sin compras registradas aún.</span>}
+                                </div>
+                            </div>
+
+                            {/* Order Timeline */}
+                            <div className="space-y-4">
+                                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                    Historial de Pedidos <span className="h-px bg-primary/10 flex-1"></span>
+                                </h4>
+                                <div className="space-y-3">
+                                    {selectedCustomer.full_history?.map((order: any, idx: number) => (
+                                        <div key={idx} className="flex gap-4 items-start relative pb-4 last:pb-0 border-l-2 border-slate-100 pl-4 ml-2">
+                                            <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-white border-2 border-primary" />
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <p className="text-xs font-black uppercase italic tracking-tighter">Pedido #{order.id.slice(0, 8)}</p>
+                                                    <Badge variant="outline" className="text-[8px] font-bold uppercase">{order.status}</Badge>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <p className="text-[10px] text-muted-foreground">{format(new Date(order.created_at), "d 'de' MMMM, yyyy", { locale: es })}</p>
+                                                    <p className="font-black text-sm text-primary">${order.total?.toFixed(2)}</p>
+                                                </div>
+                                                <div className="mt-2 flex flex-wrap gap-1">
+                                                    {order.order_items?.map((item: any, i: number) => (
+                                                        <span key={i} className="text-[9px] bg-slate-50 px-1.5 py-0.5 rounded border">
+                                                            x{item.quantity} {item.product_name}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button className="w-full rounded-xl" onClick={() => setViewDetailsOpen(false)}>Cerrar Reporte</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
                 <DialogContent className="sm:max-w-[425px] rounded-[2rem] border-2">
