@@ -81,12 +81,14 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                                 <div className="flex flex-col items-center md:items-start gap-3 text-sm font-bold text-muted-foreground">
                                     <Link href="/" className="hover:text-primary transition-colors">Catálogo</Link>
                                     <Link href="/orders" className="hover:text-primary transition-colors">Mis Pedidos</Link>
+                                    <Link href="#contact-section" className="hover:text-primary transition-colors">Contacto</Link>
                                     <Link href="/admin" className="hover:text-primary transition-colors">Administración</Link>
+                                    <Link href="#contact-section" className="hover:text-primary transition-colors">Contacto</Link>
                                 </div>
                             </div>
 
                             {/* Contact & Social Section */}
-                            <div className="flex flex-col items-center md:items-start gap-6">
+                            <div id="contact-section" className="flex flex-col items-center md:items-start gap-6 scroll-mt-24">
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Conéctate</h4>
 
                                 {/* Social Media Icons */}
