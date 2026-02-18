@@ -11,7 +11,8 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  Truck
+  Truck,
+  Wallet
 } from 'lucide-react';
 import {
   Dialog,
@@ -25,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useQuery } from '@tanstack/react-query';
+import { useUser } from '@/hooks/use-auth';
 import type { OrderWithItems } from '@/types';
 
 interface OrderHistoryProps {
@@ -34,22 +36,22 @@ interface OrderHistoryProps {
 
 const statusConfig = {
   pending: {
-    label: 'Pending',
+    label: 'Pendiente',
     color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
     icon: Clock
   },
   processing: {
-    label: 'Processing',
+    label: 'Procesando',
     color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
     icon: Truck
   },
   completed: {
-    label: 'Completed',
+    label: 'Completado',
     color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
     icon: CheckCircle
   },
   cancelled: {
-    label: 'Cancelled',
+    label: 'Cancelado',
     color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
     icon: XCircle
   },
@@ -57,6 +59,7 @@ const statusConfig = {
 
 export function OrderHistory({ open, onOpenChange }: OrderHistoryProps) {
   const [selectedOrder, setSelectedOrder] = useState<OrderWithItems | null>(null);
+  const { data: user } = useUser();
 
   const { data: orders, isLoading } = useQuery<OrderWithItems[]>({
     queryKey: ['orders'],
@@ -72,12 +75,20 @@ export function OrderHistory({ open, onOpenChange }: OrderHistoryProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[80vh]">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            <Package className="h-6 w-6 text-emerald-600" />
-            Order History
+          <DialogTitle className="text-2xl font-bold flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Package className="h-6 w-6 text-emerald-600" />
+              Historial de Pedidos
+            </div>
+            {user?.balance !== undefined && user.balance > 0 && (
+              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1.5 px-3 py-1 animate-pulse">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                Saldo a favor: ${user.balance.toFixed(2)}
+              </Badge>
+            )}
           </DialogTitle>
           <DialogDescription>
-            View your past orders and their status
+            Consulta tus pedidos anteriores y su estado actual
           </DialogDescription>
         </DialogHeader>
 
@@ -88,9 +99,9 @@ export function OrderHistory({ open, onOpenChange }: OrderHistoryProps) {
         ) : !orders || orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <ShoppingBag className="h-16 w-16 text-muted-foreground/50 mb-4" />
-            <p className="text-lg font-medium">No orders yet</p>
+            <p className="text-lg font-medium">Aún no tienes pedidos</p>
             <p className="text-sm text-muted-foreground">
-              Your order history will appear here
+              Tu historial de compras aparecerá aquí
             </p>
           </div>
         ) : (
@@ -115,8 +126,8 @@ export function OrderHistory({ open, onOpenChange }: OrderHistoryProps) {
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                             <StatusIcon className={`h-5 w-5 ${order.status === 'completed' ? 'text-emerald-600' :
-                                order.status === 'cancelled' ? 'text-red-600' :
-                                  'text-yellow-600'
+                              order.status === 'cancelled' ? 'text-red-600' :
+                                'text-yellow-600'
                               }`} />
                           </div>
                           <div>

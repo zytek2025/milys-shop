@@ -22,9 +22,17 @@ const registerSchema = z.object({
   fullName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   email: z.string().email('Por favor introduce un email válido'),
   whatsapp: z.string().min(10, 'Introduce un número de WhatsApp válido (min 10 dígitos)'),
+  age: z.string().optional(),
+  city: z.string().min(2, 'La ciudad es requerida'),
+  gender: z.enum(['masculino', 'femenino', 'otro'], {
+    errorMap: (issue, ctx) => {
+      if (issue.code === 'invalid_enum_value') return { message: 'El género es requerido' };
+      return { message: ctx.defaultError };
+    }
+  }),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   confirmPassword: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
-  marketingConsent: z.boolean().default(false),
+  marketingConsent: z.boolean(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
   path: ['confirmPassword'],
@@ -47,6 +55,9 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       fullName: '',
       email: '',
       whatsapp: '',
+      age: '',
+      city: '',
+      gender: undefined as any,
       password: '',
       confirmPassword: '',
       marketingConsent: true,
@@ -62,6 +73,9 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         fullName: data.fullName,
         whatsapp: data.whatsapp,
         marketingConsent: data.marketingConsent,
+        age: data.age ? parseInt(data.age) : undefined,
+        city: data.city,
+        gender: data.gender,
       });
       toast.success('¡Cuenta creada exitosamente!');
       onSuccess?.();
@@ -122,6 +136,58 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                   placeholder="+57 300 123 4567"
                   {...field}
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="city"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Ciudad</FormLabel>
+                <FormControl>
+                  <Input placeholder="Medellín" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="age"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Edad</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="25" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="gender"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Género</FormLabel>
+              <FormControl>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  {...field}
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="masculino">Masculino</option>
+                  <option value="femenino">Femenino</option>
+                  <option value="otro">Otro</option>
+                </select>
               </FormControl>
               <FormMessage />
             </FormItem>

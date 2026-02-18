@@ -16,6 +16,9 @@ export async function GET() {
             .from('profiles')
             .select(`
                 *,
+                age,
+                city,
+                gender,
                 orders (
                     id,
                     total,

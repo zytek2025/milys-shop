@@ -68,6 +68,9 @@ interface CustomerLead {
     last_marketing_contact: string | null;
     lastActive: string;
     full_history: any[];
+    age?: number;
+    city?: string;
+    gender?: string;
 }
 
 export default function AdminCRMPage() {
@@ -469,6 +472,21 @@ export default function AdminCRMPage() {
 
                     {selectedCustomer && (
                         <div className="space-y-6 py-4">
+                            <div className="bg-slate-50 p-3 rounded-2xl border grid grid-cols-3 gap-2">
+                                <div className="text-center">
+                                    <p className="text-[9px] font-black uppercase text-muted-foreground">Edad</p>
+                                    <p className="text-xs font-bold leading-tight">{selectedCustomer.age || 'N/A'}</p>
+                                </div>
+                                <div className="text-center border-l-2 border-slate-200">
+                                    <p className="text-[9px] font-black uppercase text-muted-foreground">Ciudad</p>
+                                    <p className="text-xs font-bold leading-tight truncate">{selectedCustomer.city || 'N/A'}</p>
+                                </div>
+                                <div className="text-center border-l-2 border-slate-200">
+                                    <p className="text-[9px] font-black uppercase text-muted-foreground">Género</p>
+                                    <p className="text-xs font-bold leading-tight capitalize">{selectedCustomer.gender || 'N/A'}</p>
+                                </div>
+                            </div>
+
                             {/* Stats Summary */}
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="bg-slate-50 p-3 rounded-2xl border flex flex-col items-center justify-center">
