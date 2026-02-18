@@ -14,7 +14,9 @@ export async function POST(request: NextRequest) {
             quantity,
             amount_to_credit,
             reason,
-            order_id
+            order_id,
+            order_item_id, // New field to mark specific item
+            product_id
         } = body;
 
         if (!profile_id || !variant_id || !quantity || amount_to_credit === undefined) {
@@ -24,37 +26,33 @@ export async function POST(request: NextRequest) {
         const supabase = await createClient();
         const { data: { user: adminUser } } = await supabase.auth.getUser();
 
-        // 1. Iniciar el proceso de devolución
-        // Nota: En un entorno real usaríamos una transacción RPC en Supabase
-        // Aquí lo haremos secuencialmente por simplicidad del ejemplo, 
-        // pero idealmente se movería a una función PL/pgSQL.
-
-        // A. Aumentar stock del producto
-        const { error: stockError } = await supabase.rpc('increment_stock', {
-            row_id: variant_id,
-            val: quantity
-        });
-
-        // Si rpc no existe, usamos update tradicional
-        if (stockError) {
-            const { data: currentVariant } = await supabase
-                .from('product_variants')
-                .select('stock')
-                .eq('id', variant_id)
-                .single();
-
-            await supabase
-                .from('product_variants')
-                .update({ stock: (currentVariant?.stock || 0) + quantity })
-                .eq('id', variant_id);
+        // Get product_id from variant if not provided
+        let resolvedProductId = product_id;
+        if (!resolvedProductId) {
+            const { data: vData } = await supabase.from('product_variants').select('product_id').eq('id', variant_id).single();
+            resolvedProductId = vData?.product_id;
         }
 
-        // B. Registrar movimiento de inventario
+        // 1. Iniciar el proceso de devolución
+        // A. Aumentar stock del producto
+        const { data: currentVariant } = await supabase
+            .from('product_variants')
+            .select('stock')
+            .eq('id', variant_id)
+            .single();
+
+        await supabase
+            .from('product_variants')
+            .update({ stock: (currentVariant?.stock || 0) + quantity })
+            .eq('id', variant_id);
+
+        // B. Registrar movimiento de inventario (Con product_id para nueva relación)
         await supabase.from('stock_movements').insert({
             variant_id,
+            product_id: resolvedProductId,
             quantity: quantity,
             type: 'return',
-            reason: `Devolución: ${reason || 'Sin motivo específico'}`,
+            reason: `Devolución (Pedido ${order_id ? '#' + order_id.slice(0, 8) : 'Manual'}): ${reason || 'Sin motivo específico'}`,
             created_by: adminUser?.id
         });
 
@@ -74,7 +72,7 @@ export async function POST(request: NextRequest) {
         if (creditError) throw creditError;
 
         // D. Registrar en historial de crédito
-        const { error: historyError } = await supabase
+        await supabase
             .from('store_credit_history')
             .insert({
                 profile_id,
@@ -85,25 +83,33 @@ export async function POST(request: NextRequest) {
                 created_by: adminUser?.id
             });
 
-        if (historyError) throw historyError;
-
-        // E. Registrar en la nueva tabla de devoluciones para seguimiento detallado
-        const { error: returnTableError } = await supabase
+        // E. Registrar en la tabla de devoluciones
+        await supabase
             .from('returns')
             .insert({
                 order_id,
                 customer_id: profile_id,
-                product_variant_id: variant_id,
-                quantity,
+                items: [{ variant_id, quantity, amount: amount_to_credit, order_item_id }],
                 amount_credited: amount_to_credit,
                 reason: reason || 'Devolución de producto',
-                created_by: adminUser?.id,
                 status: 'completed'
             });
 
-        if (returnTableError) {
-            console.error('Error recording in returns table:', returnTableError);
-            // Non-blocking for now if other steps succeeded
+        // F. Marcar el item de la orden como devuelto
+        if (order_item_id) {
+            const { data: itemData } = await supabase
+                .from('order_items')
+                .select('custom_metadata')
+                .eq('id', order_item_id)
+                .single();
+
+            const currentMetadata = itemData?.custom_metadata || {};
+            await supabase
+                .from('order_items')
+                .update({
+                    custom_metadata: { ...currentMetadata, is_returned: true, return_reason: reason }
+                })
+                .eq('id', order_item_id);
         }
 
         return NextResponse.json({ success: true, new_balance: currentCredit + Number(amount_to_credit) });

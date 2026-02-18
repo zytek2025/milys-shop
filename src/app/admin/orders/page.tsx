@@ -11,7 +11,9 @@ import {
     MessageCircle,
     Eye,
     Printer,
-    Loader2
+    Loader2,
+    RotateCcw,
+    TrendingUp
 } from 'lucide-react';
 import {
     Table,
@@ -93,6 +95,45 @@ export default function AdminOrdersPage() {
         shipped: { label: 'Enviado', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-500', icon: Truck },
         completed: { label: 'Completado', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-500', icon: CheckCircle2 },
         cancelled: { label: 'Cancelado', color: 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-500', icon: XCircle },
+    };
+
+    const handleProcessReturn = async (item: any) => {
+        const amountStr = prompt(`¿Cuánto saldo a favor deseas abonar por ${item.quantity} unidad(es) de ${item.products.name}? (Sugerido: $${(item.price * item.quantity).toFixed(2)})`, (item.price * item.quantity).toString());
+
+        if (amountStr === null) return;
+        const amount = parseFloat(amountStr);
+        if (isNaN(amount)) return toast.error("Monto inválido");
+
+        const reason = prompt("¿Cuál es el motivo de la devolución?", "Producto defectuoso o cambio de opinión");
+        if (reason === null) return;
+
+        try {
+            const res = await fetch('/api/admin/inventory/returns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    profile_id: selectedOrder.profile_id,
+                    variant_id: item.variant_id,
+                    quantity: item.quantity,
+                    amount_to_credit: amount,
+                    reason,
+                    order_id: selectedOrder.id,
+                    order_item_id: item.id,
+                    product_id: item.products?.id
+                })
+            });
+
+            if (res.ok) {
+                toast.success("Devolución procesada con éxito. Stock y crédito actualizados.");
+                fetchOrders(); // Refresh to update is_returned flag (future implementation: update order item metadata)
+                setIsDetailsOpen(false);
+            } else {
+                const data = await res.json();
+                toast.error(data.error || "Error al procesar devolución");
+            }
+        } catch (error) {
+            toast.error("Error de conexión");
+        }
     };
 
     const filteredOrders = orders.filter(o =>
@@ -457,11 +498,27 @@ export default function AdminOrdersPage() {
                                                                     {item.product_variants.color}
                                                                 </span>
                                                             )}
+                                                            {item.custom_metadata?.is_returned && (
+                                                                <Badge className="bg-rose-50 text-rose-600 border-rose-100 text-[8px] font-black uppercase">Devuelto</Badge>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <p className="font-bold text-primary">CANT: {item.quantity}</p>
-                                                        <p className="text-xs font-black">${itemTotal.toFixed(2)}</p>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="text-right">
+                                                            <p className="font-bold text-primary">CANT: {item.quantity}</p>
+                                                            <p className="text-xs font-black">${itemTotal.toFixed(2)}</p>
+                                                        </div>
+                                                        {!item.custom_metadata?.is_returned && selectedOrder.status === 'completed' && (
+                                                            <Button
+                                                                size="icon"
+                                                                variant="outline"
+                                                                className="h-8 w-8 rounded-lg text-blue-600 border-blue-100 hover:bg-blue-50"
+                                                                title="Procesar Devolución"
+                                                                onClick={() => handleProcessReturn(item)}
+                                                            >
+                                                                <RotateCcw size={14} />
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 </div>
 
