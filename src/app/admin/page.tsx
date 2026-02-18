@@ -171,10 +171,9 @@ export default function AdminDashboardPage() {
                     <CardContent className="h-[300px] flex items-end justify-between gap-2 px-6 pb-8">
                         {/* Fake Chart Bars */}
                         {[40, 70, 45, 90, 65, 85, 55].map((h, i) => (
-                            <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
+                            <div key={i} className="flex-1 h-full flex flex-col items-center gap-2 group">
                                 <div
-                                    className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-xl relative overflow-hidden flex items-end"
-                                    style={{ height: '100%' }}
+                                    className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-xl relative overflow-hidden flex items-end flex-1"
                                 >
                                     <div
                                         className="w-full bg-primary/20 group-hover:bg-primary/40 transition-all duration-500 rounded-t-xl"
