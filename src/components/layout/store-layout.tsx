@@ -25,7 +25,16 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
     useAuthCheck();
 
     const pathname = usePathname();
-    const isAdmin = pathname?.startsWith('/admin');
+    const [isClientAdmin, setIsClientAdmin] = useState(false);
+
+    // Robust check for admin route
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setIsClientAdmin(window.location.pathname.startsWith('/admin'));
+        }
+    }, [pathname]);
+
+    const isAdmin = pathname?.startsWith('/admin') || isClientAdmin;
 
     useEffect(() => {
         if (!isAdmin) {
