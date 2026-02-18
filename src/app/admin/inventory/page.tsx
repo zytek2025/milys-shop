@@ -121,6 +121,7 @@ export default function InventoryPage() {
                         product_id: p.id,
                         product_name: p.name || 'Producto sin nombre',
                         control_id: p.control_id,
+                        category_id: p.category_id || p.category, // Capture category
                         size: 'N/A',
                         color: 'N/A',
                         stock: p.stock || 0,
@@ -132,13 +133,14 @@ export default function InventoryPage() {
                     ...v,
                     product_name: p.name || 'Producto sin nombre',
                     control_id: p.control_id,
+                    category_id: p.category_id || p.category, // Capture category
                     price: v.price_override || p.price || 0
                 }));
             });
 
             if (Array.isArray(cats)) setCategories(cats);
             setVariants(allVariants);
-            setMovements(moves);
+            // No longer overwriting processed movements
         } catch (error: any) {
             toast.error(error.message || 'Error loading inventory data');
         } finally {
