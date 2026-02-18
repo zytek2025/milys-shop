@@ -360,8 +360,9 @@ export default function InventoryPage() {
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex justify-end gap-1">
-                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-600" onClick={() => { setSelectedVariant(v); setModalType('in'); setIsMovementModalOpen(true); }}><Plus size={16} /></Button>
-                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-600" onClick={() => { setSelectedVariant(v); setModalType('out'); setIsMovementModalOpen(true); }}><Minus size={16} /></Button>
+                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-600" title="Entrada" onClick={() => { setSelectedVariant(v); setModalType('in'); setIsMovementModalOpen(true); }}><Plus size={16} /></Button>
+                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-600" title="Salida" onClick={() => { setSelectedVariant(v); setModalType('out'); setIsMovementModalOpen(true); }}><Minus size={16} /></Button>
+                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600" title="Devolución" onClick={() => { setSelectedVariant(v); setModalType('return'); setIsMovementModalOpen(true); }}><RotateCcw size={16} /></Button>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -396,7 +397,7 @@ export default function InventoryPage() {
                                 <label className="text-xs font-bold uppercase">Cantidad</label>
                                 <Input type="number" min="1" value={qty} onChange={e => setQty(Number(e.target.value))} className="h-12 text-lg font-black" />
                             </div>
-                            {modalType !== 'return' && (
+                            {modalType !== 'return' ? (
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase">Tipo</label>
                                     <Select value={movementType} onValueChange={setMovementType}>
@@ -408,8 +409,33 @@ export default function InventoryPage() {
                                         </SelectContent>
                                     </Select>
                                 </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase">Monto a Abonar ($)</label>
+                                    <Input type="number" value={creditAmount} onChange={e => setCreditAmount(e.target.value)} className="h-12 text-lg font-black text-blue-600" placeholder="0" />
+                                </div>
                             )}
                         </div>
+
+                        {modalType === 'return' && (
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase text-blue-600">Seleccionar Cliente</label>
+                                <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                                    <SelectTrigger className="h-12 border-blue-200">
+                                        <SelectValue placeholder="Buscar cliente..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {customers.map(c => (
+                                            <SelectItem key={c.id} value={c.id}>
+                                                {c.full_name || c.email}
+                                                {c.store_credit > 0 && ` (Saldo: $${c.store_credit})`}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
                         <Input placeholder="Motivo (Opcional)" value={reason} onChange={e => setReason(e.target.value)} />
                     </div>
                     <DialogFooter>

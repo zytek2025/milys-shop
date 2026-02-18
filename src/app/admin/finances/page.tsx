@@ -64,7 +64,11 @@ export default function FinancesPage() {
         );
     }
 
-    const { stats, topCustomersByCredit, recentMovements } = data || {};
+    const {
+        stats = { totalRevenue: 0, totalCreditLiability: 0, totalReturnsAmount: 0, returnsCount: 0 },
+        topCustomersByCredit = [],
+        recentMovements = []
+    } = data || {};
 
     return (
         <div className="space-y-8 pb-12">
