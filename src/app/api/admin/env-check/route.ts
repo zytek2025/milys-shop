@@ -16,9 +16,7 @@ export async function GET() {
             service_key: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
             service_key_length: process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0,
             node_env: process.env.NODE_ENV,
-            all_keys: Object.keys(process.env).filter(k =>
-                k.includes('SUPA') || k.includes('URL') || k.includes('KEY')
-            )
+            all_keys: Object.keys(process.env)
         };
 
         return NextResponse.json(envStatus);
