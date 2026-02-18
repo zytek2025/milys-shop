@@ -19,8 +19,13 @@ export async function POST(request: NextRequest) {
             product_id
         } = body;
 
-        if (!profile_id || !variant_id || !quantity || amount_to_credit === undefined) {
-            return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
+        if ((!variant_id && !product_id) || !profile_id || !quantity || amount_to_credit === undefined) {
+            const missing: string[] = [];
+            if (!profile_id) missing.push('profile_id');
+            if (!variant_id && !product_id) missing.push('variant_id/product_id');
+            if (!quantity) missing.push('quantity');
+            if (amount_to_credit === undefined) missing.push('amount_to_credit');
+            return NextResponse.json({ error: `Datos incompletos: ${missing.join(', ')}` }, { status: 400 });
         }
 
         const supabase = await createClient();
@@ -35,20 +40,33 @@ export async function POST(request: NextRequest) {
 
         // 1. Iniciar el proceso de devolución
         // A. Aumentar stock del producto
-        const { data: currentVariant } = await supabase
-            .from('product_variants')
-            .select('stock')
-            .eq('id', variant_id)
-            .single();
+        if (variant_id) {
+            const { data: currentVariant } = await supabase
+                .from('product_variants')
+                .select('stock')
+                .eq('id', variant_id)
+                .single();
 
-        await supabase
-            .from('product_variants')
-            .update({ stock: (currentVariant?.stock || 0) + quantity })
-            .eq('id', variant_id);
+            await supabase
+                .from('product_variants')
+                .update({ stock: (currentVariant?.stock || 0) + quantity })
+                .eq('id', variant_id);
+        } else if (resolvedProductId) {
+            const { data: currentProduct } = await supabase
+                .from('products')
+                .select('stock')
+                .eq('id', resolvedProductId)
+                .single();
+
+            await supabase
+                .from('products')
+                .update({ stock: (currentProduct?.stock || 0) + quantity })
+                .eq('id', resolvedProductId);
+        }
 
         // B. Registrar movimiento de inventario (Con product_id para nueva relación)
         await supabase.from('stock_movements').insert({
-            variant_id,
+            variant_id: variant_id || null,
             product_id: resolvedProductId,
             quantity: quantity,
             type: 'return',

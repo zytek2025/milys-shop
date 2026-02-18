@@ -112,7 +112,7 @@ export default function AdminOrdersPage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    profile_id: selectedOrder.profile_id,
+                    profile_id: selectedOrder.user_id,
                     variant_id: item.variant_id,
                     quantity: item.quantity,
                     amount_to_credit: amount,
