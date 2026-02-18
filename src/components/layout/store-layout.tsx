@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Header } from '@/components/header';
 import { CartDrawer } from '@/components/cart/cart-drawer';
 import { AuthModal } from '@/components/auth/auth-modal';
@@ -23,14 +24,30 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
     // Initialize auth state
     useAuthCheck();
 
+    const pathname = usePathname();
+    const isAdmin = pathname?.startsWith('/admin');
+
     useEffect(() => {
-        fetch('/api/settings')
-            .then(res => res.json())
-            .then(data => setSettings(data));
-    }, []);
+        if (!isAdmin) {
+            fetch('/api/settings')
+                .then(res => res.json())
+                .then(data => setSettings(data));
+        }
+    }, [isAdmin]);
 
     const handleOpenCart = () => setIsCartOpen(true);
     const handleOpenAuth = () => setIsAuthModalOpen(true);
+
+    if (isAdmin) {
+        return (
+            <QueryClientProvider client={queryClient}>
+                <SessionTimeout />
+                <Toaster position="top-center" richColors theme="light" />
+                {children}
+                <Toaster position="bottom-right" richColors />
+            </QueryClientProvider>
+        );
+    }
 
     return (
         <QueryClientProvider client={queryClient}>
@@ -85,7 +102,6 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                                     <Link href="/orders" className="hover:text-primary transition-colors">Mis Pedidos</Link>
                                     <Link href="#contact-section" className="hover:text-primary transition-colors">Contacto</Link>
                                     <Link href="/admin" className="hover:text-primary transition-colors">Administración</Link>
-                                    <Link href="#contact-section" className="hover:text-primary transition-colors">Contacto</Link>
                                 </div>
                             </div>
 
