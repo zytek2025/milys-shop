@@ -696,11 +696,11 @@ export default function AdminOrdersPage() {
 
                                                             <div className="space-y-4">
                                                                 {(tempMetadata?.budget_request?.designs || designs).map((d: any, dIdx: number) => (
-                                                                    <div key={dIdx} className="space-y-2">
-                                                                        <Label className="text-[10px] font-bold uppercase text-muted-foreground flex justify-between">
-                                                                            Logo #{dIdx + 1} URL
+                                                                    <div key={dIdx} className="space-y-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                                                                        <div className="flex justify-between items-center mb-1">
+                                                                            <Label className="text-[10px] font-black uppercase text-primary">Logo #{dIdx + 1}</Label>
                                                                             <button
-                                                                                className="text-rose-500 hover:text-rose-700"
+                                                                                className="text-[10px] font-bold text-rose-500 hover:text-rose-700 uppercase"
                                                                                 onClick={() => {
                                                                                     const currentDesigns = [...(tempMetadata?.budget_request?.designs || designs)];
                                                                                     const newDesigns = currentDesigns.filter((_, i) => i !== dIdx);
@@ -713,27 +713,78 @@ export default function AdminOrdersPage() {
                                                                                     });
                                                                                 }}
                                                                             >Eliminar</button>
-                                                                        </Label>
-                                                                        <div className="flex gap-2">
-                                                                            <Input
-                                                                                value={d.image_url}
-                                                                                onChange={(e) => {
-                                                                                    const currentDesigns = [...(tempMetadata?.budget_request?.designs || designs)];
-                                                                                    const newDesigns = [...currentDesigns];
-                                                                                    newDesigns[dIdx] = { ...newDesigns[dIdx], image_url: e.target.value };
-                                                                                    setTempMetadata({
-                                                                                        ...tempMetadata,
-                                                                                        budget_request: {
-                                                                                            ...(tempMetadata?.budget_request || {}),
-                                                                                            designs: newDesigns
-                                                                                        }
-                                                                                    });
-                                                                                }}
-                                                                                className="h-8 text-xs font-mono"
-                                                                                placeholder="https://..."
-                                                                            />
-                                                                            <div className="w-8 h-8 rounded border bg-white overflow-hidden shrink-0">
-                                                                                <img src={d.image_url} className="w-full h-full object-contain" alt="" />
+                                                                        </div>
+
+                                                                        <div className="grid grid-cols-1 gap-2">
+                                                                            <div className="flex gap-2">
+                                                                                <div className="grow">
+                                                                                    <Label className="text-[9px] font-bold text-slate-400 uppercase">URL de Imagen</Label>
+                                                                                    <Input
+                                                                                        value={d.image_url || ''}
+                                                                                        onChange={(e) => {
+                                                                                            const currentDesigns = [...(tempMetadata?.budget_request?.designs || designs)];
+                                                                                            const newDesigns = [...currentDesigns];
+                                                                                            newDesigns[dIdx] = { ...newDesigns[dIdx], image_url: e.target.value };
+                                                                                            setTempMetadata({
+                                                                                                ...tempMetadata,
+                                                                                                budget_request: {
+                                                                                                    ...(tempMetadata?.budget_request || {}),
+                                                                                                    designs: newDesigns
+                                                                                                }
+                                                                                            });
+                                                                                        }}
+                                                                                        className="h-8 text-xs font-mono"
+                                                                                        placeholder="https://..."
+                                                                                    />
+                                                                                </div>
+                                                                                <div className="w-12 h-12 rounded border bg-slate-50 overflow-hidden shrink-0 mt-4">
+                                                                                    <img src={d.image_url} className="w-full h-full object-contain" alt="" />
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div className="grid grid-cols-2 gap-2">
+                                                                                <div>
+                                                                                    <Label className="text-[9px] font-bold text-slate-400 uppercase">Ubicación</Label>
+                                                                                    <Input
+                                                                                        value={d.location || ''}
+                                                                                        onChange={(e) => {
+                                                                                            const currentDesigns = [...(tempMetadata?.budget_request?.designs || designs)];
+                                                                                            const newDesigns = [...currentDesigns];
+                                                                                            newDesigns[dIdx] = { ...newDesigns[dIdx], location: e.target.value };
+                                                                                            setTempMetadata({
+                                                                                                ...tempMetadata,
+                                                                                                budget_request: {
+                                                                                                    ...(tempMetadata?.budget_request || {}),
+                                                                                                    designs: newDesigns
+                                                                                                }
+                                                                                            });
+                                                                                        }}
+                                                                                        className="h-8 text-[11px] font-bold"
+                                                                                        placeholder="Pechera, Espalda..."
+                                                                                    />
+                                                                                </div>
+                                                                                <div>
+                                                                                    <Label className="text-[9px] font-bold text-slate-400 uppercase">Precio ($)</Label>
+                                                                                    <Input
+                                                                                        type="number"
+                                                                                        step="0.01"
+                                                                                        value={d.price || ''}
+                                                                                        onChange={(e) => {
+                                                                                            const currentDesigns = [...(tempMetadata?.budget_request?.designs || designs)];
+                                                                                            const newDesigns = [...currentDesigns];
+                                                                                            newDesigns[dIdx] = { ...newDesigns[dIdx], price: parseFloat(e.target.value) || 0 };
+                                                                                            setTempMetadata({
+                                                                                                ...tempMetadata,
+                                                                                                budget_request: {
+                                                                                                    ...(tempMetadata?.budget_request || {}),
+                                                                                                    designs: newDesigns
+                                                                                                }
+                                                                                            });
+                                                                                        }}
+                                                                                        className="h-8 text-[11px] font-mono"
+                                                                                        placeholder="0.00"
+                                                                                    />
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>

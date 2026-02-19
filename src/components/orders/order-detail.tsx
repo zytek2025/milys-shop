@@ -155,19 +155,24 @@ export function OrderDetail({ order, onBack }: OrderDetailProps) {
                           )}
                           {designList.length > 0 && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {designList.map((d: any, idx: number) => (
+                              {designList.map((d: any, idx: number) =>
                                 <div key={idx} className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-2 rounded-xl flex items-center gap-3">
                                   <div className="w-12 h-12 bg-white rounded-lg border border-slate-200 overflow-hidden flex-shrink-0">
                                     <img src={d.image_url} className="w-full h-full object-contain" alt="" />
                                   </div>
-                                  <div className="min-w-0">
-                                    <p className="text-[10px] font-black uppercase truncate">{d.name || 'Diseño de Cliente'}</p>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex justify-between items-start">
+                                      <p className="text-[10px] font-black uppercase truncate">{d.name || 'Diseño de Cliente'}</p>
+                                      {d.price > 0 && (
+                                        <span className="text-[10px] font-black text-primary ml-2">+${d.price.toFixed(2)}</span>
+                                      )}
+                                    </div>
                                     <p className="text-[8px] text-slate-400 font-bold uppercase">
-                                      {d.size || 'Base'} @ {d.location || 'Centro'}
+                                      {d.location || 'Ubicación Pendiente'}
                                     </p>
                                   </div>
                                 </div>
-                              ))}
+                              )}
                             </div>
                           )}
                           {instructions && (
