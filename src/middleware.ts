@@ -37,18 +37,16 @@ export async function middleware(request: NextRequest) {
 
     // Protect /admin routes
     const isLoginPage = request.nextUrl.pathname === '/auth/login'
-    const isAdminLoginPage = request.nextUrl.pathname === '/admin/login'
-    const isAdminRoute = request.nextUrl.pathname.startsWith('/admin') && !isAdminLoginPage
+    const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
 
     if (isAdminRoute) {
         if (!user) {
-            const url = new URL('/admin/login', request.url)
+            const url = new URL('/auth/login', request.url)
+            url.searchParams.set('from', request.nextUrl.pathname)
             return NextResponse.redirect(url)
         }
 
         // Enforce Role Separation: Only 'admin' role can access /admin
-        // Users (Customers) are blocked.
-        // Check staff_users first
         const { data: staff } = await supabase
             .from('staff_users')
             .select('id')
@@ -56,7 +54,6 @@ export async function middleware(request: NextRequest) {
             .single()
 
         if (!staff) {
-            // Fallback: Check if they are still an admin in the legacy profiles table
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('role')
@@ -64,13 +61,13 @@ export async function middleware(request: NextRequest) {
                 .single()
 
             if (profile?.role !== 'admin') {
-                return NextResponse.redirect(new URL('/admin/login', request.url))
+                return NextResponse.redirect(new URL('/auth/login', request.url))
             }
         }
     }
 
     if (isLoginPage && user) {
-        // Redirection logic for logged-in users on /auth/login
+        // If already logged in, redirect based on role
         const { data: staff } = await supabase
             .from('staff_users')
             .select('id')
@@ -81,7 +78,6 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(new URL('/admin', request.url))
         }
 
-        // Fallback for redirect
         const { data: profile } = await supabase
             .from('profiles')
             .select('role')
