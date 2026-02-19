@@ -124,6 +124,7 @@ export interface UserProfile {
   is_super_admin?: boolean;
   store_credit?: number;
   balance?: number;
+  shipping_address?: string;
   permissions?: Permissions;
   created_at: string;
   updated_at: string;

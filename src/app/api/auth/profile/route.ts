@@ -37,6 +37,7 @@ export async function GET() {
             id: user.id,
             email: user.email,
             full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
+            shipping_address: user.user_metadata?.shipping_address || null,
           })
           .select()
           .single();
@@ -82,7 +83,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { full_name, avatar_url, whatsapp } = body;
+    const { full_name, avatar_url, whatsapp, shipping_address } = body;
 
     const { data, error } = await supabase
       .from('profiles')
@@ -90,6 +91,7 @@ export async function PUT(request: Request) {
         full_name,
         avatar_url,
         whatsapp,
+        shipping_address,
         updated_at: new Date().toISOString(),
       })
       .eq('id', user.id)

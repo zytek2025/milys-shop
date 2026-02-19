@@ -11,21 +11,24 @@ import { cn } from '@/lib/utils';
 import { PaymentSelector } from './payment-selector';
 
 interface CheckoutButtonProps {
-  onLoginRequired?: () => void;
+  onLoginRequired?: (config?: { view: 'login' | 'register'; message: string }) => void;
   onOrderComplete?: (orderId: string) => void;
 }
 
 export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutButtonProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const { data: cart } = useCart();
-  const { isAuthenticated, store_credit } = useAuth();
+  const { isAuthenticated, store_credit, shipping_address } = useAuth();
   const [applyCredit, setApplyCredit] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<any>(null);
   const clearCart = useClearCart();
 
   const handleCheckout = async () => {
     if (!isAuthenticated) {
-      onLoginRequired?.();
+      onLoginRequired?.({
+        view: 'register',
+        message: '¡Hola! Antes de terminar, crea tu cuenta rápidamente. Así podrás ver por dónde viene tu paquete en tiempo real y recibir avisos de tu pedido directamente.'
+      });
       return;
     }
 
@@ -82,7 +85,8 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
           total: cartTotal,
           credit_applied: usedCredit,
           payment_method_id: null,
-          payment_discount_amount: 0
+          payment_discount_amount: 0,
+          shipping_address: shipping_address || null
         }),
       });
 
@@ -110,11 +114,13 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
   if (!isAuthenticated) {
     return (
       <Button
-        className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 h-12 rounded-xl"
-        onClick={() => onLoginRequired?.()}
+        className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 h-14 rounded-2xl shadow-lg font-black uppercase italic tracking-wider transition-all hover:scale-[1.02] active:scale-95"
+        onClick={() => onLoginRequired?.({
+          view: 'register',
+          message: '¡Hola! Antes de terminar, crea tu cuenta rápidamente. Así podrás ver por dónde viene tu paquete en tiempo real y recibir avisos de tu pedido directamente.'
+        })}
       >
-        <LogIn className="h-4 w-4 mr-2" />
-        Inicia sesión para Pagar
+        Continuar con mi pedido
       </Button>
     );
   }

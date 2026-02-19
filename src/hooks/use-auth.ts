@@ -107,8 +107,9 @@ export function useRegister() {
     age?: number;
     city?: string;
     gender?: string;
+    shippingAddress?: string;
   }>({
-    mutationFn: async ({ email, password, fullName, whatsapp, marketingConsent, age, city, gender }) => {
+    mutationFn: async ({ email, password, fullName, whatsapp, marketingConsent, age, city, gender, shippingAddress }) => {
       const supabase = createClient();
 
       const { data, error } = await supabase.auth.signUp({
@@ -121,7 +122,8 @@ export function useRegister() {
             marketing_consent: marketingConsent,
             age: age,
             city: city,
-            gender: gender
+            gender: gender,
+            shipping_address: shippingAddress
           },
         },
       });

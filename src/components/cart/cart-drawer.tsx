@@ -30,7 +30,7 @@ import { toast } from 'sonner';
 interface CartDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onLoginRequired?: () => void;
+  onLoginRequired?: (config?: { view: 'login' | 'register'; message: string }) => void;
 }
 
 export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerProps) {

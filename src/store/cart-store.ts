@@ -101,6 +101,7 @@ export function useAuth() {
     setAuthenticated,
     is_super_admin: user?.is_super_admin || false,
     store_credit: Number(user?.store_credit || 0),
+    shipping_address: user?.shipping_address || '',
     permissions: user?.permissions || {
       can_manage_prices: false,
       can_view_metrics: false,

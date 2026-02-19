@@ -24,14 +24,10 @@ const registerSchema = z.object({
   whatsapp: z.string().min(10, 'Introduce un número de WhatsApp válido (min 10 dígitos)'),
   age: z.string().optional(),
   city: z.string().min(2, 'La ciudad es requerida'),
-  gender: z.enum(['masculino', 'femenino', 'otro'], {
-    errorMap: (issue, ctx) => {
-      if (issue.code === 'invalid_enum_value') return { message: 'El género es requerido' };
-      return { message: ctx.defaultError };
-    }
-  }),
+  gender: z.enum(['masculino', 'femenino', 'otro']),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   confirmPassword: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  shippingAddress: z.string().min(10, 'Por favor, introduce una dirección detallada para el envío'),
   marketingConsent: z.boolean(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
@@ -60,6 +56,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       gender: undefined as any,
       password: '',
       confirmPassword: '',
+      shippingAddress: '',
       marketingConsent: true,
     },
   });
@@ -76,6 +73,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         age: data.age ? parseInt(data.age) : undefined,
         city: data.city,
         gender: data.gender,
+        shippingAddress: data.shippingAddress,
       });
       toast.success('¡Cuenta creada exitosamente!');
       onSuccess?.();
@@ -134,6 +132,24 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               <FormControl>
                 <Input
                   placeholder="+57 300 123 4567"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="shippingAddress"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>¿A dónde enviamos tu pedido? (Dirección detallada)</FormLabel>
+              <FormControl>
+                <textarea
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="Calle, número de casa/apto, referencia..."
                   {...field}
                 />
               </FormControl>

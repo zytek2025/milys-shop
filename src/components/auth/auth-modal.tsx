@@ -16,9 +16,10 @@ interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultView?: 'login' | 'register';
+  message?: string | React.ReactNode;
 }
 
-export function AuthModal({ open, onOpenChange, defaultView = 'login' }: AuthModalProps) {
+export function AuthModal({ open, onOpenChange, defaultView = 'login', message }: AuthModalProps) {
   const [view, setView] = useState<'login' | 'register'>(defaultView);
 
   const handleSuccess = () => {
@@ -36,10 +37,18 @@ export function AuthModal({ open, onOpenChange, defaultView = 'login' }: AuthMod
           <DialogDescription>
             {view === 'login'
               ? 'Inicia sesión para acceder a tu carrito y pedidos'
-              : 'Únete a nosotros para empezar a comprar'
+              : (message || 'Únete a nosotros para empezar a comprar')
             }
           </DialogDescription>
         </DialogHeader>
+
+        {message && view === 'register' && (
+          <div className="mx-6 mb-2 p-3 rounded-xl bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-800">
+            <p className="text-xs text-emerald-800 dark:text-emerald-200 font-medium leading-relaxed italic">
+              {message}
+            </p>
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
           {view === 'login' ? (
@@ -71,6 +80,6 @@ export function AuthModal({ open, onOpenChange, defaultView = 'login' }: AuthMod
           )}
         </AnimatePresence>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 }

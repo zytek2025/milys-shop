@@ -19,6 +19,7 @@ import { SessionTimeout } from '@/components/auth/session-timeout';
 export function StoreLayout({ children }: { children: React.ReactNode }) {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [authConfig, setAuthConfig] = useState<{ view: 'login' | 'register'; message: string | null }>({ view: 'login', message: null });
     const [settings, setSettings] = useState<any>(null);
 
     // Initialize auth state
@@ -45,7 +46,14 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
     }, [isAdmin]);
 
     const handleOpenCart = () => setIsCartOpen(true);
-    const handleOpenAuth = () => setIsAuthModalOpen(true);
+    const handleOpenAuth = (config?: { view: 'login' | 'register'; message: string }) => {
+        if (config) {
+            setAuthConfig(config);
+        } else {
+            setAuthConfig({ view: 'login', message: null });
+        }
+        setIsAuthModalOpen(true);
+    };
 
     if (isAdmin) {
         return (
@@ -82,11 +90,14 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                 <CartDrawer
                     open={isCartOpen}
                     onOpenChange={setIsCartOpen}
+                    onLoginRequired={handleOpenAuth}
                 />
 
                 <AuthModal
                     open={isAuthModalOpen}
                     onOpenChange={setIsAuthModalOpen}
+                    defaultView={authConfig.view}
+                    message={authConfig.message}
                 />
 
                 <footer className="border-t border-primary/10 py-16 bg-muted/30 mt-auto">
