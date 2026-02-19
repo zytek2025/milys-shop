@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Check, Info, Plus, X, Search, Palette, Tags, Loader2 } from 'lucide-react';
@@ -19,6 +19,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Upload, X as XIcon } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 
 interface Design {
@@ -77,6 +81,15 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
     const [isAdding, setIsAdding] = useState(false);
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+
+    // Budget Request State
+    const [designMode, setDesignMode] = useState<'gallery' | 'upload'>('gallery');
+    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+    const [uploadInstructions, setUploadInstructions] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const supabase = createClient();
 
     const addToCart = useAddToCart();
 
@@ -195,20 +208,91 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
         ));
     };
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('El archivo es muy pesado. Máximo 5MB.');
+            return;
+        }
+
+        setUploadedFile(file);
+        const objectUrl = URL.createObjectURL(file);
+        setUploadPreview(objectUrl);
+    };
+
+    const uploadCustomDesign = async (): Promise<string | null> => {
+        if (!uploadedFile) return null;
+
+        const fileExt = uploadedFile.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        try {
+            const { error: uploadError } = await supabase.storage
+                .from('custom-designs')
+                .upload(filePath, uploadedFile);
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage
+                .from('custom-designs')
+                .getPublicUrl(filePath);
+
+            return data.publicUrl;
+        } catch (error) {
+            console.error('Error uploading:', error);
+            toast.error('Error al subir la imagen');
+            return null;
+        }
+    };
+
     const handleAddToCart = async () => {
         if (hasVariants && !activeVariant) return;
 
-        const isOutOfStock = activeVariant ? activeVariant.stock <= 0 : (product.stock <= 0);
-
         setIsAdding(true);
+
         try {
-            await addToCart.mutateAsync({
-                productId: product.id,
-                quantity: 1,
-                // @ts-ignore
-                variantId: activeVariant?.id || null,
-                // @ts-ignore
-                customMetadata: {
+            let customMetadata: any = {
+                personalization: customText ? {
+                    text: customText,
+                    size: customTextSize,
+                    price: personalizationPrice
+                } : null
+            };
+
+            // Logic for Budget Request vs Standard Gallery
+            if (designMode === 'upload') {
+                if (!uploadedFile) {
+                    toast.error('Por favor sube una imagen de referencia');
+                    setIsAdding(false);
+                    return;
+                }
+
+                const publicUrl = await uploadCustomDesign();
+                if (!publicUrl) {
+                    setIsAdding(false);
+                    return;
+                }
+
+                customMetadata = {
+                    ...customMetadata,
+                    on_request: true, // Mark as Budget Request
+                    budget_request: {
+                        image_url: publicUrl,
+                        notes: uploadInstructions,
+                        original_base_price: garmentPrice
+                    },
+                    designs: [] // No standard designs
+                };
+
+            } else {
+                // Logic for Standard Gallery Designs
+                const isOutOfStock = activeVariant ? activeVariant.stock <= 0 : (product.stock <= 0);
+
+                customMetadata = {
+                    ...customMetadata,
                     on_request: isOutOfStock,
                     designs: selectedDesigns.map(d => ({
                         id: d.id,
@@ -216,21 +300,42 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                         size: d.selectedSize,
                         location: d.selectedLocation,
                         price: getDesignPrice(d, d.selectedSize)
-                    })),
-                    personalization: customText ? {
-                        text: customText,
-                        size: customTextSize,
-                        price: personalizationPrice
-                    } : null
-                }
+                    }))
+                };
+            }
+
+            // Common Add to Cart
+            await addToCart.mutateAsync({
+                productId: product.id,
+                quantity: 1,
+                // @ts-ignore
+                variantId: activeVariant?.id || null,
+                // @ts-ignore
+                customMetadata
             });
 
-            if (isOutOfStock) {
-                toast.success('Añadido al carrito (Sujeto a disponibilidad)');
-                toast.info('Este producto se fabricará bajo pedido. Soporte se contactará contigo.', { duration: 6000 });
+            if (designMode === 'upload') {
+                toast.success('Solicitud añadida al carrito');
+                toast.info('Se calculará el presupuesto final en base a tu diseño.');
             } else {
-                toast.success('¡Añadido al carrito!');
+                const isOutOfStock = activeVariant ? activeVariant.stock <= 0 : (product.stock <= 0);
+                if (isOutOfStock) {
+                    toast.success('Añadido al carrito (Sujeto a disponibilidad)');
+                } else {
+                    toast.success('¡Añadido al carrito!');
+                }
             }
+
+            // Cleanup
+            if (designMode === 'upload') {
+                setUploadedFile(null);
+                setUploadPreview(null);
+                setUploadInstructions('');
+            } else {
+                setSelectedDesigns([]);
+                setCustomText('');
+            }
+
         } catch (error: any) {
             toast.error(error.message || 'Error al añadir al carrito');
         } finally {
@@ -246,21 +351,30 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
 
     return (
         <div className="space-y-8">
-            {/* Price Header - Now at the top for immediate visibility */}
+            {/* Price Header */}
             <div className="flex flex-col gap-1 border-b border-lavanda/30 pb-6">
                 <div className="flex items-baseline gap-3">
                     <span className="text-6xl font-serif font-light text-foreground tracking-tighter">
-                        ${totalPrice.toFixed(2)}
+                        {designMode === 'upload' ? (
+                            <span className="text-4xl text-muted-foreground">A Cotizar</span>
+                        ) : (
+                            `$${totalPrice.toFixed(2)}`
+                        )}
                     </span>
-                    <span className="text-xs font-sans font-bold uppercase tracking-[0.2em] text-slate-400">USD</span>
+                    {designMode === 'gallery' && <span className="text-xs font-sans font-bold uppercase tracking-[0.2em] text-slate-400">USD</span>}
                 </div>
-                {(selectedDesigns.length > 0 || customText) && (
+                {(selectedDesigns.length > 0 || customText) && designMode === 'gallery' && (
                     <p className="text-[10px] font-sans font-medium text-slate-400 uppercase tracking-widest">
                         Base: ${garmentPrice.toFixed(2)}
                         {selectedDesigns.length > 0 && <span className="text-lavanda mx-1">|</span>}
                         {selectedDesigns.length > 0 && `Logos: $${designsPrice.toFixed(2)}`}
                         {customText && <span className="text-lavanda mx-1">|</span>}
                         {customText && `Personalización: $${personalizationPrice.toFixed(2)}`}
+                    </p>
+                )}
+                {designMode === 'upload' && (
+                    <p className="text-[10px] font-sans font-medium text-slate-400 uppercase tracking-widest">
+                        Base estimada: ${garmentPrice.toFixed(2)} + Personalización
                     </p>
                 )}
             </div>
@@ -353,166 +467,243 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 </AnimatePresence>
             )}
 
-            {/* Step 3: Designs Selection */}
+            {/* Step 3: Design Mode Selection */}
             {isCustomizable && (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <SectionLabel label="Paso 3: Añade tus diseños (Máx 3)" />
-                        <Badge variant="secondary" className="rounded-full bg-slate-100 text-primary border-none">
-                            {selectedDesigns.length} / 3 Seleccionados
-                        </Badge>
+                        <SectionLabel label="Paso 3: Personalización" />
                     </div>
 
-                    <div className="flex flex-col gap-4">
-                        {selectedDesigns.map(design => (
-                            <div key={design.instanceId} className="group relative rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 shadow-sm animate-in fade-in slide-in-from-left duration-300">
-                                <div className="flex gap-4">
-                                    <div className="relative aspect-square w-20 rounded-xl bg-white dark:bg-slate-900 overflow-hidden border">
-                                        <img src={design.image_url} alt={design.name} className="w-full h-full object-contain p-2" />
+                    <Tabs value={designMode} onValueChange={(v: any) => setDesignMode(v)} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 mb-4">
+                            <TabsTrigger value="gallery">Galería de Diseños</TabsTrigger>
+                            <TabsTrigger value="upload">Subir mi Propio Diseño</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="gallery" className="space-y-4 mt-0">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-muted-foreground">Elige de nuestro catálogo</span>
+                                <Badge variant="secondary" className="rounded-full bg-slate-100 text-primary border-none">
+                                    {selectedDesigns.length} / 3 Seleccionados
+                                </Badge>
+                            </div>
+
+
+                            <div className="flex flex-col gap-4">
+                                {selectedDesigns.map(design => (
+                                    <div key={design.instanceId} className="group relative rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 shadow-sm animate-in fade-in slide-in-from-left duration-300">
+                                        <div className="flex gap-4">
+                                            <div className="relative aspect-square w-20 rounded-xl bg-white dark:bg-slate-900 overflow-hidden border">
+                                                <img src={design.image_url} alt={design.name} className="w-full h-full object-contain p-2" />
+                                                <button
+                                                    onClick={() => setSelectedDesigns(prev => prev.filter(d => d.instanceId !== design.instanceId))}
+                                                    className="absolute -top-1 -right-1 bg-destructive text-white p-1 rounded-full shadow-md hover:scale-110 transition-transform"
+                                                >
+                                                    <X size={10} strokeWidth={4} />
+                                                </button>
+                                            </div>
+
+                                            <div className="flex-1 space-y-3">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="font-bold text-sm uppercase truncate max-w-[150px]">{design.name}</div>
+                                                    <div className="text-primary font-black text-xs">
+                                                        ${getDesignPrice(design, design.selectedSize).toFixed(2)}
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[9px] uppercase font-bold text-muted-foreground">Tamaño</Label>
+                                                        <select
+                                                            value={design.selectedSize}
+                                                            onChange={(e) => updateDesignOption(design.instanceId, 'selectedSize', e.target.value)}
+                                                            className="w-full h-8 rounded-lg bg-white dark:bg-slate-800 border text-[10px] font-bold px-2 focus:ring-1 focus:ring-primary outline-none"
+                                                        >
+                                                            <option value="small">Pequeño</option>
+                                                            <option value="medium">Mediano</option>
+                                                            <option value="large">Grande</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[9px] uppercase font-bold text-muted-foreground">Ubicación</Label>
+                                                        <select
+                                                            value={design.selectedLocation}
+                                                            onChange={(e) => updateDesignOption(design.instanceId, 'selectedLocation', e.target.value)}
+                                                            className="w-full h-8 rounded-lg bg-white dark:bg-slate-800 border text-[10px] font-bold px-2 focus:ring-1 focus:ring-primary outline-none"
+                                                        >
+                                                            {designLocations.map(loc => (
+                                                                <option key={loc} value={loc}>{loc}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="flex flex-wrap gap-3">
+
+                                {selectedDesigns.length < 3 && (
+                                    <Dialog open={isGalleryOpen} onOpenChange={setIsGalleryOpen}>
+                                        <DialogTrigger asChild>
+                                            <button className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-primary hover:bg-slate-50 transition-all flex flex-col items-center justify-center gap-2 group">
+                                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-primary group-hover:text-white transition-colors flex items-center justify-center">
+                                                    <Plus size={18} />
+                                                </div>
+                                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Añadir Logo</span>
+                                            </button>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col rounded-3xl p-0 overflow-hidden">
+                                            <DialogHeader className="p-6 pb-0">
+                                                <DialogTitle className="flex items-center gap-2 text-2xl font-black italic uppercase tracking-tighter">
+                                                    <Palette className="text-primary" /> Galería de Diseños Disponibles
+                                                </DialogTitle>
+                                                <div className="flex flex-col sm:flex-row gap-4 mt-4">
+                                                    <div className="relative flex-1">
+                                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                                        <Input
+                                                            placeholder="Busca un logo..."
+                                                            className="pl-10 rounded-xl h-11 bg-slate-50 dark:bg-slate-900 border-none"
+                                                            value={designSearch}
+                                                            onChange={e => setDesignSearch(e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                                        <Button
+                                                            variant={activeDesignCategory === null ? 'default' : 'ghost'}
+                                                            className="rounded-xl h-11 shrink-0 font-bold"
+                                                            onClick={() => setActiveDesignCategory(null)}
+                                                        >
+                                                            Todos
+                                                        </Button>
+                                                        {categories.map(cat => (
+                                                            <Button
+                                                                key={cat.id}
+                                                                variant={activeDesignCategory === cat.id ? 'default' : 'ghost'}
+                                                                className="rounded-xl h-11 shrink-0 font-bold"
+                                                                onClick={() => setActiveDesignCategory(cat.id)}
+                                                            >
+                                                                {cat.name}
+                                                            </Button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </DialogHeader>
+                                            <Separator className="mt-6" />
+                                            <ScrollArea className="flex-1 p-6">
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                                    {filteredDesigns.map(design => {
+                                                        const count = selectedDesigns.filter(d => d.id === design.id).length;
+                                                        return (
+                                                            <button
+                                                                key={design.id}
+                                                                onClick={() => toggleDesign(design)}
+                                                                className={cn(
+                                                                    "group relative aspect-square rounded-2xl border-2 transition-all overflow-hidden flex flex-col p-2",
+                                                                    count > 0
+                                                                        ? "border-primary bg-slate-50 shadow-inner"
+                                                                        : "border-slate-100 hover:border-primary/50 dark:border-slate-800"
+                                                                )}
+                                                            >
+                                                                <div className="flex-1 w-full bg-white dark:bg-slate-900 rounded-xl mb-2 flex items-center justify-center overflow-hidden">
+                                                                    <img src={design.image_url} alt={design.name} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" />
+                                                                </div>
+                                                                <div className="text-[10px] font-black uppercase truncate text-center mb-0.5">{design.name}</div>
+
+                                                                {count > 0 && (
+                                                                    <div className="absolute top-3 right-3 bg-primary text-white w-5 h-5 flex items-center justify-center rounded-full shadow-lg font-bold text-[10px]">
+                                                                        {count}
+                                                                    </div>
+                                                                )}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </ScrollArea>
+                                            <div className="p-6 border-t bg-slate-50 dark:bg-slate-900 flex justify-between items-center">
+                                                <p className="text-xs font-medium text-slate-500">
+                                                    Has seleccionado {selectedDesigns.length} de 3 diseños
+                                                </p>
+                                                <Button onClick={() => setIsGalleryOpen(false)} className="rounded-xl px-8 font-bold h-12 shadow-xl shadow-primary/20">
+                                                    Confirmar Selección
+                                                </Button>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+                                )}
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="upload" className="space-y-4 mt-0 animate-in fade-in slide-in-from-right-4 duration-300">
+                            <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900">
+                                {uploadPreview ? (
+                                    <div className="relative w-full max-h-[300px] rounded-xl overflow-hidden border border-slate-200">
+                                        <img src={uploadPreview} alt="Preview" className="w-full h-full object-contain" />
                                         <button
-                                            onClick={() => setSelectedDesigns(prev => prev.filter(d => d.instanceId !== design.instanceId))}
-                                            className="absolute -top-1 -right-1 bg-destructive text-white p-1 rounded-full shadow-md hover:scale-110 transition-transform"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                setUploadPreview(null);
+                                                setUploadedFile(null);
+                                            }}
+                                            className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white p-1 rounded-full backdrop-blur-sm transition-colors"
                                         >
-                                            <X size={10} strokeWidth={4} />
+                                            <XIcon size={16} />
                                         </button>
                                     </div>
-
-                                    <div className="flex-1 space-y-3">
-                                        <div className="flex justify-between items-start">
-                                            <div className="font-bold text-sm uppercase truncate max-w-[150px]">{design.name}</div>
-                                            <div className="text-primary font-black text-xs">
-                                                ${getDesignPrice(design, design.selectedSize).toFixed(2)}
-                                            </div>
+                                ) : (
+                                    <div
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="cursor-pointer flex flex-col items-center gap-2 text-center py-8 w-full"
+                                    >
+                                        <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-2">
+                                            <Upload size={24} />
                                         </div>
-
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div className="space-y-1">
-                                                <Label className="text-[9px] uppercase font-bold text-muted-foreground">Tamaño</Label>
-                                                <select
-                                                    value={design.selectedSize}
-                                                    onChange={(e) => updateDesignOption(design.instanceId, 'selectedSize', e.target.value)}
-                                                    className="w-full h-8 rounded-lg bg-white dark:bg-slate-800 border text-[10px] font-bold px-2 focus:ring-1 focus:ring-primary outline-none"
-                                                >
-                                                    <option value="small">Pequeño</option>
-                                                    <option value="medium">Mediano</option>
-                                                    <option value="large">Grande</option>
-                                                </select>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-[9px] uppercase font-bold text-muted-foreground">Ubicación</Label>
-                                                <select
-                                                    value={design.selectedLocation}
-                                                    onChange={(e) => updateDesignOption(design.instanceId, 'selectedLocation', e.target.value)}
-                                                    className="w-full h-8 rounded-lg bg-white dark:bg-slate-800 border text-[10px] font-bold px-2 focus:ring-1 focus:ring-primary outline-none"
-                                                >
-                                                    {designLocations.map(loc => (
-                                                        <option key={loc} value={loc}>{loc}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
+                                        <div className="space-y-1">
+                                            <p className="font-bold text-sm">Haz clic para subir imagen</p>
+                                            <p className="text-xs text-muted-foreground">PNG, JPG, JPEG (Máx 5MB)</p>
                                         </div>
+                                    </div>
+                                )}
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleFileUpload}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground">Instrucciones Adicionales</Label>
+                                <Textarea
+                                    placeholder="Describe cómo quieres tu diseño (ubicación, tamaño, colores...)"
+                                    value={uploadInstructions}
+                                    onChange={(e) => setUploadInstructions(e.target.value)}
+                                    className="rounded-xl resize-none min-h-[100px]"
+                                />
+                            </div>
+
+                            <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-xl border border-amber-100 dark:border-amber-800">
+                                <div className="flex gap-2">
+                                    <Info size={16} className="text-amber-600 mt-0.5 shrink-0" />
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-amber-800 dark:text-amber-200">Solicitud de Presupuesto</p>
+                                        <p className="text-[10px] text-amber-700 dark:text-amber-300 leading-relaxed">
+                                            Al subir tu diseño, el precio final será calculado por nuestro equipo.
+                                            Podrás finalizar el pedido sin pagar ahora, y te contactaremos con la cotización.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-
-                    <div className="flex flex-wrap gap-3">
-
-                        {selectedDesigns.length < 3 && (
-                            <Dialog open={isGalleryOpen} onOpenChange={setIsGalleryOpen}>
-                                <DialogTrigger asChild>
-                                    <button className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-primary hover:bg-slate-50 transition-all flex flex-col items-center justify-center gap-2 group">
-                                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-primary group-hover:text-white transition-colors flex items-center justify-center">
-                                            <Plus size={18} />
-                                        </div>
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Añadir Logo</span>
-                                    </button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col rounded-3xl p-0 overflow-hidden">
-                                    <DialogHeader className="p-6 pb-0">
-                                        <DialogTitle className="flex items-center gap-2 text-2xl font-black italic uppercase tracking-tighter">
-                                            <Palette className="text-primary" /> Galería de Diseños Disponibles
-                                        </DialogTitle>
-                                        <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                                            <div className="relative flex-1">
-                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                                                <Input
-                                                    placeholder="Busca un logo..."
-                                                    className="pl-10 rounded-xl h-11 bg-slate-50 dark:bg-slate-900 border-none"
-                                                    value={designSearch}
-                                                    onChange={e => setDesignSearch(e.target.value)}
-                                                />
-                                            </div>
-                                            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                                                <Button
-                                                    variant={activeDesignCategory === null ? 'default' : 'ghost'}
-                                                    className="rounded-xl h-11 shrink-0 font-bold"
-                                                    onClick={() => setActiveDesignCategory(null)}
-                                                >
-                                                    Todos
-                                                </Button>
-                                                {categories.map(cat => (
-                                                    <Button
-                                                        key={cat.id}
-                                                        variant={activeDesignCategory === cat.id ? 'default' : 'ghost'}
-                                                        className="rounded-xl h-11 shrink-0 font-bold"
-                                                        onClick={() => setActiveDesignCategory(cat.id)}
-                                                    >
-                                                        {cat.name}
-                                                    </Button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </DialogHeader>
-                                    <Separator className="mt-6" />
-                                    <ScrollArea className="flex-1 p-6">
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                            {filteredDesigns.map(design => {
-                                                const count = selectedDesigns.filter(d => d.id === design.id).length;
-                                                return (
-                                                    <button
-                                                        key={design.id}
-                                                        onClick={() => toggleDesign(design)}
-                                                        className={cn(
-                                                            "group relative aspect-square rounded-2xl border-2 transition-all overflow-hidden flex flex-col p-2",
-                                                            count > 0
-                                                                ? "border-primary bg-slate-50 shadow-inner"
-                                                                : "border-slate-100 hover:border-primary/50 dark:border-slate-800"
-                                                        )}
-                                                    >
-                                                        <div className="flex-1 w-full bg-white dark:bg-slate-900 rounded-xl mb-2 flex items-center justify-center overflow-hidden">
-                                                            <img src={design.image_url} alt={design.name} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" />
-                                                        </div>
-                                                        <div className="text-[10px] font-black uppercase truncate text-center mb-0.5">{design.name}</div>
-
-                                                        {count > 0 && (
-                                                            <div className="absolute top-3 right-3 bg-primary text-white w-5 h-5 flex items-center justify-center rounded-full shadow-lg font-bold text-[10px]">
-                                                                {count}
-                                                            </div>
-                                                        )}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </ScrollArea>
-                                    <div className="p-6 border-t bg-slate-50 dark:bg-slate-900 flex justify-between items-center">
-                                        <p className="text-xs font-medium text-slate-500">
-                                            Has seleccionado {selectedDesigns.length} de 3 diseños
-                                        </p>
-                                        <Button onClick={() => setIsGalleryOpen(false)} className="rounded-xl px-8 font-bold h-12 shadow-xl shadow-primary/20">
-                                            Confirmar Selección
-                                        </Button>
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
-                        )}
-                    </div>
+                        </TabsContent>
+                    </Tabs>
                 </div>
             )}
 
             {/* Step 4: Personalization Text */}
-            {isCustomizable && (
+            {isCustomizable && designMode === 'gallery' && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-500 delay-200">
                     <SectionLabel label="Paso Adicional: Personalización de Texto" />
                     <div className="flex flex-col sm:flex-row gap-4">
@@ -548,6 +739,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
 
 
 
+
             {/* Final Action */}
             <div className="pt-6 border-t border-slate-100 dark:border-slate-900">
                 <Button
@@ -562,13 +754,12 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                     )}
                     {!activeVariant
                         ? 'Completa los pasos'
-                        : activeVariant.stock <= 0
-                            ? 'Reservar Bajo Pedido'
-                            : 'Personalizar y Comprar'}
+                        : designMode === 'upload'
+                            ? 'Solicitar Presupuesto'
+                            : activeVariant.stock <= 0
+                                ? 'Reservar Bajo Pedido'
+                                : 'Personalizar y Comprar'}
                 </Button>
-                <p className="text-center mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center justify-center gap-2">
-                    <Check size={12} className="text-emerald-500" /> Garantía de Satisfacción 100%
-                </p>
             </div>
         </div>
     );

@@ -90,7 +90,7 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex flex-col w-full sm:max-w-md">
+      <SheetContent className="flex flex-col w-full sm:max-w-md h-full overflow-hidden">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <ShoppingBag className="h-5 w-5" />
@@ -123,7 +123,7 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
           </div>
         ) : (
           <>
-            <ScrollArea className="flex-1 -mx-6 px-6">
+            <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
               <AnimatePresence mode="popLayout">
                 {items.map((item) => (
                   <CartItemRow
@@ -136,42 +136,44 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
                   />
                 ))}
               </AnimatePresence>
-            </ScrollArea>
 
-            <div className="mt-auto">
-              <Separator className="my-4" />
+              <div className="pb-4">
+                <Separator className="my-4" />
 
-              {/* Auth message for non-logged in users */}
-              {!isAuthenticated && (
-                <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
-                  <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
-                    <LogIn className="h-4 w-4" />
-                    <span className="text-sm font-medium">
-                      Inicia sesión para guardar tu carrito
-                    </span>
+                {/* Auth message for non-logged in users */}
+                {!isAuthenticated && (
+                  <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+                      <LogIn className="h-4 w-4" />
+                      <span className="text-sm font-medium">
+                        Inicia sesión para guardar tu carrito
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Cart Summary */}
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>${total.toFixed(2)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between font-semibold text-lg">
+                    <span>Total</span>
+                    <span>${total.toFixed(2)}</span>
+                  </div>
+                  <div className="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Política de Devolución</p>
+                    <p className="text-[11px] text-muted-foreground leading-tight italic font-medium">
+                      Solo se permiten cambios por otros productos. Si el nuevo artículo es de menor valor, la diferencia se acreditará a tu cuenta como saldo a favor.
+                    </p>
                   </div>
                 </div>
-              )}
-
-              {/* Cart Summary */}
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between font-semibold text-lg">
-                  <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-                <div className="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Política de Devolución</p>
-                  <p className="text-[11px] text-muted-foreground leading-tight italic font-medium">
-                    Solo se permiten cambios por otros productos. Si el nuevo artículo es de menor valor, la diferencia se acreditará a tu cuenta como saldo a favor.
-                  </p>
-                </div>
               </div>
+            </ScrollArea>
 
+            <div className="mt-4">
               {/* Action Buttons */}
               <SheetFooter className="flex-col gap-2 sm:flex-col">
                 <CheckoutButton
