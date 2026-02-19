@@ -163,7 +163,7 @@ export async function PUT(req: Request) {
         }
 
         const body = await req.json();
-        const { userId, full_name, email } = body;
+        const { userId, full_name, email, whatsapp, age, city, gender, notes, password } = body;
 
         if (!userId) {
             return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -175,6 +175,11 @@ export async function PUT(req: Request) {
             .update({
                 full_name,
                 email,
+                whatsapp: whatsapp || null,
+                age: age || null,
+                city: city || null,
+                gender: gender || null,
+                notes: notes || null,
                 updated_at: new Date().toISOString()
             })
             .eq('id', userId)
@@ -182,6 +187,18 @@ export async function PUT(req: Request) {
             .single();
 
         if (error) throw error;
+
+        // Optionally reset password via admin client
+        if (password) {
+            const { createAdminClient } = await import('@/lib/supabase/server');
+            const adminClient = await createAdminClient();
+            const { error: passError } = await adminClient.auth.admin.updateUserById(userId, { password });
+            if (passError) {
+                console.error('Password reset error:', passError.message);
+                // Still return success for profile update, just warn
+                return NextResponse.json({ ...data, warning: 'Perfil actualizado pero error al cambiar contraseña: ' + passError.message });
+            }
+        }
 
         return NextResponse.json(data);
     } catch (error: any) {

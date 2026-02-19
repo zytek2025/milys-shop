@@ -71,6 +71,8 @@ interface CustomerLead {
     age?: number;
     city?: string;
     gender?: string;
+    whatsapp?: string;
+    notes?: string;
 }
 
 export default function AdminCRMPage() {
@@ -158,14 +160,24 @@ export default function AdminCRMPage() {
 
         setUpdating(selectedCustomer.id);
         try {
+            const body: any = {
+                userId: selectedCustomer.id,
+                full_name: selectedCustomer.full_name,
+                email: selectedCustomer.email,
+                whatsapp: selectedCustomer.whatsapp || '',
+                age: selectedCustomer.age || null,
+                city: selectedCustomer.city || '',
+                gender: selectedCustomer.gender || '',
+                notes: selectedCustomer.notes || '',
+            };
+            // Only send password if filled
+            if ((selectedCustomer as any).new_password) {
+                body.password = (selectedCustomer as any).new_password;
+            }
             const res = await fetch('/api/admin/crm', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: selectedCustomer.id,
-                    full_name: selectedCustomer.full_name,
-                    email: selectedCustomer.email
-                }),
+                body: JSON.stringify(body),
             });
 
             if (res.ok) {
@@ -555,31 +567,95 @@ export default function AdminCRMPage() {
             </Dialog>
 
             <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-                <DialogContent className="sm:max-w-[425px] rounded-[2rem] border-2">
+                <DialogContent className="sm:max-w-[500px] rounded-[2rem] border-2 max-h-[90vh] overflow-y-auto">
                     <form onSubmit={handleUpdateCustomer}>
                         <DialogHeader>
                             <DialogTitle className="text-2xl font-black italic uppercase tracking-tight">Modificar Cliente</DialogTitle>
+                            <DialogDescription className="text-[11px] text-muted-foreground">
+                                ID: <span className="font-mono font-bold">{selectedCustomer?.control_id}</span>
+                            </DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-4 py-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit-name" className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Nombre Completo</Label>
-                                <Input
-                                    id="edit-name"
-                                    className="rounded-xl border-2 h-11"
-                                    value={selectedCustomer?.full_name || ''}
-                                    onChange={(e) => setSelectedCustomer(prev => prev ? { ...prev, full_name: e.target.value } : null)}
-                                    required
-                                />
+                        <div className="grid gap-3 py-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="grid gap-2">
+                                    <Label className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Nombre Completo</Label>
+                                    <Input
+                                        className="rounded-xl border-2 h-10"
+                                        value={selectedCustomer?.full_name || ''}
+                                        onChange={(e) => setSelectedCustomer(prev => prev ? { ...prev, full_name: e.target.value } : null)}
+                                        required
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">WhatsApp</Label>
+                                    <Input
+                                        className="rounded-xl border-2 h-10"
+                                        placeholder="+58412..."
+                                        value={selectedCustomer?.whatsapp || ''}
+                                        onChange={(e) => setSelectedCustomer(prev => prev ? { ...prev, whatsapp: e.target.value } : null)}
+                                    />
+                                </div>
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="edit-email" className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Correo Electrónico</Label>
+                                <Label className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Correo Electrónico</Label>
                                 <Input
-                                    id="edit-email"
                                     type="email"
-                                    className="rounded-xl border-2 h-11"
+                                    className="rounded-xl border-2 h-10"
                                     value={selectedCustomer?.email || ''}
                                     onChange={(e) => setSelectedCustomer(prev => prev ? { ...prev, email: e.target.value } : null)}
                                     required
+                                />
+                            </div>
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="grid gap-2">
+                                    <Label className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Edad</Label>
+                                    <Input
+                                        type="number"
+                                        className="rounded-xl border-2 h-10"
+                                        placeholder="25"
+                                        value={selectedCustomer?.age || ''}
+                                        onChange={(e) => setSelectedCustomer(prev => prev ? { ...prev, age: parseInt(e.target.value) || undefined } : null)}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Ciudad</Label>
+                                    <Input
+                                        className="rounded-xl border-2 h-10"
+                                        placeholder="Caracas"
+                                        value={selectedCustomer?.city || ''}
+                                        onChange={(e) => setSelectedCustomer(prev => prev ? { ...prev, city: e.target.value } : null)}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Género</Label>
+                                    <select
+                                        className="rounded-xl border-2 h-10 px-3 text-sm bg-background outline-none focus:ring-2"
+                                        value={selectedCustomer?.gender || ''}
+                                        onChange={(e) => setSelectedCustomer(prev => prev ? { ...prev, gender: e.target.value } : null)}
+                                    >
+                                        <option value="">-</option>
+                                        <option value="masculino">Masculino</option>
+                                        <option value="femenino">Femenino</option>
+                                        <option value="otro">Otro</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Notas Internas</Label>
+                                <textarea
+                                    className="rounded-xl border-2 p-3 text-sm bg-background outline-none focus:ring-2 min-h-[70px] resize-none"
+                                    placeholder="Observaciones sobre el cliente..."
+                                    value={selectedCustomer?.notes || ''}
+                                    onChange={(e) => setSelectedCustomer(prev => prev ? { ...prev, notes: e.target.value } : null)}
+                                />
+                            </div>
+                            <div className="grid gap-2 border-t pt-3">
+                                <Label className="font-black uppercase text-[10px] tracking-widest text-amber-600">🔑 Nueva Contraseña (opcional)</Label>
+                                <Input
+                                    type="password"
+                                    className="rounded-xl border-2 h-10 border-amber-200"
+                                    placeholder="Dejar vacío para no cambiar"
+                                    onChange={(e) => setSelectedCustomer(prev => prev ? { ...prev, new_password: e.target.value } as any : null)}
                                 />
                             </div>
                         </div>
