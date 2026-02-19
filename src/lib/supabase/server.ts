@@ -54,24 +54,26 @@ export async function createAdminClient() {
 export async function isAdmin() {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
+
   if (authError || !user) {
     console.log('isAdmin check: No user found', authError);
     return false;
   }
 
-  // Check staff_users table first (New System)
-  const { data: staff } = await supabase
+  // Use Admin Client to bypass RLS for strictly checking roles
+  const adminClient = await createAdminClient();
+
+  // 1. Check staff_users table first (New System)
+  const { data: staff } = await adminClient
     .from('staff_users')
-    .select('id, is_super_admin')
+    .select('id')
     .eq('id', user.id)
     .single();
 
-  if (staff) {
-    return true;
-  }
+  if (staff) return true;
 
-  // Fallback: Check profiles table (Legacy System)
-  const { data: profile } = await supabase
+  // 2. Fallback: Check profiles table (Legacy System)
+  const { data: profile } = await adminClient
     .from('profiles')
     .select('role')
     .eq('id', user.id)

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, isAdmin } from '@/lib/supabase/server';
+import { createClient, isAdmin, createAdminClient } from '@/lib/supabase/server';
 
 export async function PATCH(
     request: NextRequest,
@@ -11,14 +11,17 @@ export async function PATCH(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
+        const supabase = await createClient();
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+
         const body = await request.json();
         const { status } = body;
 
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        // Use Admin Client to bypass RLS for administrative updates
+        const adminSupabase = await createAdminClient();
 
         // 1. Update order status
-        const { data: updatedOrder, error } = await supabase
+        const { data: updatedOrder, error } = await adminSupabase
             .from('orders')
             .update({
                 status,
@@ -34,10 +37,10 @@ export async function PATCH(
         }
 
         if (!updatedOrder) {
-            console.log('Update failed for ID:', id, 'User:', user?.id, 'Status:', status);
+            console.log('Update failed for ID:', id, 'User:', currentUser?.id, 'Status:', status);
             return NextResponse.json({
                 error: 'Pedido no encontrado o sin permisos',
-                debug: { id, userId: user?.id, status }
+                debug: { id, userId: currentUser?.id, status }
             }, { status: 404 });
         }
 
@@ -45,8 +48,8 @@ export async function PATCH(
         if (status === 'shipped' || status === 'completed') {
             const { sendWebhook } = await import('@/lib/webhook-dispatcher');
 
-            // Fetch full details for the webhook
-            const { data: orderDetails } = await supabase
+            // Fetch full details for the webhook using admin client
+            const { data: orderDetails } = await adminSupabase
                 .from('orders')
                 .select(`
                     *,
