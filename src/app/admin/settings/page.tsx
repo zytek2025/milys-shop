@@ -16,8 +16,6 @@ interface StoreSettings {
     design_price_small: number;
     design_price_medium: number;
     design_price_large: number;
-    pago_movil_info: string;
-    zelle_info: string;
     crm_webhook_url: string;
     canva_api_key?: string;
     whatsapp_number?: string;
@@ -59,8 +57,6 @@ export default function AdminSettingsPage() {
         design_price_small: 2.00,
         design_price_medium: 5.00,
         design_price_large: 10.00,
-        pago_movil_info: '',
-        zelle_info: '',
         crm_webhook_url: '',
         canva_api_key: '',
         whatsapp_number: '',
@@ -88,8 +84,6 @@ export default function AdminSettingsPage() {
                     design_price_small: Number(data.design_price_small ?? 2.00),
                     design_price_medium: Number(data.design_price_medium ?? 5.00),
                     design_price_large: Number(data.design_price_large ?? 10.00),
-                    pago_movil_info: data.pago_movil_info || '',
-                    zelle_info: data.zelle_info || '',
                     crm_webhook_url: data.crm_webhook_url || '',
                     canva_api_key: data.canva_api_key || '',
                     whatsapp_number: data.whatsapp_number || '',
@@ -287,41 +281,6 @@ export default function AdminSettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Pago Móvil - Legacy Support/Quick Info */}
-                <Card className="border-2 opacity-50">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Smartphone className="text-primary h-5 w-5" /> Pago Móvil
-                        </CardTitle>
-                        <CardDescription>Información que verá el cliente para realizar el pago móvil.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Textarea
-                            placeholder="Ej: Banco Mercantil, Cedula: V-1234567, Tlf: 0412..."
-                            value={settings.pago_movil_info}
-                            onChange={(e) => handleUpdateField('pago_movil_info', e.target.value)}
-                            className="min-h-[100px] font-mono text-sm bg-slate-50 dark:bg-slate-900 border-none"
-                        />
-                    </CardContent>
-                </Card>
-
-                {/* Zelle */}
-                <Card className="border-2">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Landmark className="text-primary h-5 w-5" /> Zelle
-                        </CardTitle>
-                        <CardDescription>Correo electrónico y titular para transferencias vía Zelle.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Textarea
-                            placeholder="Ej: Correo: ventas@tienda.com, Titular: ShopHub Inc."
-                            value={settings.zelle_info}
-                            onChange={(e) => handleUpdateField('zelle_info', e.target.value)}
-                            className="min-h-[100px] font-mono text-sm bg-slate-50 dark:bg-slate-900 border-none"
-                        />
-                    </CardContent>
-                </Card>
 
                 {/* Canva Integration */}
                 <Card className="border-2">
