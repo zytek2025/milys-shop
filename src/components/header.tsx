@@ -25,10 +25,17 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
+  const [hasActivePromotions, setHasActivePromotions] = useState(false);
   const addToCart = useAddToCart();
 
   useEffect(() => {
     setIsMounted(true);
+
+    // Check for active promotions
+    fetch('/api/promotions/active')
+      .then(res => res.json())
+      .then(data => setHasActivePromotions(!!data.hasActivePromotions))
+      .catch(() => setHasActivePromotions(false));
   }, []);
 
   const handleSearchProductClick = async (product: Product) => {
@@ -94,7 +101,11 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
           {/* Navigation Links (Desktop) */}
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-sm font-bold hover:text-primary transition-colors">Tienda</Link>
-            <Link href="/offers" className="text-sm font-bold hover:text-primary transition-colors">Ofertas</Link>
+            {hasActivePromotions && (
+              <Link href="/offers" className="text-sm font-bold hover:text-primary transition-colors animate-in fade-in slide-in-from-left-2 transition-all">
+                Ofertas
+              </Link>
+            )}
           </nav>
 
           {/* Search Bar - Hidden on mobile */}

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -26,6 +27,10 @@ async function getActivePromotions() {
 
 export default async function OffersPage() {
     const promotions = await getActivePromotions();
+
+    if (!promotions || promotions.length === 0) {
+        redirect('/');
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950">

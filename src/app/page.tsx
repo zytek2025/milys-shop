@@ -49,17 +49,8 @@ async function getProducts() {
     return { products: MOCK_PRODUCTS, categories: [], promotions: [] };
   }
 
-  if ((!promotions || promotions.length === 0) && !promoError) {
-    // Fallback mock promotions if database is empty but no error
-    return {
-      products: products || [],
-      categories: categories || [],
-      promotions: [
-        { id: '1', name: 'Oferta de Bienvenida', description: 'Descuento especial para nuevos clientes', type: 'percentage', value: 15, is_active: true },
-        { id: '2', name: '2x1 en Accesorios', description: 'Compra uno y llévate el segundo gratis', type: 'bogo', value: 0, is_active: true },
-        { id: '3', name: 'Envío Gratis', description: 'En pedidos superiores a $50', type: 'percentage', value: 100, is_active: true }
-      ]
-    };
+  if (!hasContent) {
+    return { products: MOCK_PRODUCTS, categories: [], promotions: [] };
   }
 
   return { products: products || [], categories: categories || [], promotions: promotions || [] };
