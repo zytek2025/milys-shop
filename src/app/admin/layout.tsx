@@ -70,6 +70,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         );
     }
 
+    // Admin login page renders without sidebar
+    if (pathname === '/admin/login') {
+        return <>{children}</>;
+    }
+
     // Guard: if not admin, show fix button instead of redirecting
     if (isAuthenticated && !isAdmin) {
         return <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
