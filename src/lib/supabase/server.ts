@@ -33,6 +33,7 @@ export async function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!serviceRoleKey || serviceRoleKey.length === 0) {
+    console.error('Environment keys available:', Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY')));
     throw new Error('CONFIG_ERROR: La SUPABASE_SERVICE_ROLE_KEY no está configurada en el servidor. Por favor, verifica las variables de entorno en AWS Amplify.');
   }
 
