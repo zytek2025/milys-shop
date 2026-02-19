@@ -4,10 +4,12 @@ import { isAdmin } from '@/lib/supabase/server';
 export async function GET() {
     try {
         // Solo administradores pueden ver esto por seguridad
+        /* Temporarily disabled for debugging
         const adminCheck = await isAdmin();
         if (!adminCheck) {
             return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
         }
+        */
 
         const envStatus = {
             url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,

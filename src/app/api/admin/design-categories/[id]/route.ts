@@ -1,16 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-
-async function isAdmin(supabase: any) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-    return profile?.role === 'admin';
-}
+import { createClient, isAdmin } from '@/lib/supabase/server';
 
 export async function PUT(
     request: NextRequest,
@@ -18,7 +7,7 @@ export async function PUT(
 ) {
     try {
         const supabase = await createClient();
-        if (!(await isAdmin(supabase))) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+        if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
 
         const { id } = await params;
         const body = await request.json();
@@ -51,7 +40,7 @@ export async function DELETE(
 ) {
     try {
         const supabase = await createClient();
-        if (!(await isAdmin(supabase))) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+        if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
 
         const { id } = await params;
         const { error } = await supabase

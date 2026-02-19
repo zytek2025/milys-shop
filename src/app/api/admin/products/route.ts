@@ -1,25 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-
-// helper to check admin role
-async function isAdmin(supabase: any) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-    return profile?.role === 'admin';
-}
+import { createClient, isAdmin } from '@/lib/supabase/server';
 
 // GET /api/admin/products - List all products (including low stock)
 export async function GET() {
     try {
         const supabase = await createClient();
-        if (!(await isAdmin(supabase))) {
+        if (!(await isAdmin())) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
@@ -39,7 +25,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
-        if (!(await isAdmin(supabase))) {
+        if (!(await isAdmin())) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
