@@ -59,18 +59,23 @@ export async function isAdmin() {
     return false;
   }
 
-  // Check staff_users table instead of profiles
-  const { data: staff, error: staffError } = await supabase
+  // Check staff_users table first (New System)
+  const { data: staff } = await supabase
     .from('staff_users')
-    .select('id, email, is_super_admin')
+    .select('id, is_super_admin')
     .eq('id', user.id)
     .single();
 
-  if (staffError) {
-    console.log('isAdmin check: Staff record error or not found', staffError.message);
-    return false;
+  if (staff) {
+    return true;
   }
 
-  console.log('isAdmin check: Staff User', staff.email, 'Super Admin:', staff.is_super_admin);
-  return true; // If they are in the staff_users table, they are considered admin
+  // Fallback: Check profiles table (Legacy System)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  return profile?.role === 'admin';
 }
