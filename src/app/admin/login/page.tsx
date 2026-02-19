@@ -72,6 +72,7 @@ export default function AdminLoginPage() {
                 setAdmin(true);
 
                 toast.success("Bienvenido al Panel Administrativo");
+                router.refresh();
                 router.push('/admin');
             }
         } catch (error) {

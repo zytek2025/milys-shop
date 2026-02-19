@@ -36,13 +36,13 @@ export async function middleware(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     // Protect /admin routes
-    const isLoginPage = request.nextUrl.pathname.startsWith('/auth/login')
-    const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+    const isLoginPage = request.nextUrl.pathname === '/auth/login'
+    const isAdminLoginPage = request.nextUrl.pathname === '/admin/login'
+    const isAdminRoute = request.nextUrl.pathname.startsWith('/admin') && !isAdminLoginPage
 
     if (isAdminRoute) {
         if (!user) {
-            const url = new URL('/auth/login', request.url)
-            url.searchParams.set('from', request.nextUrl.pathname)
+            const url = new URL('/admin/login', request.url)
             return NextResponse.redirect(url)
         }
 
@@ -64,13 +64,13 @@ export async function middleware(request: NextRequest) {
                 .single()
 
             if (profile?.role !== 'admin') {
-                return NextResponse.redirect(new URL('/', request.url))
+                return NextResponse.redirect(new URL('/admin/login', request.url))
             }
         }
     }
 
     if (isLoginPage && user) {
-        // Redirection logic for logged-in users
+        // Redirection logic for logged-in users on /auth/login
         const { data: staff } = await supabase
             .from('staff_users')
             .select('id')
