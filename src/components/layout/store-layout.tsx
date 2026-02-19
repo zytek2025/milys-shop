@@ -19,7 +19,7 @@ import { SessionTimeout } from '@/components/auth/session-timeout';
 export function StoreLayout({ children }: { children: React.ReactNode }) {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const [authConfig, setAuthConfig] = useState<{ view: 'login' | 'register'; message: string | null }>({ view: 'login', message: null });
+    const [authConfig, setAuthConfig] = useState<{ view: 'login' | 'register' | 'summary'; message: string | null }>({ view: 'login', message: null });
     const [settings, setSettings] = useState<any>(null);
 
     // Initialize auth state
@@ -46,7 +46,7 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
     }, [isAdmin]);
 
     const handleOpenCart = () => setIsCartOpen(true);
-    const handleOpenAuth = (config?: { view: 'login' | 'register'; message: string }) => {
+    const handleOpenAuth = (config?: { view: 'login' | 'register' | 'summary'; message: string }) => {
         if (config) {
             setAuthConfig(config);
         } else {

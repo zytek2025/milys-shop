@@ -216,6 +216,9 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           render={({ field }) => (
             <FormItem>
               <FormLabel>Contraseña</FormLabel>
+              <p className="text-[10px] text-muted-foreground mb-2">
+                Establece una contraseña para crear tu perfil y así poder rastrear tu pedido.
+              </p>
               <FormControl>
                 <Input
                   type="password"
