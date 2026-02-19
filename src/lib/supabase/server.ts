@@ -58,28 +58,44 @@ export async function isAdmin() {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    console.log('isAdmin check: No user found', authError);
+    console.error('isAdmin check: No user session found', {
+      authError: authError?.message,
+      hasUser: !!user,
+      env: process.env.NODE_ENV
+    });
     return false;
   }
+
+  console.log('isAdmin check: Finding roles for User ID:', user.id);
 
   // Use Admin Client to bypass RLS for strictly checking roles
   const adminClient = await createAdminClient();
 
   // 1. Check staff_users table first (New System)
-  const { data: staff } = await adminClient
+  const { data: staff, error: staffError } = await adminClient
     .from('staff_users')
     .select('id')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (staff) return true;
+  if (staff) {
+    console.log('isAdmin check: Authorized via staff_users table');
+    return true;
+  }
+
+  if (staffError) console.error('isAdmin check: staff_users error', staffError);
 
   // 2. Fallback: Check profiles table (Legacy System)
-  const { data: profile } = await adminClient
+  const { data: profile, error: profileError } = await adminClient
     .from('profiles')
     .select('role')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
-  return profile?.role === 'admin';
+  if (profileError) console.error('isAdmin check: profiles error', profileError);
+
+  const isProfileAdmin = profile?.role === 'admin';
+  console.log('isAdmin check: Authorized via profiles table?', isProfileAdmin);
+
+  return isProfileAdmin;
 }
