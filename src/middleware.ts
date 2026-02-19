@@ -62,14 +62,14 @@ export async function middleware(request: NextRequest) {
     }
 
     if (isLoginPage && user) {
-        // If user is logged in, check role to decide redirect
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
+        // If user is logged in, check if they are staff to decide redirect
+        const { data: staff } = await supabase
+            .from('staff_users')
+            .select('id')
             .eq('id', user.id)
             .single()
 
-        if (profile?.role === 'admin') {
+        if (staff) {
             return NextResponse.redirect(new URL('/admin', request.url))
         } else {
             return NextResponse.redirect(new URL('/', request.url))
