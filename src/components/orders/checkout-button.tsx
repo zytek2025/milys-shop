@@ -117,7 +117,7 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
         className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 h-14 rounded-2xl shadow-lg font-black uppercase italic tracking-wider transition-all hover:scale-[1.02] active:scale-95"
         onClick={() => onLoginRequired?.({
           view: 'register',
-          message: '¡Hola! Antes de terminar, crea tu cuenta rápidamente. Así podrás ver por dónde viene tu paquete en tiempo real y recibir avisos de tu pedido directamente.'
+          message: '¡Hola! Antes de terminar, crea tu cuenta rápidamente. Así podrás ver cómo va el proceso de tu pedido en tiempo real y recibir avisos de tu pedido directamente.'
         })}
       >
         Continuar con mi pedido
