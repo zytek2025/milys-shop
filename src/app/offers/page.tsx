@@ -19,7 +19,7 @@ async function getActivePromotions() {
         .from('promotions')
         .select('*')
         .eq('is_active', true)
-        .gte('end_date', new Date().toISOString().split('T')[0]) // Only valid dates
+        .or(`end_date.is.null,end_date.gte.${new Date().toISOString().split('T')[0]}`) // NULL or valid dates
         .order('value', { ascending: false }); // Show best offers first
 
     return promotions || [];

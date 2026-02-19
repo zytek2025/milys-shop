@@ -8,7 +8,7 @@ export async function GET() {
             .from('promotions')
             .select('*', { count: 'exact', head: true })
             .eq('is_active', true)
-            .gte('end_date', new Date().toISOString().split('T')[0]);
+            .or(`end_date.is.null,end_date.gte.${new Date().toISOString().split('T')[0]}`);
 
         if (error) throw error;
 
