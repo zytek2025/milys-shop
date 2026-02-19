@@ -6,9 +6,11 @@ import { usePathname } from 'next/navigation';
 import { Header } from '@/components/header';
 import { CartDrawer } from '@/components/cart/cart-drawer';
 import { AuthModal } from '@/components/auth/auth-modal';
+import { OrderHistory } from '@/components/orders/order-history';
 import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthCheck } from '@/hooks/use-auth';
+import { useAuth } from '@/store/cart-store';
 import { Instagram, Facebook, Send, Music2, Pin, Mail, MessageCircle } from 'lucide-react';
 
 // Create a client (singleton for browser)
@@ -19,11 +21,13 @@ import { SessionTimeout } from '@/components/auth/session-timeout';
 export function StoreLayout({ children }: { children: React.ReactNode }) {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
     const [authConfig, setAuthConfig] = useState<{ view: 'login' | 'register' | 'summary'; message: string | null }>({ view: 'login', message: null });
     const [settings, setSettings] = useState<any>(null);
 
     // Initialize auth state
     useAuthCheck();
+    const { isAuthenticated } = useAuth();
 
     const pathname = usePathname();
     const [isClientAdmin, setIsClientAdmin] = useState(false);
@@ -81,6 +85,8 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
 
                 <Header
                     onCartClick={handleOpenCart}
+                    onLoginClick={() => setIsAuthModalOpen(true)}
+                    onOrdersClick={() => setIsOrderHistoryOpen(true)}
                 />
 
                 <main className="flex-1 relative z-10 w-full animate-in fade-in duration-500">
@@ -98,6 +104,11 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                     onOpenChange={setIsAuthModalOpen}
                     defaultView={authConfig.view}
                     message={authConfig.message}
+                />
+
+                <OrderHistory
+                    open={isOrderHistoryOpen}
+                    onOpenChange={setIsOrderHistoryOpen}
                 />
 
                 <footer className="border-t border-primary/10 py-16 bg-muted/30 mt-auto">
@@ -119,7 +130,12 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Navegación</h4>
                                 <div className="flex flex-col items-center md:items-start gap-3 text-sm font-bold text-muted-foreground">
                                     <Link href="/" className="hover:text-primary transition-colors">Catálogo</Link>
-                                    <Link href="/orders" className="hover:text-primary transition-colors">Mis Pedidos</Link>
+                                    <button
+                                        onClick={() => isAuthenticated ? setIsOrderHistoryOpen(true) : setIsAuthModalOpen(true)}
+                                        className="hover:text-primary transition-colors"
+                                    >
+                                        Mis Pedidos
+                                    </button>
                                     <Link href="#contact-section" className="hover:text-primary transition-colors">Contacto</Link>
                                     <Link href="/admin" className="hover:text-primary transition-colors">Administración</Link>
                                 </div>

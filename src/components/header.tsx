@@ -8,23 +8,26 @@ import { Badge } from '@/components/ui/badge';
 import { useCartTotals, useAddToCart } from '@/hooks/use-cart';
 import { useAuth, useCartStore } from '@/store/cart-store';
 import { SearchBar } from '@/components/search/search-bar';
-import { AuthModal } from '@/components/auth/auth-modal';
 import { UserMenu } from '@/components/auth/user-menu';
-import { OrderHistory } from '@/components/orders/order-history';
 import { toast } from 'sonner';
 import type { Product } from '@/types';
 
 interface HeaderProps {
   onCartClick: () => void;
+  onLoginClick: () => void;
+  onOrdersClick: () => void;
   onSearchProductClick?: (product: Product) => void;
 }
 
-export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
+export function Header({
+  onCartClick,
+  onLoginClick,
+  onOrdersClick,
+  onSearchProductClick
+}: HeaderProps) {
   const { itemCount } = useCartTotals();
   const { isAuthenticated } = useAuth();
   const [isMounted, setIsMounted] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
   const [hasActivePromotions, setHasActivePromotions] = useState(false);
   const addToCart = useAddToCart();
 
@@ -107,7 +110,7 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
               </Link>
             )}
             <button
-              onClick={() => isAuthenticated ? setIsOrderHistoryOpen(true) : setIsAuthModalOpen(true)}
+              onClick={() => isAuthenticated ? onOrdersClick() : onLoginClick()}
               className="text-sm font-bold hover:text-primary transition-colors"
             >
               Mis Pedidos
@@ -123,11 +126,11 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
           <div className="flex items-center gap-3">
             {isMounted && (
               isAuthenticated ? (
-                <UserMenu onOrdersClick={() => setIsOrderHistoryOpen(true)} />
+                <UserMenu onOrdersClick={onOrdersClick} />
               ) : (
                 <Button
                   variant="ghost"
-                  onClick={() => setIsAuthModalOpen(true)}
+                  onClick={onLoginClick}
                   className="gap-2 rounded-2xl hover:bg-slate-100"
                 >
                   <LogIn className="h-4 w-4" />
@@ -158,18 +161,6 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
           <SearchBar onProductClick={handleSearchProductClick} />
         </div>
       </header >
-
-      {/* Auth Modal */}
-      < AuthModal
-        open={isAuthModalOpen}
-        onOpenChange={setIsAuthModalOpen}
-      />
-
-      {/* Order History Modal */}
-      < OrderHistory
-        open={isOrderHistoryOpen}
-        onOpenChange={setIsOrderHistoryOpen}
-      />
     </>
   );
 }
