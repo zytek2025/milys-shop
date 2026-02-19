@@ -154,6 +154,8 @@ export function useRegister() {
           body: JSON.stringify({
             type: 'NEW_CUSTOMER_REGISTRATION',
             customer: {
+              id: data.user.id,
+              control_id: profile.control_id || null,
               fullName,
               email,
               whatsapp,
