@@ -3,9 +3,34 @@
 import { LoginForm } from "@/components/auth/login-form"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 export default function LoginPage() {
     const router = useRouter();
+
+    const handleLoginSuccess = async (user: any) => {
+        try {
+            // Check staff_users table first (primary admin source)
+            const supabase = createClient();
+            const { data: staff } = await supabase
+                .from('staff_users')
+                .select('id')
+                .eq('id', user?.id)
+                .single();
+
+            const isAdmin = !!staff || user?.role === 'admin';
+
+            router.refresh(); // sync session cookies with server middleware
+            if (isAdmin) {
+                router.push('/admin');
+            } else {
+                router.push('/');
+            }
+        } catch {
+            // Fallback: trust the profile role
+            router.push(user?.role === 'admin' ? '/admin' : '/');
+        }
+    };
 
     return (
         <div className="container relative h-[800px] flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
@@ -45,13 +70,7 @@ export default function LoginPage() {
                             Inicia sesión para acceder a tu cuenta
                         </p>
                     </div>
-                    <LoginForm onSuccess={(user) => {
-                        if (user?.role === 'admin') {
-                            router.push('/admin');
-                        } else {
-                            router.push('/');
-                        }
-                    }} />
+                    <LoginForm onSuccess={handleLoginSuccess} />
                     <p className="px-8 text-center text-sm text-muted-foreground">
                         <Link
                             href="/auth/register"
@@ -65,3 +84,4 @@ export default function LoginPage() {
         </div>
     )
 }
+
