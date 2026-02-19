@@ -50,10 +50,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Variant not found' }, { status: 404 });
       }
       activeVariant = variant;
-      if (variant.stock < quantity) {
+      const isOnRequest = customMetadata?.on_request === true;
+      if (variant.stock < quantity && !isOnRequest) {
         return NextResponse.json({ error: 'Insufficient variant stock' }, { status: 400 });
       }
-    } else if (product.stock < quantity) {
+    } else if (product.stock < quantity && customMetadata?.on_request !== true) {
       return NextResponse.json({ error: 'Insufficient stock' }, { status: 400 });
     }
 
@@ -116,7 +117,8 @@ export async function POST(request: NextRequest) {
       const newQuantity = existingItem.quantity + quantity;
 
       const stockToCheck = activeVariant ? (activeVariant as any).stock : product.stock;
-      if (stockToCheck < newQuantity) {
+      const isOnRequest = customMetadata?.on_request === true;
+      if (stockToCheck < newQuantity && !isOnRequest) {
         return NextResponse.json({ error: 'Stock insuficiente para la cantidad combinada' }, { status: 400 });
       }
 
