@@ -10,14 +10,27 @@ export async function POST() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Force set this user as admin using upsert to handle missing profiles
-        const { data, error } = await supabase
+        const { createAdminClient } = await import('@/lib/supabase/server');
+        const adminSupabase = await createAdminClient();
+
+        // 1. Update Profile (Keep legacy role for safety)
+        await adminSupabase
             .from('profiles')
             .upsert({
                 id: user.id,
                 email: user.email,
                 full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
                 role: 'admin',
+                updated_at: new Date().toISOString(),
+            });
+
+        // 2. Force set this user as admin in staff_users (Source of truth)
+        const { data, error } = await adminSupabase
+            .from('staff_users')
+            .upsert({
+                id: user.id,
+                email: user.email,
+                full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
                 is_super_admin: true, // Emergency promote
                 permissions: {
                     can_manage_prices: true,
@@ -33,7 +46,7 @@ export async function POST() {
 
         if (error) throw error;
 
-        return NextResponse.json({ success: true, profile: data });
+        return NextResponse.json({ success: true, staff: data });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

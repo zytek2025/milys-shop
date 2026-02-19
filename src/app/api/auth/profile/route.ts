@@ -11,43 +11,57 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get profile from profiles table using the authenticated client
-    // This client automatically sends the session cookie, so RLS policies work.
+    // Get profile from profiles table
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
       .single();
 
-    if (profileError) {
-      // If profile doesn't exist (e.g. race condition with trigger), try to create one
-      if (profileError.code === 'PGRST116') {
+    // Check if user exists in staff_users table
+    const { data: staff, error: staffError } = await supabase
+      .from('staff_users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    let finalProfile = profile;
+
+    if (profileError && profileError.code === 'PGRST116') {
+      // If profile doesn't exist but they are staff, we can synthesize one or error
+      if (!staff) {
+        // Create profile if missing
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .insert({
             id: user.id,
             email: user.email,
             full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
-            whatsapp: user.user_metadata?.whatsapp || null,
           })
           .select()
           .single();
-
-        if (createError) {
-          // If insert fails (maybe trigger already did it), try to fetch once more
-          const { data: retryProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-          if (retryProfile) return NextResponse.json(retryProfile);
-
-          return NextResponse.json({ error: createError.message }, { status: 500 });
-        }
-
-        return NextResponse.json(newProfile);
+        if (createError) return NextResponse.json({ error: createError.message }, { status: 500 });
+        finalProfile = newProfile;
       }
-
+    } else if (profileError) {
       return NextResponse.json({ error: profileError.message }, { status: 500 });
     }
 
-    return NextResponse.json(profile);
+    // Merge staff data if present
+    if (staff) {
+      finalProfile = {
+        ...(finalProfile || {}),
+        id: user.id, // Ensure ID is correct
+        email: user.email,
+        role: 'admin', // Force admin role if in staff_users
+        is_super_admin: staff.is_super_admin,
+        permissions: staff.permissions,
+        full_name: staff.full_name || (finalProfile?.full_name),
+        updated_at: staff.updated_at
+      };
+    }
+
+    return NextResponse.json(finalProfile);
   } catch (error) {
     console.error('Error fetching profile:', error);
     return NextResponse.json(
