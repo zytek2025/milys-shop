@@ -35,7 +35,7 @@ interface CartDrawerProps {
 
 export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerProps) {
   const { data: cart, isLoading } = useCart();
-  const { total, itemCount } = useCartTotals();
+  const { total, itemCount, hasOnRequestItems } = useCartTotals();
   const { isAuthenticated } = useAuth();
   const router = useRouter();
 
@@ -161,8 +161,24 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
                   <Separator />
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <div className="flex flex-col items-end">
+                      <span>${total.toFixed(2)}</span>
+                      {hasOnRequestItems && (
+                        <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tight">
+                          + Presupuesto de diseño
+                        </span>
+                      )}
+                    </div>
                   </div>
+
+                  {hasOnRequestItems && (
+                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 animate-in fade-in slide-in-from-top-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-1">Nota de Presupuesto</p>
+                      <p className="text-[11px] text-amber-800 dark:text-amber-200 leading-tight italic font-medium">
+                        Tu carrito incluye diseños personalizados. El total mostrado es un estimado base; nos contactaremos contigo para darte la cotización final después de realizar el pedido.
+                      </p>
+                    </div>
+                  )}
                   <div className="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Política de Devolución</p>
                     <p className="text-[11px] text-muted-foreground leading-tight italic font-medium">

@@ -28,6 +28,9 @@ export function CartItemRow({
 
   // Estructura de metadatos (soporta formato nuevo y antiguo)
   const metadata = (item.custom_metadata || {}) as any;
+  const isOnRequest = metadata?.on_request === true;
+  const budgetRequest = metadata?.budget_request;
+
   const isNewFormat = !Array.isArray(metadata) && !!metadata.designs;
   const designList = (isNewFormat ? metadata.designs : (Array.isArray(metadata) ? metadata : [])) as any[];
   const personalization = isNewFormat ? metadata.personalization : null;
@@ -49,7 +52,7 @@ export function CartItemRow({
       className="flex items-center gap-3 py-4 border-b last:border-b-0"
     >
       {/* Product Image */}
-      <div className="h-16 w-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+      <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
         {product?.image_url ? (
           <img
             src={product.image_url}
@@ -61,13 +64,31 @@ export function CartItemRow({
             Sin img
           </div>
         )}
+
+        {/* Overlay preview for custom designs if it's a quote request */}
+        {isOnRequest && budgetRequest?.image_url && (
+          <div className="absolute bottom-0 right-0 w-8 h-8 rounded-tl-lg overflow-hidden border-t border-l border-white shadow-lg bg-white">
+            <img
+              src={budgetRequest.image_url}
+              alt="Tu diseño"
+              className="w-full h-full object-contain p-0.5"
+            />
+          </div>
+        )}
       </div>
 
       {/* Product Info */}
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-sm line-clamp-1">
-          {product?.name || 'Producto Desconocido'}
-        </h4>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h4 className="font-medium text-sm line-clamp-1">
+            {product?.name || 'Producto Desconocido'}
+          </h4>
+          {isOnRequest && (
+            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-black uppercase tracking-tighter">
+              A Cotizar
+            </span>
+          )}
+        </div>
 
         {/* Talla y Color si hay variante */}
         {(variant?.size || variant?.color) && (
@@ -78,9 +99,20 @@ export function CartItemRow({
           </p>
         )}
 
-        <p className="text-sm font-bold text-primary">
-          ${finalPrice.toFixed(2)}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-bold text-primary">
+            {isOnRequest ? (
+              <span className="text-amber-600 italic">Precio pendiente</span>
+            ) : (
+              `$${finalPrice.toFixed(2)}`
+            )}
+          </p>
+          {isOnRequest && finalPrice > 0 && (
+            <span className="text-[10px] text-muted-foreground line-through decoration-slate-300">
+              ${finalPrice.toFixed(2)}
+            </span>
+          )}
+        </div>
 
         {/* Listado de Diseños y Personalización */}
         {designList.length > 0 && (
@@ -100,6 +132,14 @@ export function CartItemRow({
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {isOnRequest && budgetRequest?.notes && (
+          <div className="mt-1 px-2 py-1 rounded bg-amber-50/50 border border-amber-100">
+            <p className="text-[8px] font-bold text-amber-700 uppercase tracking-tighter line-clamp-2 italic">
+              Nota: {budgetRequest.notes}
+            </p>
           </div>
         )}
 

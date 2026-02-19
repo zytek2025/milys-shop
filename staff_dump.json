@@ -1,0 +1,47 @@
+[
+  {
+    "id": "bcf9e6ce-b6c7-426c-be20-978de3f9c193",
+    "email": "vanessa@milys.shop",
+    "full_name": "vanessa bejarano",
+    "is_super_admin": true,
+    "permissions": {
+      "can_manage_users": true,
+      "can_view_metrics": true,
+      "can_manage_prices": true,
+      "can_view_settings": true,
+      "can_manage_designs": true
+    },
+    "created_at": "2026-02-19T03:43:39.121132+00:00",
+    "updated_at": "2026-02-19T03:43:39.121132+00:00"
+  },
+  {
+    "id": "1cacb6ea-74a1-4296-9ad4-e01491d16ab7",
+    "email": "BEJARANO.V189@GMAIL.COM",
+    "full_name": "VANESSA BEJARANO",
+    "is_super_admin": false,
+    "permissions": {
+      "can_manage_users": false,
+      "can_view_metrics": false,
+      "can_manage_prices": false,
+      "can_view_settings": false,
+      "can_manage_designs": false
+    },
+    "created_at": "2026-02-19T03:43:39.121132+00:00",
+    "updated_at": "2026-02-19T03:43:39.121132+00:00"
+  },
+  {
+    "id": "dc527887-9a29-42dc-aa6a-d92bd3172513",
+    "email": "dfornerino.usa@gmail.com",
+    "full_name": "Daniel Fornerino",
+    "is_super_admin": true,
+    "permissions": {
+      "can_manage_users": true,
+      "can_view_metrics": true,
+      "can_manage_prices": true,
+      "can_view_settings": true,
+      "can_manage_designs": true
+    },
+    "created_at": "2026-02-19T13:54:36.310788+00:00",
+    "updated_at": "2026-02-19T13:54:36.310788+00:00"
+  }
+]

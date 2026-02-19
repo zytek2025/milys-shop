@@ -43,16 +43,31 @@ export default function AdminLoginPage() {
                     .eq('id', data.user.id)
                     .single();
 
-                if (profileError || profile?.role !== 'admin') {
+                // Check staff_users as fallback/primary source of truth for permissions
+                const { data: staff } = await supabase
+                    .from('staff_users')
+                    .select('*')
+                    .eq('id', data.user.id)
+                    .single();
+
+                if (!staff && (!profile || profile.role !== 'admin')) {
                     toast.error("Este usuario no tiene permisos de administrador");
                     await supabase.auth.signOut();
                     setLoading(false);
                     return;
                 }
 
+                // Merge staff info into profile for the store if needed
+                const finalProfile = {
+                    ...(profile || {}),
+                    role: 'admin',
+                    is_super_admin: staff?.is_super_admin || profile?.is_super_admin || false,
+                    permissions: staff?.permissions || profile?.permissions
+                };
+
                 // Update store
                 setUserId(data.user.id);
-                setUser(profile);
+                setUser(finalProfile as any);
                 setAuthenticated(true);
                 setAdmin(true);
 

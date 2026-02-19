@@ -53,8 +53,8 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
           <Link href="/" className="flex items-center gap-4 flex-shrink-0 group">
             <div className="relative">
               <div className="absolute -inset-1 bg-gradient-to-tr from-primary to-secondary rounded-2xl blur-sm opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-              <div className="relative h-14 w-14 flex items-center justify-center p-2 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-primary/20 group-hover:border-primary/50 group-hover:scale-110 transition-all duration-500">
-                <svg viewBox="0 0 150 120" className="w-full h-full fill-none">
+              <div className="relative h-14 w-14 flex items-center justify-center p-2 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-primary/20 group-hover:border-primary/50 group-hover:scale-110 transition-all duration-500" style={{ width: '3.5rem', height: '3.5rem' }}>
+                <svg viewBox="0 0 150 120" className="w-full h-full fill-none" width="56" height="56">
                   <defs>
                     <linearGradient id="threadGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                       <stop offset="0%" stopColor="hsl(var(--primary))" />

@@ -11,7 +11,7 @@ export function Hero() {
             <div className="absolute inset-0 z-0 overflow-hidden bg-background">
                 <div className="absolute inset-0 bg-gradient-to-r from-background via-background to-transparent z-10 opacity-90" />
                 <motion.img
-                    initial={{ scale: 1.2, opacity: 0 }}
+                    initial={{ scale: 1, opacity: 0.15 }}
                     animate={{ scale: 1, opacity: 0.15 }}
                     transition={{ duration: 2, ease: "easeOut" }}
                     src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2070&auto=format&fit=crop"
@@ -27,7 +27,7 @@ export function Hero() {
 
             <div className="container relative z-20 px-8 mx-auto text-center lg:text-left">
                 <motion.div
-                    initial={{ opacity: 0, x: -50 }}
+                    initial={{ opacity: 1, x: 0 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 1, ease: "easeOut" }}
                     className="max-w-4xl"
@@ -61,7 +61,7 @@ export function Hero() {
             {/* Decorative Card */}
             <div className="absolute bottom-12 right-12 hidden xl:block z-20">
                 <motion.div
-                    initial={{ opacity: 0, y: 50 }}
+                    initial={{ opacity: 1, y: 0 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.8, duration: 1 }}
                     className="bg-white p-8 rounded-[2.5rem] border border-primary/20 shadow-[0_20px_60px_-15px_rgba(212,175,55,0.15)] max-w-sm group hover:-translate-y-2 transition-transform duration-500"

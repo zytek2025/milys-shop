@@ -184,13 +184,21 @@ export function useCartTotals() {
   const { data: cart } = useCart();
 
   const itemCount = cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+
+  let hasOnRequestItems = false;
+
   const total = cart?.items.reduce((sum, item) => {
+    // Check if item is on request
+    const metadata = item.custom_metadata as any;
+    if (metadata?.on_request === true) {
+      hasOnRequestItems = true;
+    }
+
     // Precio base del producto o el override de la variante si existe
     const basePrice = item.variant?.price_override ?? item.product?.price ?? 0;
 
     // Sumar precio de logos y personalización en custom_metadata
     let extraPrice = 0;
-    const metadata = item.custom_metadata;
 
     if (Array.isArray(metadata)) {
       // Formato antiguo: Array de logos
@@ -209,5 +217,5 @@ export function useCartTotals() {
     return sum + (basePrice + extraPrice) * item.quantity;
   }, 0) ?? 0;
 
-  return { itemCount, total };
+  return { itemCount, total, hasOnRequestItems };
 }
