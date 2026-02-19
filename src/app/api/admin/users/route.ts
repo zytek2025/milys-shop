@@ -10,22 +10,21 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Check if requester is super admin or has manage_users permission
-        const { data: profile } = await supabase
-            .from('profiles')
+        // Check if requester is super admin or has manage_users permission in staff_users
+        const { data: requester } = await supabase
+            .from('staff_users')
             .select('is_super_admin, permissions')
             .eq('id', currentUser.id)
             .single();
 
-        if (!profile?.is_super_admin && !profile?.permissions?.can_manage_users) {
+        if (!requester?.is_super_admin && !requester?.permissions?.can_manage_users) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // Filter ONLY staff (admins) for this page
+        // Fetch staff from staff_users table
         const { data: users, error } = await supabase
-            .from('profiles')
+            .from('staff_users')
             .select('*')
-            .eq('role', 'admin')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -44,13 +43,13 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { data: profile } = await supabase
-            .from('profiles')
+        const { data: requester } = await supabase
+            .from('staff_users')
             .select('is_super_admin, permissions')
             .eq('id', currentUser.id)
             .single();
 
-        if (!profile?.is_super_admin && !profile?.permissions?.can_manage_users) {
+        if (!requester?.is_super_admin && !requester?.permissions?.can_manage_users) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
@@ -58,14 +57,13 @@ export async function PUT(request: Request) {
         const { id, role, permissions, is_super_admin, full_name } = body;
 
         // Prevent non-super-admins from giving super admin status or editing super admins
-        if (!profile.is_super_admin && (is_super_admin !== undefined)) {
+        if (!requester.is_super_admin && (is_super_admin !== undefined)) {
             return NextResponse.json({ error: 'Only super admins can modify super admin status' }, { status: 403 });
         }
 
         const { data, error } = await supabase
-            .from('profiles')
+            .from('staff_users')
             .update({
-                role,
                 permissions,
                 is_super_admin,
                 full_name,
@@ -91,13 +89,13 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { data: profile } = await supabase
-            .from('profiles')
+        const { data: requester } = await supabase
+            .from('staff_users')
             .select('is_super_admin')
             .eq('id', currentUser.id)
             .single();
 
-        if (!profile?.is_super_admin) {
+        if (!requester?.is_super_admin) {
             return NextResponse.json({ error: 'Forbidden: Only super admins can delete users' }, { status: 403 });
         }
 
@@ -119,13 +117,13 @@ export async function DELETE(request: Request) {
         const { error: authDeleteError } = await adminSupabase.auth.admin.deleteUser(userId);
         if (authDeleteError) throw authDeleteError;
 
-        // 2. Delete from Profiles
-        const { error: profileDeleteError } = await adminSupabase
-            .from('profiles')
+        // 2. Delete from Staff Users
+        const { error: staffDeleteError } = await adminSupabase
+            .from('staff_users')
             .delete()
             .eq('id', userId);
 
-        if (profileDeleteError) throw profileDeleteError;
+        if (staffDeleteError) throw staffDeleteError;
 
         return NextResponse.json({ success: true });
     } catch (error: any) {

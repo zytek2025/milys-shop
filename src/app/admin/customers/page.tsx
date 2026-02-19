@@ -130,13 +130,10 @@ export default function AdminCRMPage() {
         e.preventDefault();
         setUpdating('creating');
         try {
-            const res = await fetch('/api/admin/users/create', {
+            const res = await fetch('/api/admin/crm', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...newCustomer,
-                    role: 'user'
-                }),
+                body: JSON.stringify(newCustomer),
             });
 
             if (res.ok) {

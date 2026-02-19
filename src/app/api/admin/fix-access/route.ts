@@ -10,10 +10,13 @@ export async function POST() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Force set this user as admin
+        // Force set this user as admin using upsert to handle missing profiles
         const { data, error } = await supabase
             .from('profiles')
-            .update({
+            .upsert({
+                id: user.id,
+                email: user.email,
+                full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
                 role: 'admin',
                 is_super_admin: true, // Emergency promote
                 permissions: {
@@ -25,7 +28,6 @@ export async function POST() {
                 },
                 updated_at: new Date().toISOString(),
             })
-            .eq('id', user.id)
             .select()
             .single();
 

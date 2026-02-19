@@ -10,19 +10,19 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Check if requester is super admin
-        const { data: profile } = await supabase
-            .from('profiles')
+        // Check if requester is super admin in staff_users
+        const { data: requester } = await supabase
+            .from('staff_users')
             .select('is_super_admin')
             .eq('id', currentUser.id)
             .single();
 
-        if (!profile?.is_super_admin) {
+        if (!requester?.is_super_admin) {
             return NextResponse.json({ error: 'Forbidden: Only super admins can create staff' }, { status: 403 });
         }
 
         const body = await request.json();
-        const { email, password, full_name, permissions, role } = body;
+        const { email, password, full_name, permissions } = body;
 
         if (!email || !password) {
             return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
@@ -39,12 +39,14 @@ export async function POST(request: Request) {
 
         if (createError) throw createError;
 
-        // Update the profile with role and permissions
-        const { data: newProfile, error: profileError } = await adminSupabase
-            .from('profiles')
-            .update({
-                role: role || 'admin',
+        // Insert into staff_users table
+        const { data: newStaff, error: staffError } = await adminSupabase
+            .from('staff_users')
+            .insert({
+                id: authData.user.id,
+                email: email,
                 full_name: full_name || email.split('@')[0],
+                is_super_admin: false,
                 permissions: permissions || {
                     can_manage_prices: false,
                     can_view_metrics: false,
@@ -53,13 +55,12 @@ export async function POST(request: Request) {
                     can_view_settings: false,
                 }
             })
-            .eq('id', authData.user.id)
             .select()
             .single();
 
-        if (profileError) throw profileError;
+        if (staffError) throw staffError;
 
-        return NextResponse.json(newProfile);
+        return NextResponse.json(newStaff);
     } catch (error: any) {
         console.error('Create staff error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });

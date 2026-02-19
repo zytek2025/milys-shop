@@ -103,6 +103,57 @@ export async function GET() {
     }
 }
 
+// Create a new customer profile and auth user
+export async function POST(req: Request) {
+    try {
+        const adminCheck = await isAdmin();
+        if (!adminCheck) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
+        const body = await req.json();
+        const { email, password, full_name } = body;
+
+        if (!email || !password) {
+            return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+        }
+
+        const { createAdminClient } = await import('@/lib/supabase/server');
+        const adminClient = await createAdminClient();
+
+        // 1. Create Auth user
+        const { data: authData, error: createError } = await adminClient.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: { full_name }
+        });
+
+        if (createError) throw createError;
+
+        // 2. Create customer profile
+        const { data: newProfile, error: profileError } = await adminClient
+            .from('profiles')
+            .upsert({
+                id: authData.user.id,
+                email,
+                full_name: full_name || email.split('@')[0],
+                role: 'user',
+                crm_status: 'lead',
+                updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+        if (profileError) throw profileError;
+
+        return NextResponse.json(newProfile);
+    } catch (error: any) {
+        console.error('CRM API POST error:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
 // Update CRM profile details
 export async function PUT(req: Request) {
     try {

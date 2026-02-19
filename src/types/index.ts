@@ -124,13 +124,25 @@ export interface UserProfile {
   is_super_admin?: boolean;
   store_credit?: number;
   balance?: number;
-  permissions?: {
-    can_manage_prices: boolean;
-    can_view_metrics: boolean;
-    can_manage_users: boolean;
-    can_manage_designs: boolean;
-    can_view_settings: boolean;
-  };
+  permissions?: Permissions;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Permissions {
+  can_manage_prices: boolean;
+  can_view_metrics: boolean;
+  can_manage_users: boolean;
+  can_manage_designs: boolean;
+  can_view_settings: boolean;
+}
+
+export interface StaffUser {
+  id: string;
+  email: string;
+  full_name: string | null;
+  is_super_admin: boolean;
+  permissions: Permissions;
   created_at: string;
   updated_at: string;
 }

@@ -20,7 +20,7 @@ import {
     UserPlus
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { UserProfile } from '@/types';
+import { StaffUser } from '@/types';
 import { useAuth } from '@/store/cart-store';
 import {
     Dialog,
@@ -34,7 +34,7 @@ import {
 
 export default function AdminUsersPage() {
     const { is_super_admin, user: currentUser } = useAuth();
-    const [users, setUsers] = useState<UserProfile[]>([]);
+    const [users, setUsers] = useState<StaffUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState<string | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -165,8 +165,8 @@ export default function AdminUsersPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex flex-col gap-2">
-                    <h1 className="text-3xl font-black italic uppercase tracking-tighter">Personal del Sistema</h1>
-                    <p className="text-muted-foreground font-medium">Gestiona las cuentas y permisos de los administradores.</p>
+                    <h1 className="text-3xl font-black italic uppercase tracking-tighter">Gestión de Usuarios (Staff)</h1>
+                    <p className="text-muted-foreground font-medium">Controla el acceso de tu equipo administrativo y sus permisos por módulo.</p>
                 </div>
 
                 {is_super_admin && (
@@ -246,11 +246,9 @@ export default function AdminUsersPage() {
                             <div className="flex items-center gap-4">
                                 <div className="h-14 w-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-primary relative">
                                     {user.is_super_admin ? <ShieldCheck className="h-8 w-8 text-emerald-500" /> : <UserIcon className="h-8 w-8" />}
-                                    {user.role === 'admin' && (
-                                        <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-primary flex items-center justify-center border-2 border-white dark:border-slate-900">
-                                            <Shield className="h-3 w-3 text-white" />
-                                        </div>
-                                    )}
+                                    <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-primary flex items-center justify-center border-2 border-white dark:border-slate-900">
+                                        <Shield className="h-3 w-3 text-white" />
+                                    </div>
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">

@@ -115,7 +115,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { label: 'Pedidos', icon: ShoppingBag, href: '/admin/orders', requiredPermission: 'can_view_metrics' },
         { label: 'Devoluciones', icon: RotateCcw, href: '/admin/returns', requiredPermission: 'can_view_metrics' },
         { label: 'Clientes', icon: Users, href: '/admin/customers', requiredPermission: 'can_manage_users' },
-        { label: 'Gestión Usuaros', icon: Users, href: '/admin/users', requiredPermission: 'can_manage_users' },
+        { label: 'Gestión de Usuarios', icon: Users, href: '/admin/users', requiredPermission: 'can_manage_users' },
         { label: 'Ajustes', icon: SettingsIcon, href: '/admin/settings', requiredPermission: 'can_view_settings' },
     ];
 

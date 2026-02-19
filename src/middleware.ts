@@ -48,13 +48,14 @@ export async function middleware(request: NextRequest) {
 
         // Enforce Role Separation: Only 'admin' role can access /admin
         // Users (Customers) are blocked.
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
+        // Enforce Role Separation: Only users in 'staff_users' can access /admin
+        const { data: staff } = await supabase
+            .from('staff_users')
+            .select('id')
             .eq('id', user.id)
             .single()
 
-        if (profile?.role !== 'admin') {
+        if (!staff) {
             // Redirect unauthorized users to the shop home
             return NextResponse.redirect(new URL('/', request.url))
         }
