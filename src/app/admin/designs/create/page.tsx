@@ -50,8 +50,10 @@ export default function AdminDesignCreatePage() {
         script.async = true;
         script.onload = () => {
             if ((window as any).Canva && (window as any).Canva.DesignButton) {
+                // Initialize with new SDK parameters
                 (window as any).Canva.DesignButton.initialize({
                     apiKey: apiKey,
+                    autoAuth: true,
                 }).then((api: any) => {
                     const button = document.createElement('button');
                     button.style.width = '100%';
@@ -60,10 +62,28 @@ export default function AdminDesignCreatePage() {
                     button.style.background = 'linear-gradient(to right, #7D2AE8, #00C4CC)';
                     button.style.color = 'white';
                     button.style.fontWeight = 'bold';
+                    button.style.fontSize = '1.1rem';
                     button.style.border = 'none';
                     button.style.cursor = 'pointer';
                     button.style.marginTop = '10px';
-                    button.innerText = 'Diseñar en Canva';
+                    button.style.display = 'flex';
+                    button.style.alignItems = 'center';
+                    button.style.justifyContent = 'center';
+                    button.style.gap = '10px';
+                    button.style.boxShadow = '0 10px 25px -5px rgba(125, 42, 232, 0.3)';
+                    button.style.transition = 'all 0.2s ease';
+
+                    button.innerHTML = `
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 24C18.6274 24 24 18.6274 24 12C24 5.37258 18.6274 0 12 0C5.37258 0 0 5.37258 0 12C0 18.6274 5.37258 24 12 24Z" fill="white" fill-opacity="0.2"/>
+                            <path d="M16.5 8.5C16.5 8.5 14.5 9.5 14.5 12C14.5 14.5 16.5 15.5 16.5 15.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="9" cy="12" r="2.5" stroke="white" stroke-width="2"/>
+                        </svg>
+                        Diseñar en Canva
+                    `;
+
+                    button.onmouseover = () => { button.style.transform = 'scale(1.02)'; };
+                    button.onmouseout = () => { button.style.transform = 'scale(1)'; };
 
                     button.onclick = () => {
                         api.createDesign({
@@ -71,7 +91,6 @@ export default function AdminDesignCreatePage() {
                                 type: 'Poster',
                             },
                             onDesignPublish: (result: any) => {
-                                // Canva returns an object with exportUrl
                                 const downloadUrl = result.exportUrl;
                                 fetch(downloadUrl)
                                     .then(res => res.blob())
