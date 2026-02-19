@@ -1,4 +1,3 @@
-// Triggering redeploy after SUPABASE_SERVICE_ROLE_KEY setup
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -33,8 +32,9 @@ export async function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!serviceRoleKey || serviceRoleKey.length === 0) {
-    console.error('Environment keys available:', Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY')));
-    throw new Error('CONFIG_ERROR: La SUPABASE_SERVICE_ROLE_KEY no está configurada en el servidor. Por favor, verifica las variables de entorno en AWS Amplify.');
+    console.error('CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing from process.env');
+    console.error('Available env keys (censored):', Object.keys(process.env).map(k => k.length > 5 ? k.substring(0, 3) + '...' : k));
+    throw new Error(`CONFIG_ERROR: La SUPABASE_SERVICE_ROLE_KEY no está configurada en el servidor. (Env keys found: ${Object.keys(process.env).length})`);
   }
 
   return createServerClient(
