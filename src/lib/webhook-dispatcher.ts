@@ -20,7 +20,7 @@ export async function sendWebhook(event: WebhookEvent, data: Record<string, any>
             .eq('id', 'global')
             .single();
 
-        const webhookUrl = settings?.crm_webhook_url;
+        const webhookUrl = settings?.crm_webhook_url || process.env.N8N_WEBHOOK_URL;
 
         if (!webhookUrl) {
             console.warn(`[WebhookDispatcher] No webhook URL configured for event: ${event}`);
