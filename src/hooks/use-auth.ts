@@ -146,17 +146,23 @@ export function useRegister() {
       }
       const profile = await profileResponse.json();
 
-      // Trigger Marketing Webhook (Fire and forget)
+      // Trigger Marketing Webhook with ALL registration fields (Fire and forget)
       try {
         fetch(`${API_BASE}/marketing/trigger`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            type: 'NEW_CUSTOMER_REGISTRATION',
             customer: {
-              fullName: fullName,
-              email: email,
-              whatsapp: whatsapp,
-              marketingConsent: marketingConsent
+              fullName,
+              email,
+              whatsapp,
+              age: age || null,
+              city: city || null,
+              gender: gender || null,
+              shippingAddress: shippingAddress || null,
+              marketingConsent,
+              registeredAt: new Date().toISOString()
             }
           })
         });

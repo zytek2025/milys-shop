@@ -98,6 +98,32 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete }: CheckoutBut
 
       const orderId = data.data.id;
 
+      // Trigger n8n webhook with order data (Fire and forget)
+      try {
+        fetch('/api/marketing/trigger', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'NEW_ORDER',
+            order: {
+              id: orderId,
+              total: cartTotal,
+              credit_applied: usedCredit,
+              payment_discount: paymentDiscount,
+              items_count: cart.items.length,
+              items: cart.items.map(item => ({
+                name: item.product?.name || 'Producto',
+                quantity: item.quantity,
+                price: item.variant?.price_override ?? item.product?.price ?? 0,
+              })),
+              createdAt: new Date().toISOString()
+            }
+          })
+        });
+      } catch (e) {
+        console.error('Order webhook error:', e);
+      }
+
       // Clear cart
       await clearCart.mutateAsync();
 
