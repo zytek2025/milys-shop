@@ -10,14 +10,28 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Check if requester is super admin in staff_users
+        // Check if requester is in staff_users (New System)
         const { data: requester } = await supabase
             .from('staff_users')
             .select('is_super_admin')
             .eq('id', currentUser.id)
             .single();
 
-        if (!requester?.is_super_admin) {
+        let isSuperAdmin = false;
+        if (requester) {
+            isSuperAdmin = requester.is_super_admin;
+        } else {
+            // Fallback: Check profiles table (Legacy System)
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', currentUser.id)
+                .single();
+
+            isSuperAdmin = profile?.role === 'admin';
+        }
+
+        if (!isSuperAdmin) {
             return NextResponse.json({ error: 'Forbidden: Only super admins can create staff' }, { status: 403 });
         }
 

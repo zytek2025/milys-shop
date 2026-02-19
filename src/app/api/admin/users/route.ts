@@ -10,14 +10,28 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Check if requester is super admin or has manage_users permission in staff_users
+        // Check if requester is in staff_users (New System)
         const { data: requester } = await supabase
             .from('staff_users')
             .select('is_super_admin, permissions')
             .eq('id', currentUser.id)
             .single();
 
-        if (!requester?.is_super_admin && !requester?.permissions?.can_manage_users) {
+        let canAccess = false;
+        if (requester) {
+            canAccess = requester.is_super_admin || requester.permissions?.can_manage_users;
+        } else {
+            // Fallback: Check profiles table (Legacy System)
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', currentUser.id)
+                .single();
+
+            canAccess = profile?.role === 'admin';
+        }
+
+        if (!canAccess) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
@@ -43,21 +57,42 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        // Check if requester is in staff_users (New System)
         const { data: requester } = await supabase
             .from('staff_users')
             .select('is_super_admin, permissions')
             .eq('id', currentUser.id)
             .single();
 
-        if (!requester?.is_super_admin && !requester?.permissions?.can_manage_users) {
+        let canAccess = false;
+        let isSuperAdmin = false;
+
+        if (requester) {
+            canAccess = requester.is_super_admin || requester.permissions?.can_manage_users;
+            isSuperAdmin = requester.is_super_admin;
+        } else {
+            // Fallback: Check profiles table (Legacy System)
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', currentUser.id)
+                .single();
+
+            canAccess = profile?.role === 'admin';
+            isSuperAdmin = canAccess; // Legacy admins are treated as super admins for the transition
+        }
+
+        if (!canAccess) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
+
+        // Use isSuperAdmin for subsequent check
 
         const body = await request.json();
         const { id, role, permissions, is_super_admin, full_name } = body;
 
         // Prevent non-super-admins from giving super admin status or editing super admins
-        if (!requester.is_super_admin && (is_super_admin !== undefined)) {
+        if (!isSuperAdmin && (is_super_admin !== undefined)) {
             return NextResponse.json({ error: 'Only super admins can modify super admin status' }, { status: 403 });
         }
 
@@ -89,13 +124,28 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        // Check if requester is in staff_users (New System)
         const { data: requester } = await supabase
             .from('staff_users')
             .select('is_super_admin')
             .eq('id', currentUser.id)
             .single();
 
-        if (!requester?.is_super_admin) {
+        let isSuperAdmin = false;
+        if (requester) {
+            isSuperAdmin = requester.is_super_admin;
+        } else {
+            // Fallback: Check profiles table (Legacy System)
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', currentUser.id)
+                .single();
+
+            isSuperAdmin = profile?.role === 'admin';
+        }
+
+        if (!isSuperAdmin) {
             return NextResponse.json({ error: 'Forbidden: Only super admins can delete users' }, { status: 403 });
         }
 
