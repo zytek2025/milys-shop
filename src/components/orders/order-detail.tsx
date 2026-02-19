@@ -125,37 +125,61 @@ export function OrderDetail({ order, onBack }: OrderDetailProps) {
                   </p>
                 </div>
 
-                {/* Metadata Display */}
-                {item.custom_metadata && (
-                  <div className="mt-3 ml-15 space-y-2">
+                {/* Customization Details */}
+                {(item.custom_metadata || item.on_request) && (
+                  <div className="mt-4 ml-15 space-y-3">
                     {(() => {
                       const metadata = item.custom_metadata as any;
-                      const isNewFormat = !Array.isArray(metadata) && !!metadata.designs;
-                      const designList = (isNewFormat ? metadata.designs : (Array.isArray(metadata) ? metadata : [])) as any[];
+                      const isNewFormat = !Array.isArray(metadata) && (!!metadata?.designs || !!metadata?.budget_request);
+
+                      let designList = (isNewFormat ? (metadata.designs || []) : (Array.isArray(metadata) ? metadata : [])) as any[];
+
+                      // If it's a budget request with multiple designs, use those
+                      if (metadata?.budget_request?.designs) {
+                        designList = [...designList, ...metadata.budget_request.designs];
+                      } else if (metadata?.budget_request?.image_url) {
+                        // Fallback for old single image format
+                        designList = [...designList, { image_url: metadata.budget_request.image_url }];
+                      }
+
                       const personalization = isNewFormat ? metadata.personalization : null;
                       const personalizationText = personalization?.text || (typeof personalization === 'string' ? personalization : null);
-                      const personalizationSize = personalization?.size || null;
+                      const instructions = isNewFormat ? (metadata.instructions || metadata?.budget_request?.notes) : (metadata.instructions || null);
 
                       return (
                         <>
+                          {item.on_request && !isNewFormat && (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-100 text-[10px] font-black uppercase mb-3">
+                              Pendiente de Cotización
+                            </Badge>
+                          )}
                           {designList.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 ml-15">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {designList.map((d: any, idx: number) => (
-                                <div key={idx} className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-2 py-1 rounded-lg text-[9px] font-bold text-slate-500 uppercase tracking-tighter flex flex-col">
-                                  <span>{d.name} {d.price > 0 && `(+$${d.price})`}</span>
-                                  <span className="text-[8px] text-slate-400 italic">
-                                    {d.size || 'Base'} @ {d.location || 'Centro'}
-                                  </span>
+                                <div key={idx} className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-2 rounded-xl flex items-center gap-3">
+                                  <div className="w-12 h-12 bg-white rounded-lg border border-slate-200 overflow-hidden flex-shrink-0">
+                                    <img src={d.image_url} className="w-full h-full object-contain" alt="" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-[10px] font-black uppercase truncate">{d.name || 'Diseño de Cliente'}</p>
+                                    <p className="text-[8px] text-slate-400 font-bold uppercase">
+                                      {d.size || 'Base'} @ {d.location || 'Centro'}
+                                    </p>
+                                  </div>
                                 </div>
                               ))}
                             </div>
                           )}
+                          {instructions && (
+                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                              <p className="text-[8px] uppercase font-black text-slate-400 tracking-widest mb-1">Instrucciones de Diseño:</p>
+                              <p className="text-xs font-medium text-slate-600 leading-relaxed">{instructions}</p>
+                            </div>
+                          )}
                           {personalizationText && (
-                            <div className="mt-2 p-2 rounded-xl bg-primary/5 border border-primary/10 ml-15">
-                              <p className="text-[8px] uppercase font-black text-primary tracking-widest leading-none mb-1">
-                                Personalización {personalizationSize && `(${personalizationSize === 'small' ? 'Pequeño' : 'Grande'})`}
-                              </p>
-                              <p className="text-sm font-medium italic text-slate-600 dark:text-slate-300">"{personalizationText}"</p>
+                            <div className="p-2 rounded-xl bg-primary/5 border border-primary/10">
+                              <p className="text-[8px] uppercase font-black text-primary tracking-widest leading-none mb-1">Personalización</p>
+                              <p className="text-sm font-medium italic text-slate-600 tracking-tight">"{personalizationText}"</p>
                             </div>
                           )}
                         </>

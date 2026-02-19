@@ -93,6 +93,7 @@ export interface CartItem {
   product_id: string;
   variant_id?: string | null;
   quantity: number;
+  on_request?: boolean;
   custom_metadata: any;
   created_at: string;
   product?: Product;
@@ -162,7 +163,7 @@ export interface Order {
   id: string;
   user_id: string;
   total: number;
-  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  status: 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled';
   shipping_address?: string;
   created_at: string;
 }
@@ -174,6 +175,7 @@ export interface OrderItem {
   product_name: string;
   quantity: number;
   price: number;
+  on_request?: boolean;
   custom_metadata?: any;
   created_at: string;
   product?: Product;

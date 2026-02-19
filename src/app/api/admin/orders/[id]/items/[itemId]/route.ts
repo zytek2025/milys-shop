@@ -12,24 +12,38 @@ export async function PATCH(
         }
 
         const body = await request.json();
-        const { quantity } = body;
-
-        if (typeof quantity !== 'number' || quantity < 1) {
-            return NextResponse.json({ error: 'Cantidad inválida' }, { status: 400 });
-        }
+        const { quantity, unit_price, custom_metadata, product_name } = body;
 
         const supabase = await createClient();
 
-        // 1. Update item quantity
+        // 1. Update item
+        const updateData: any = {};
+        if (typeof quantity === 'number' && quantity >= 1) updateData.quantity = quantity;
+        if (typeof unit_price === 'number') updateData.unit_price = unit_price;
+        if (custom_metadata) updateData.custom_metadata = custom_metadata;
+        if (product_name) updateData.product_name = product_name;
+
+        if (Object.keys(updateData).length === 0) {
+            return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
+        }
+
         const { error: updateError } = await supabase
             .from('order_items')
-            .update({ quantity })
+            .update(updateData)
             .eq('id', itemId)
             .eq('order_id', id);
 
         if (updateError) throw updateError;
 
-        // 2. Fetch all items to recalculate total
+        // 2. Fetch order and all items to recalculate total
+        const { data: order, error: orderFetchError } = await supabase
+            .from('orders')
+            .select('credit_applied, payment_discount_amount')
+            .eq('id', id)
+            .single();
+
+        if (orderFetchError) throw orderFetchError;
+
         const { data: items, error: itemsError } = await supabase
             .from('order_items')
             .select('unit_price, quantity')
@@ -37,7 +51,8 @@ export async function PATCH(
 
         if (itemsError) throw itemsError;
 
-        const newTotal = items.reduce((sum, item) => sum + (Number(item.unit_price) * item.quantity), 0);
+        const subtotal = items.reduce((sum, item) => sum + (Number(item.unit_price || 0) * item.quantity), 0);
+        const newTotal = Math.max(0, subtotal - Number(order.credit_applied || 0) - Number(order.payment_discount_amount || 0));
 
         // 3. Update order total
         const { error: orderError } = await supabase
@@ -89,10 +104,20 @@ export async function DELETE(
             return NextResponse.json({ success: true, orderDeleted: true });
         }
 
-        // 3. Recalculate total
-        const newTotal = items.reduce((sum, item) => sum + (Number(item.unit_price) * item.quantity), 0);
+        // 3. Fetch order data for recalculation
+        const { data: order, error: orderFetchError } = await supabase
+            .from('orders')
+            .select('credit_applied, payment_discount_amount')
+            .eq('id', id)
+            .single();
 
-        // 4. Update order total
+        if (orderFetchError) throw orderFetchError;
+
+        // 4. Recalculate total
+        const subtotal = items.reduce((sum, item) => sum + (Number(item.unit_price || 0) * item.quantity), 0);
+        const newTotal = Math.max(0, subtotal - Number(order.credit_applied || 0) - Number(order.payment_discount_amount || 0));
+
+        // 5. Update order total
         const { error: orderError } = await supabase
             .from('orders')
             .update({ total: newTotal, updated_at: new Date().toISOString() })

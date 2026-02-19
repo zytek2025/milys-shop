@@ -13,7 +13,9 @@ import {
     Printer,
     Loader2,
     RotateCcw,
-    TrendingUp
+    TrendingUp,
+    Palette,
+    Plus
 } from 'lucide-react';
 import {
     Table,
@@ -25,6 +27,8 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
@@ -43,6 +47,10 @@ export default function AdminOrdersPage() {
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [processingOrders, setProcessingOrders] = useState<Set<string>>(new Set());
+    const [editingItem, setEditingItem] = useState<{ id: string, price: string } | null>(null);
+    const [editingMetadata, setEditingMetadata] = useState<string | null>(null);
+    const [tempMetadata, setTempMetadata] = useState<any>(null);
+    const [paymentProof, setPaymentProof] = useState<any | null>(null);
 
     useEffect(() => {
         fetchOrders();
@@ -87,6 +95,80 @@ export default function AdminOrdersPage() {
                 return next;
             });
         }
+    };
+
+    useEffect(() => {
+        if (selectedOrder && isDetailsOpen) {
+            fetchPaymentProof(selectedOrder.id);
+        } else {
+            setPaymentProof(null);
+            setEditingItem(null);
+        }
+    }, [selectedOrder, isDetailsOpen]);
+
+    const fetchPaymentProof = async (orderId: string) => {
+        try {
+            const res = await fetch(`/api/orders/${orderId}/confirm-payment`);
+            if (res.ok) {
+                const data = await res.json();
+                setPaymentProof(data);
+            }
+        } catch (error) {
+            console.error('Error fetching payment proof:', error);
+        }
+    };
+
+    const handlePriceUpdate = async (item: any) => {
+        if (!editingItem) return;
+        const newPrice = parseFloat(editingItem.price);
+        if (isNaN(newPrice)) return toast.error("Precio inválido");
+
+        try {
+            const res = await fetch(`/api/admin/orders/${selectedOrder.id}/items/${item.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ unit_price: newPrice }),
+            });
+
+            if (res.ok) {
+                toast.success("Precio actualizado");
+                setEditingItem(null);
+                refreshOrder();
+            } else {
+                const data = await res.json();
+                toast.error(data.error || "Error al actualizar precio");
+            }
+        } catch (error) {
+            toast.error("Error de conexión");
+        }
+    };
+
+    const handleMetadataUpdate = async (itemId: string) => {
+        try {
+            const res = await fetch(`/api/admin/orders/${selectedOrder.id}/items/${itemId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ custom_metadata: tempMetadata }),
+            });
+
+            if (res.ok) {
+                toast.success("Diseño actualizado");
+                setEditingMetadata(null);
+                refreshOrder();
+            } else {
+                const data = await res.json();
+                toast.error(data.error || "Error al actualizar diseño");
+            }
+        } catch (error) {
+            toast.error("Error de conexión");
+        }
+    };
+
+    const refreshOrder = async () => {
+        const updatedOrders = await fetch('/api/admin/orders').then(r => r.json());
+        setOrders(updatedOrders);
+        const updatedOrder = updatedOrders.find((o: any) => o.id === selectedOrder.id);
+        if (updatedOrder) setSelectedOrder(updatedOrder);
     };
 
     const statusMap: any = {
@@ -413,12 +495,22 @@ export default function AdminOrdersPage() {
                                 <div className="space-y-6">
                                     {selectedOrder.order_items?.map((item: any, idx: number) => {
                                         const metadata = item.custom_metadata || {};
-                                        const isNewFormat = !Array.isArray(metadata) && !!metadata.designs;
-                                        const designs = isNewFormat ? metadata.designs : (Array.isArray(metadata) ? metadata : []);
+                                        const isNewFormat = !Array.isArray(metadata) && (!!metadata.designs || !!metadata.budget_request);
+
+                                        let designs = (isNewFormat ? (metadata.designs || []) : (Array.isArray(metadata) ? metadata : [])) as any[];
+                                        if (metadata.budget_request) {
+                                            if (metadata.budget_request.designs) {
+                                                designs = [...designs, ...metadata.budget_request.designs];
+                                            } else if (metadata.budget_request.image_url) {
+                                                designs = [...designs, { image_url: metadata.budget_request.image_url }];
+                                            }
+                                        }
+
                                         const personalization = isNewFormat ? metadata.personalization : null;
-                                        const personalizationText = personalization?.text || personalization;
+                                        const personalizationText = personalization?.text || (typeof personalization === 'string' ? personalization : null);
                                         const personalizationSize = personalization?.size || null;
                                         const personalizationPrice = personalization?.price || 0;
+                                        const instructions = isNewFormat ? (metadata.instructions || metadata?.budget_request?.notes) : (metadata.instructions || null);
 
                                         return (
                                             <div key={idx} className="border-2 border-black p-4 space-y-4 break-inside-avoid mb-6">
@@ -456,14 +548,20 @@ export default function AdminOrdersPage() {
                                                                         <img src={d.image_url} className="w-full h-full object-contain" alt="" />
                                                                     </div>
                                                                     <div className="min-w-0">
-                                                                        <p className="text-[11px] font-black uppercase leading-tight truncate">{d.name}</p>
-                                                                        <p className="text-[10px] font-bold mt-1 tracking-tight">TAMAÑO: <span className="bg-black text-white px-1 tracking-normal">{d.size?.toUpperCase() || 'BASE'}</span></p>
-                                                                        <p className="text-[10px] font-bold truncate">POSICIÓN: {d.location?.toUpperCase()}</p>
+                                                                        <p className="text-[11px] font-black uppercase leading-tight truncate">{d.name || 'Diseño de Cliente'}</p>
+                                                                        {d.size && <p className="text-[10px] font-bold mt-1 tracking-tight">TAMAÑO: <span className="bg-black text-white px-1 tracking-normal">{d.size?.toUpperCase() || 'BASE'}</span></p>}
+                                                                        {d.location && <p className="text-[10px] font-bold truncate">POSICIÓN: {d.location?.toUpperCase()}</p>}
                                                                         <p className="text-[9px] font-black text-primary mt-1">${(d.price || 0).toFixed(2)}</p>
                                                                     </div>
                                                                 </div>
                                                             ))}
                                                         </div>
+                                                    </div>
+                                                )}
+                                                {instructions && (
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-black uppercase border-b border-black">Instrucciones Especiales</p>
+                                                        <p className="text-[11px] font-medium leading-tight">{instructions}</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -493,19 +591,29 @@ export default function AdminOrdersPage() {
                                 <div className="space-y-3">
                                     {selectedOrder.order_items?.map((item: any) => {
                                         const metadata = item.custom_metadata || {};
-                                        const isNewFormat = !Array.isArray(metadata) && metadata.designs;
-                                        const designs = isNewFormat ? metadata.designs : (Array.isArray(metadata) ? metadata : []);
+                                        const isNewFormat = !Array.isArray(metadata) && (!!metadata.designs || !!metadata.budget_request);
+
+                                        let designs = (isNewFormat ? (metadata.designs || []) : (Array.isArray(metadata) ? metadata : [])) as any[];
+                                        if (metadata.budget_request) {
+                                            if (metadata.budget_request.designs) {
+                                                designs = [...designs, ...metadata.budget_request.designs];
+                                            } else if (metadata.budget_request.image_url) {
+                                                designs = [...designs, { image_url: metadata.budget_request.image_url }];
+                                            }
+                                        }
+
                                         const personalization = isNewFormat ? metadata.personalization : null;
-                                        const personalizationText = personalization?.text || personalization;
+                                        const personalizationText = personalization?.text || (typeof personalization === 'string' ? personalization : null);
                                         const personalizationSize = personalization?.size || null;
                                         const personalizationPrice = personalization?.price || 0;
+                                        const instructions = isNewFormat ? (metadata.instructions || metadata?.budget_request?.notes) : (metadata.instructions || null);
 
                                         const basePrice = item.price || item.product_variants?.price_override || item.products?.price || 0;
                                         const designsPrice = designs.reduce((sum: number, d: any) => sum + (d.price || 0), 0);
                                         const itemTotal = (basePrice + designsPrice + personalizationPrice) * item.quantity;
 
                                         return (
-                                            <div key={item.id} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 space-y-3 shadow-sm">
+                                            <div key={item.id} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 space-y-4 shadow-sm">
                                                 <div className="flex justify-between items-start">
                                                     <div>
                                                         <p className="font-bold text-lg">{item.products?.name || 'Producto'}</p>
@@ -519,17 +627,50 @@ export default function AdminOrdersPage() {
                                                                     {item.product_variants.color}
                                                                 </span>
                                                             )}
-                                                            {metadata.is_returned && (
-                                                                <Badge className="bg-rose-50 text-rose-600 border-rose-100 text-[10px] font-black uppercase py-1 px-3 animate-pulse">
-                                                                    Artículo Devuelto
+                                                            {metadata.on_request && (
+                                                                <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-100 text-[10px] font-black uppercase">
+                                                                    Presupuesto Pendiente
                                                                 </Badge>
                                                             )}
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-4">
                                                         <div className="text-right">
-                                                            <p className="font-bold text-primary">CANT: {item.quantity}</p>
-                                                            <p className="text-xs font-black">${itemTotal.toFixed(2)}</p>
+                                                            {editingItem?.id === item.id ? (
+                                                                <div className="flex flex-col gap-2">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-sm font-bold">$</span>
+                                                                        <Input
+                                                                            type="number"
+                                                                            step="0.01"
+                                                                            value={editingItem?.price || ''}
+                                                                            onChange={(e) => setEditingItem(prev => prev ? { ...prev, price: e.target.value } : null)}
+                                                                            className="w-24 h-8 text-right font-mono text-sm"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="flex gap-2">
+                                                                        <Button size="sm" className="h-6 px-2 text-[10px]" onClick={() => handlePriceUpdate(item)}>Guardar</Button>
+                                                                        <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => setEditingItem(null)}>Canc.</Button>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <p className="font-bold text-primary">CANT: {item.quantity}</p>
+                                                                    <div className="flex items-center gap-2 justify-end">
+                                                                        <p className="text-xs font-black">${itemTotal.toFixed(2)}</p>
+                                                                        {item.on_request && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6 text-slate-400 hover:text-primary"
+                                                                                onClick={() => setEditingItem({ id: item.id, price: (item.unit_price || basePrice).toString() })}
+                                                                            >
+                                                                                <RotateCcw className="h-3 w-3" />
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                </>
+                                                            )}
                                                         </div>
                                                         {!item.custom_metadata?.is_returned && selectedOrder.status === 'completed' && (
                                                             <Button
@@ -545,36 +686,147 @@ export default function AdminOrdersPage() {
                                                     </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-dashed">
-                                                    {designs.length > 0 && (
-                                                        <div>
-                                                            <p className="text-[9px] uppercase font-black text-slate-500 mb-2 tracking-widest">Diseños Aplicados:</p>
-                                                            <div className="space-y-2">
-                                                                {designs.map((d: any, idx: number) => (
-                                                                    <div key={idx} className="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                                                                        <div>
-                                                                            <p className="text-[10px] font-bold truncate">{d.name}</p>
-                                                                            <p className="text-[8px] text-slate-400 uppercase font-black mt-0.5">
-                                                                                {d.size || 'Base'} @ {d.location || 'Centro'}
-                                                                            </p>
+                                                {/* DESIGN AND METADATA EDITING SECTION */}
+                                                <div className="mt-2">
+                                                    {editingMetadata === item.id ? (
+                                                        <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-primary/20 space-y-4">
+                                                            <h4 className="text-xs font-bold uppercase text-primary flex items-center gap-2">
+                                                                <Palette className="w-3 h-3" /> Modificando Diseños
+                                                            </h4>
+
+                                                            <div className="space-y-4">
+                                                                {(tempMetadata?.budget_request?.designs || designs).map((d: any, dIdx: number) => (
+                                                                    <div key={dIdx} className="space-y-2">
+                                                                        <Label className="text-[10px] font-bold uppercase text-muted-foreground flex justify-between">
+                                                                            Logo #{dIdx + 1} URL
+                                                                            <button
+                                                                                className="text-rose-500 hover:text-rose-700"
+                                                                                onClick={() => {
+                                                                                    const currentDesigns = [...(tempMetadata?.budget_request?.designs || designs)];
+                                                                                    const newDesigns = currentDesigns.filter((_, i) => i !== dIdx);
+                                                                                    setTempMetadata({
+                                                                                        ...tempMetadata,
+                                                                                        budget_request: {
+                                                                                            ...(tempMetadata?.budget_request || {}),
+                                                                                            designs: newDesigns
+                                                                                        }
+                                                                                    });
+                                                                                }}
+                                                                            >Eliminar</button>
+                                                                        </Label>
+                                                                        <div className="flex gap-2">
+                                                                            <Input
+                                                                                value={d.image_url}
+                                                                                onChange={(e) => {
+                                                                                    const currentDesigns = [...(tempMetadata?.budget_request?.designs || designs)];
+                                                                                    const newDesigns = [...currentDesigns];
+                                                                                    newDesigns[dIdx] = { ...newDesigns[dIdx], image_url: e.target.value };
+                                                                                    setTempMetadata({
+                                                                                        ...tempMetadata,
+                                                                                        budget_request: {
+                                                                                            ...(tempMetadata?.budget_request || {}),
+                                                                                            designs: newDesigns
+                                                                                        }
+                                                                                    });
+                                                                                }}
+                                                                                className="h-8 text-xs font-mono"
+                                                                                placeholder="https://..."
+                                                                            />
+                                                                            <div className="w-8 h-8 rounded border bg-white overflow-hidden shrink-0">
+                                                                                <img src={d.image_url} className="w-full h-full object-contain" alt="" />
+                                                                            </div>
                                                                         </div>
-                                                                        <span className="text-[9px] font-black text-primary">${(d.price || 0).toFixed(2)}</span>
                                                                     </div>
                                                                 ))}
+
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="w-full h-8 border-dashed text-[10px] font-bold uppercase"
+                                                                    onClick={() => {
+                                                                        const currentDesigns = [...(tempMetadata?.budget_request?.designs || designs)];
+                                                                        setTempMetadata({
+                                                                            ...tempMetadata,
+                                                                            budget_request: {
+                                                                                ...(tempMetadata?.budget_request || {}),
+                                                                                designs: [...currentDesigns, { image_url: '' }]
+                                                                            }
+                                                                        });
+                                                                    }}
+                                                                >
+                                                                    <Plus className="w-3 h-3 mr-2" /> Añadir Logo
+                                                                </Button>
+                                                            </div>
+
+                                                            <div className="space-y-2 pt-2 border-t">
+                                                                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Instrucciones Especiales</Label>
+                                                                <Textarea
+                                                                    value={tempMetadata?.budget_request?.notes || instructions || ''}
+                                                                    onChange={(e) => setTempMetadata({
+                                                                        ...tempMetadata,
+                                                                        budget_request: {
+                                                                            ...(tempMetadata?.budget_request || {}),
+                                                                            notes: e.target.value
+                                                                        }
+                                                                    })}
+                                                                    className="h-20 text-xs resize-none"
+                                                                    placeholder="Instrucciones para producción..."
+                                                                />
+                                                            </div>
+
+                                                            <div className="flex gap-2">
+                                                                <Button size="sm" className="flex-1 h-9 font-bold" onClick={() => handleMetadataUpdate(item.id)}>Guardar Cambios</Button>
+                                                                <Button size="sm" variant="ghost" className="h-9 font-bold" onClick={() => setEditingMetadata(null)}>Cancelar</Button>
                                                             </div>
                                                         </div>
-                                                    )}
-
-                                                    {personalizationText && (
-                                                        <div className="p-3 rounded-xl bg-primary/5 border border-primary/10 h-fit">
-                                                            <div className="flex justify-between items-start mb-1">
-                                                                <p className="text-[9px] uppercase font-black text-primary">Personalización:</p>
-                                                                <span className="text-[9px] font-black text-primary">${personalizationPrice.toFixed(2)}</span>
-                                                            </div>
-                                                            <p className="text-sm font-medium italic">"{personalizationText}"</p>
-                                                            <p className="text-[8px] font-bold text-primary/60 uppercase mt-1">
-                                                                Tam: {personalizationSize === 'small' ? 'Pequeño' : 'Grande'}
-                                                            </p>
+                                                    ) : (
+                                                        <div className="space-y-3">
+                                                            {designs.length > 0 && (
+                                                                <div className="grid grid-cols-2 gap-3">
+                                                                    {designs.map((d: any, dIdx: number) => (
+                                                                        <div key={dIdx} className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-2 rounded-xl flex items-center gap-3">
+                                                                            <div className="w-10 h-10 bg-white rounded-lg border border-slate-200 overflow-hidden shrink-0">
+                                                                                <img src={d.image_url} className="w-full h-full object-contain" alt="" />
+                                                                            </div>
+                                                                            <div className="min-w-0">
+                                                                                <p className="text-[10px] font-black uppercase truncate">{d.name || 'Diseño de Cliente'}</p>
+                                                                                {d.size && <p className="text-[8px] text-slate-400 font-bold uppercase">{d.size} @ {d.location}</p>}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                            {instructions && (
+                                                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+                                                                    <p className="text-[8px] uppercase font-black text-slate-400 tracking-widest mb-1">Instrucciones:</p>
+                                                                    <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 leading-tight">{instructions}</p>
+                                                                </div>
+                                                            )}
+                                                            {personalizationText && (
+                                                                <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
+                                                                    <div className="flex justify-between items-start mb-1">
+                                                                        <p className="text-[9px] uppercase font-black text-primary">Personalización:</p>
+                                                                        <span className="text-[9px] font-black text-primary">${personalizationPrice.toFixed(2)}</span>
+                                                                    </div>
+                                                                    <p className="text-sm font-medium italic">"{personalizationText}"</p>
+                                                                    <p className="text-[8px] font-bold text-primary/60 uppercase mt-1">
+                                                                        Tam: {personalizationSize === 'small' ? 'Pequeño' : 'Grande'}
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                            {item.on_request && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="w-full h-8 text-[10px] font-bold uppercase border border-primary/10 hover:bg-primary/5 text-primary rounded-xl"
+                                                                    onClick={() => {
+                                                                        setEditingMetadata(item.id);
+                                                                        setTempMetadata(metadata);
+                                                                    }}
+                                                                >
+                                                                    <Palette className="w-3 h-3 mr-2" /> Modificar Diseños / Notas
+                                                                </Button>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -582,11 +834,41 @@ export default function AdminOrdersPage() {
                                         );
                                     })}
                                 </div>
+
+                                {/* Payment Proof Section */}
+                                {paymentProof && (
+                                    <div className="mt-8 p-6 rounded-3xl border-2 border-emerald-100 bg-emerald-50/20 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-sm font-black uppercase italic tracking-tighter flex items-center gap-2 text-emerald-700">
+                                                <CheckCircle2 size={16} /> Comprobante de Pago Informado
+                                            </h3>
+                                            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                                                {paymentProof.status === 'pending' ? 'Pendiente Verificación' : 'Verificado'}
+                                            </Badge>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Referencia</p>
+                                                <p className="font-mono font-bold text-sm tracking-tighter">{paymentProof.reference_number}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Monto Informado</p>
+                                                <p className="font-bold text-sm text-emerald-700">${paymentProof.amount_paid.toFixed(2)}</p>
+                                            </div>
+                                        </div>
+                                        <div className="relative aspect-video rounded-2xl border bg-white overflow-hidden group cursor-pointer" onClick={() => window.open(paymentProof.screenshot_url, '_blank')}>
+                                            <img src={paymentProof.screenshot_url} className="w-full h-full object-contain" alt="Payment Proof" />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                                                <span className="text-white text-xs font-black uppercase">Ver Imagen Completa</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     );
 }

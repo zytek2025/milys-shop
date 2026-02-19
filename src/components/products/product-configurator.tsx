@@ -84,8 +84,8 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
 
     // Budget Request State
     const [designMode, setDesignMode] = useState<'gallery' | 'upload'>('gallery');
-    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-    const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+    const [uploadPreviews, setUploadPreviews] = useState<string[]>([]);
     const [uploadInstructions, setUploadInstructions] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -209,30 +209,52 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
 
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error('El archivo es muy pesado. Máximo 5MB.');
+        if (uploadedFiles.length + files.length > 5) {
+            toast.error('Puedes subir un máximo de 5 diseños');
             return;
         }
 
-        setUploadedFile(file);
-        const objectUrl = URL.createObjectURL(file);
-        setUploadPreview(objectUrl);
+        const validFiles: File[] = [];
+        const validPreviews: string[] = [];
+
+        files.forEach(file => {
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error(`El archivo ${file.name} es muy pesado. Máximo 5MB.`);
+            } else {
+                validFiles.push(file);
+                validPreviews.push(URL.createObjectURL(file));
+            }
+        });
+
+        if (validFiles.length > 0) {
+            setUploadedFiles(prev => [...prev, ...validFiles]);
+            setUploadPreviews(prev => [...prev, ...validPreviews]);
+        }
     };
 
-    const uploadCustomDesign = async (): Promise<string | null> => {
-        if (!uploadedFile) return null;
+    const removeUploadedFile = (index: number) => {
+        setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+        setUploadPreviews(prev => {
+            const newPreviews = [...prev];
+            URL.revokeObjectURL(newPreviews[index]);
+            return newPreviews.filter((_, i) => i !== index);
+        });
+    };
 
-        const fileExt = uploadedFile.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
+    const uploadCustomDesigns = async (): Promise<string[]> => {
+        if (uploadedFiles.length === 0) return [];
 
-        try {
+        const uploadPromises = uploadedFiles.map(async (file) => {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
             const { error: uploadError } = await supabase.storage
                 .from('custom-designs')
-                .upload(filePath, uploadedFile);
+                .upload(filePath, file);
 
             if (uploadError) throw uploadError;
 
@@ -241,10 +263,14 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 .getPublicUrl(filePath);
 
             return data.publicUrl;
+        });
+
+        try {
+            return await Promise.all(uploadPromises);
         } catch (error) {
             console.error('Error uploading:', error);
-            toast.error('Error al subir la imagen');
-            return null;
+            toast.error('Error al subir las imágenes');
+            return [];
         }
     };
 
@@ -264,14 +290,14 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
 
             // Logic for Budget Request vs Standard Gallery
             if (designMode === 'upload') {
-                if (!uploadedFile) {
-                    toast.error('Por favor sube una imagen de referencia');
+                if (uploadedFiles.length === 0) {
+                    toast.error('Por favor sube al menos una imagen de referencia');
                     setIsAdding(false);
                     return;
                 }
 
-                const publicUrl = await uploadCustomDesign();
-                if (!publicUrl) {
+                const publicUrls = await uploadCustomDesigns();
+                if (publicUrls.length === 0) {
                     setIsAdding(false);
                     return;
                 }
@@ -280,7 +306,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                     ...customMetadata,
                     on_request: true, // Mark as Budget Request
                     budget_request: {
-                        image_url: publicUrl,
+                        designs: publicUrls.map(url => ({ image_url: url })),
                         notes: uploadInstructions,
                         original_base_price: garmentPrice
                     },
@@ -328,8 +354,8 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
 
             // Cleanup
             if (designMode === 'upload') {
-                setUploadedFile(null);
-                setUploadPreview(null);
+                setUploadedFiles([]);
+                setUploadPreviews([]);
                 setUploadInstructions('');
             } else {
                 setSelectedDesigns([]);
@@ -637,42 +663,33 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                         </TabsContent>
 
                         <TabsContent value="upload" className="space-y-4 mt-0 animate-in fade-in slide-in-from-right-4 duration-300">
-                            <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900">
-                                {uploadPreview ? (
-                                    <div className="relative w-full max-h-[300px] rounded-xl overflow-hidden border border-slate-200">
-                                        <img src={uploadPreview} alt="Preview" className="w-full h-full object-contain" />
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {uploadPreviews.map((preview, index) => (
+                                    <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 group">
+                                        <img src={preview} alt={`Upload ${index + 1}`} className="w-full h-full object-contain p-2" />
                                         <button
                                             onClick={(e) => {
                                                 e.preventDefault();
-                                                setUploadPreview(null);
-                                                setUploadedFile(null);
+                                                removeUploadedFile(index);
                                             }}
-                                            className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white p-1 rounded-full backdrop-blur-sm transition-colors"
+                                            className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white p-1 rounded-full backdrop-blur-sm transition-colors opacity-0 group-hover:opacity-100"
                                         >
-                                            <XIcon size={16} />
+                                            <XIcon size={12} />
                                         </button>
                                     </div>
-                                ) : (
-                                    <div
+                                ))}
+
+                                {uploadPreviews.length < 5 && (
+                                    <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="cursor-pointer flex flex-col items-center gap-2 text-center py-8 w-full"
+                                        className="aspect-square rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-primary hover:bg-slate-50 transition-all flex flex-col items-center justify-center gap-2 group"
                                     >
-                                        <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-2">
-                                            <Upload size={24} />
+                                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-primary group-hover:text-white transition-colors flex items-center justify-center">
+                                            <Upload size={18} />
                                         </div>
-                                        <div className="space-y-1">
-                                            <p className="font-bold text-sm">Haz clic para subir imagen</p>
-                                            <p className="text-xs text-muted-foreground">PNG, JPG, JPEG (Máx 5MB)</p>
-                                        </div>
-                                    </div>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Subir Logo</span>
+                                    </button>
                                 )}
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={handleFileUpload}
-                                />
                             </div>
 
                             <div className="space-y-2">
