@@ -390,6 +390,31 @@ export default function AdminSettingsPage() {
                     </CardContent>
                 </Card>
 
+                {/* Canva Integration */}
+                <Card className="border-2 border-[#7D2AE8]/20 bg-[#7D2AE8]/5 overflow-hidden">
+                    <div className="bg-gradient-to-r from-[#7D2AE8] to-[#00C4CC] h-1.5 w-full" />
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Palette className="text-[#7D2AE8] h-5 w-5" /> Integración con Canva
+                        </CardTitle>
+                        <CardDescription>Permite diseñar arte para productos directamente desde el panel.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-50">Canva API Key / Client ID</Label>
+                            <Input
+                                placeholder="Paste your Canva API Key here..."
+                                value={settings.canva_api_key}
+                                onChange={(e) => handleUpdateField('canva_api_key', e.target.value)}
+                                className="font-mono text-sm bg-white dark:bg-slate-900 border-none h-12"
+                            />
+                            <p className="text-[10px] text-muted-foreground italic">
+                                * Necesitas añadir <span className="font-bold underline">milys.shop</span> a tus dominios permitidos en Canva Developers.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 {/* CRM Webhook */}
                 <Card className="border-2">
                     <CardHeader>
