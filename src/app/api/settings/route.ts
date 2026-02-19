@@ -6,7 +6,7 @@ export async function GET() {
         const supabase = await createClient();
         const { data, error } = await supabase
             .from('store_settings')
-            .select('personalization_price_small, personalization_price_large, design_price_small, design_price_medium, design_price_large, pago_movil_info, zelle_info, whatsapp_number, instagram_handle, telegram_username, facebook_url, contact_email, tiktok_handle, pinterest_handle, payment_methods')
+            .select('personalization_price_small, personalization_price_large, design_price_small, design_price_medium, design_price_large, whatsapp_number, instagram_handle, telegram_username, facebook_url, contact_email, tiktok_handle, pinterest_handle, payment_methods')
             .eq('id', 'global')
             .single();
 

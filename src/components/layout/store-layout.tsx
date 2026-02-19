@@ -119,34 +119,52 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Conéctate</h4>
 
                                 {/* Social Media Icons */}
-                                <div className="flex gap-4">
+                                <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                                     {settings?.instagram_handle && (
-                                        <a href={`https://instagram.com/${settings.instagram_handle}`} target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-white border border-primary/10 flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg text-rose-500">
+                                        <a href={`https://instagram.com/${settings.instagram_handle}`} target="_blank" rel="noopener noreferrer"
+                                            className="h-10 w-10 rounded-full bg-white border border-rose-100 flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg hover:bg-rose-500 hover:text-white text-rose-500 shadow-sm"
+                                            title="Instagram"
+                                        >
                                             <Instagram size={18} />
                                         </a>
                                     )}
                                     {settings?.tiktok_handle && (
-                                        <a href={`https://tiktok.com/@${settings.tiktok_handle.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-white border border-primary/10 flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg text-slate-900">
+                                        <a href={`https://tiktok.com/@${settings.tiktok_handle.replace('@', '')}`} target="_blank" rel="noopener noreferrer"
+                                            className="h-10 w-10 rounded-full bg-white border border-slate-200 flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg hover:bg-slate-900 hover:text-white text-slate-900 shadow-sm"
+                                            title="TikTok"
+                                        >
                                             <Music2 size={18} />
                                         </a>
                                     )}
                                     {settings?.whatsapp_number && (
-                                        <a href={`https://wa.me/${settings.whatsapp_number.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-white border border-primary/10 flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg text-emerald-500">
+                                        <a href={`https://wa.me/${settings.whatsapp_number.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
+                                            className="h-10 w-10 rounded-full bg-white border border-emerald-100 flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg hover:bg-emerald-500 hover:text-white text-emerald-500 shadow-sm"
+                                            title="WhatsApp"
+                                        >
                                             <MessageCircle size={18} />
                                         </a>
                                     )}
                                     {settings?.telegram_username && (
-                                        <a href={`https://t.me/${settings.telegram_username}`} target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-white border border-primary/10 flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg text-sky-500">
+                                        <a href={`https://t.me/${settings.telegram_username}`} target="_blank" rel="noopener noreferrer"
+                                            className="h-10 w-10 rounded-full bg-white border border-sky-100 flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg hover:bg-sky-500 hover:text-white text-sky-500 shadow-sm"
+                                            title="Telegram"
+                                        >
                                             <Send size={18} />
                                         </a>
                                     )}
                                     {settings?.facebook_url && (
-                                        <a href={settings.facebook_url} target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-white border border-primary/10 flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg text-blue-600">
+                                        <a href={settings.facebook_url} target="_blank" rel="noopener noreferrer"
+                                            className="h-10 w-10 rounded-full bg-white border border-blue-100 flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg hover:bg-blue-600 hover:text-white text-blue-600 shadow-sm"
+                                            title="Facebook"
+                                        >
                                             <Facebook size={18} />
                                         </a>
                                     )}
                                     {settings?.pinterest_handle && (
-                                        <a href={`https://pinterest.com/${settings.pinterest_handle}`} target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-white border border-primary/10 flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg text-rose-600">
+                                        <a href={`https://pinterest.com/${settings.pinterest_handle}`} target="_blank" rel="noopener noreferrer"
+                                            className="h-10 w-10 rounded-full bg-white border border-rose-100 flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg hover:bg-rose-600 hover:text-white text-rose-600 shadow-sm"
+                                            title="Pinterest"
+                                        >
                                             <Pin size={18} />
                                         </a>
                                     )}
