@@ -106,6 +106,12 @@ export function Header({ onCartClick, onSearchProductClick }: HeaderProps) {
                 Ofertas
               </Link>
             )}
+            <button
+              onClick={() => isAuthenticated ? setIsOrderHistoryOpen(true) : setIsAuthModalOpen(true)}
+              className="text-sm font-bold hover:text-primary transition-colors"
+            >
+              Mis Pedidos
+            </button>
           </nav>
 
           {/* Search Bar - Hidden on mobile */}
