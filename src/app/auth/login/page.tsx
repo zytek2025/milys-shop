@@ -2,15 +2,14 @@
 
 import { LoginForm } from "@/components/auth/login-form"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
     const router = useRouter();
 
     const handleLoginSuccess = async (user: any) => {
         try {
-            // Check staff_users table first (primary admin source)
             const supabase = createClient();
             const { data: staff } = await supabase
                 .from('staff_users')
@@ -20,14 +19,11 @@ export default function LoginPage() {
 
             const isAdmin = !!staff || user?.role === 'admin';
 
-            router.refresh(); // sync session cookies with server middleware
-            if (isAdmin) {
-                router.push('/admin');
-            } else {
-                router.push('/');
-            }
+            // Refresh so the server middleware reads the new session cookies
+            router.refresh();
+            router.push(isAdmin ? '/admin' : '/');
         } catch {
-            // Fallback: trust the profile role
+            router.refresh();
             router.push(user?.role === 'admin' ? '/admin' : '/');
         }
     };
