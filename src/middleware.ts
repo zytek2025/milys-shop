@@ -48,7 +48,7 @@ export async function middleware(request: NextRequest) {
 
         // Enforce Role Separation: Only 'admin' role can access /admin
         // Users (Customers) are blocked.
-        // Enforce Role Separation: Only users in 'staff_users' can access /admin
+        // Check staff_users first
         const { data: staff } = await supabase
             .from('staff_users')
             .select('id')
@@ -56,13 +56,21 @@ export async function middleware(request: NextRequest) {
             .single()
 
         if (!staff) {
-            // Redirect unauthorized users to the shop home
-            return NextResponse.redirect(new URL('/', request.url))
+            // Fallback: Check if they are still an admin in the legacy profiles table
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+
+            if (profile?.role !== 'admin') {
+                return NextResponse.redirect(new URL('/', request.url))
+            }
         }
     }
 
     if (isLoginPage && user) {
-        // If user is logged in, check if they are staff to decide redirect
+        // Redirection logic for logged-in users
         const { data: staff } = await supabase
             .from('staff_users')
             .select('id')
@@ -70,6 +78,17 @@ export async function middleware(request: NextRequest) {
             .single()
 
         if (staff) {
+            return NextResponse.redirect(new URL('/admin', request.url))
+        }
+
+        // Fallback for redirect
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+        if (profile?.role === 'admin') {
             return NextResponse.redirect(new URL('/admin', request.url))
         } else {
             return NextResponse.redirect(new URL('/', request.url))

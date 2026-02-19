@@ -15,14 +15,15 @@ CREATE TABLE IF NOT EXISTS public.staff_users (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Enable RLS
+-- 2. Activar RLS
 ALTER TABLE public.staff_users ENABLE ROW LEVEL SECURITY;
 
--- Staff users can read their own data
+-- 3. Políticas de acceso
+DROP POLICY IF EXISTS "Staff can read own record" ON public.staff_users;
 CREATE POLICY "Staff can read own record" ON public.staff_users
     FOR SELECT USING (auth.uid() = id);
 
--- Super admins can do everything
+DROP POLICY IF EXISTS "Super admins can manage staff" ON public.staff_users;
 CREATE POLICY "Super admins can manage staff" ON public.staff_users
     FOR ALL USING (
         (SELECT is_super_admin FROM public.staff_users WHERE id = auth.uid()) = true
