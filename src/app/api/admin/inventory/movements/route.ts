@@ -94,24 +94,9 @@ export async function POST(request: NextRequest) {
         if (insertError) throw insertError;
 
         // 2. Update Stock in Product Variant
-        // RPC or direct update? Direct update is fine for now as we don't have high concurrency
-        // We need to fetch current to be safe or use a Postgres increment if available via Supabase simple API
-        // But wait, we can just use the rpc 'decrement_stock' if it existed for generic cases, but it doesn't.
-        // Let's read current, calc new, update.
+        // The DB trigger `tr_update_stock_on_movement` will automatically update the product_variants stock
+        // so we NO LONGER need to manually update it here. This prevents double-additions.
 
-        const { data: variant } = await supabase
-            .from('product_variants')
-            .select('stock')
-            .eq('id', variant_id)
-            .single();
-
-        if (variant) {
-            const newStock = (variant.stock || 0) + quantity;
-            await supabase
-                .from('product_variants')
-                .update({ stock: newStock })
-                .eq('id', variant_id);
-        }
 
         return NextResponse.json(movement);
 

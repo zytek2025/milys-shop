@@ -45,21 +45,13 @@ export async function POST(request: NextRequest) {
 
         if (newStock < 0) newStock = 0;
 
-        // 2. Update Variant Stock
-        const { error: updateError } = await supabase
-            .from('product_variants')
-            .update({ stock: newStock })
-            .eq('id', variant_id);
+        // 3. Log Movement (This will trigger the automatic stock update in product_variants via db trigger tr_update_stock_on_movement)
 
-        if (updateError) throw updateError;
-
-        // 3. Log Movement
-        // Determine movement type for log
         let movementType = 'adjustment';
         if (type === 'add') movementType = 'IN';
         if (type === 'remove') movementType = 'OUT';
         if (type === 'set') {
-            movementType = newStock > currentVariant.stock ? 'IN' : 'OUT';
+            movementType = newStock >= currentVariant.stock ? 'IN' : 'OUT';
         }
 
         await supabase.from('stock_movements').insert({
