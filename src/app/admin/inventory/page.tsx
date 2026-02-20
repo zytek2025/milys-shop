@@ -13,7 +13,9 @@ import {
     RotateCcw,
     User as UserIcon,
     DollarSign,
-    RefreshCw
+    RefreshCw,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,6 +73,9 @@ export default function InventoryPage() {
     const [creditAmount, setCreditAmount] = useState<string>('0');
     const [submitting, setSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState('quick');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [updatingInline, setUpdatingInline] = useState<string | null>(null);
+    const ITEMS_PER_PAGE = 20;
 
     useEffect(() => {
         fetchData();
@@ -83,6 +88,10 @@ export default function InventoryPage() {
             fetchStats();
         }
     }, [activeTab]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedCategory]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -252,6 +261,46 @@ export default function InventoryPage() {
         return match && catMatch;
     });
 
+    const totalPages = Math.ceil(filteredVariants.length / ITEMS_PER_PAGE);
+    const paginatedVariants = filteredVariants.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const handleInlineUpdate = async (variant: any, valStr: string) => {
+        if (!valStr) return;
+        const isSub = valStr.startsWith('-');
+        const num = parseInt(valStr.replace(/[+-]/g, ''));
+        if (isNaN(num) || num <= 0) return;
+
+        const type = isSub ? 'remove' : 'add';
+        const targetId = variant.is_legacy ? variant.product_id : variant.id;
+
+        setUpdatingInline(variant.id);
+        try {
+            const res = await fetch('/api/admin/inventory/quick-update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    variant_id: targetId,
+                    type,
+                    adjustment: num,
+                    reason: 'Ajuste Inline Tabla'
+                })
+            });
+            if (res.ok) {
+                toast.success('Stock actualizado');
+                fetchData();
+            } else {
+                toast.error('Error al actualizar');
+            }
+        } catch (e) {
+            toast.error('Error de red');
+        } finally {
+            setUpdatingInline(null);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-end">
@@ -350,7 +399,7 @@ export default function InventoryPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {loading ? <TableRow><TableCell colSpan={5} className="text-center py-10"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow> :
-                                        filteredVariants.map((v, i) => (
+                                        paginatedVariants.map((v, i) => (
                                             <TableRow key={v.id || i}>
                                                 <TableCell className="font-mono text-xs text-muted-foreground">{v.control_id || '---'}</TableCell>
                                                 <TableCell className="font-bold text-sm">{v.product_name}</TableCell>
@@ -361,9 +410,19 @@ export default function InventoryPage() {
                                                     </span>
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-1">
-                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-600" title="Entrada" onClick={() => { setSelectedVariant(v); setModalType('in'); setIsMovementModalOpen(true); }}><Plus size={16} /></Button>
-                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-600" title="Salida" onClick={() => { setSelectedVariant(v); setModalType('out'); setIsMovementModalOpen(true); }}><Minus size={16} /></Button>
+                                                    <div className="flex justify-end items-center gap-2">
+                                                        <Input
+                                                            placeholder="+5 / -2"
+                                                            className="w-20 h-8 font-mono text-center text-xs"
+                                                            disabled={updatingInline === v.id}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    handleInlineUpdate(v, e.currentTarget.value);
+                                                                    e.currentTarget.value = '';
+                                                                }
+                                                            }}
+                                                        />
+                                                        {updatingInline === v.id && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
                                                         <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600" title="Devolución" onClick={() => { setSelectedVariant(v); setModalType('return'); setIsMovementModalOpen(true); }}><RotateCcw size={16} /></Button>
                                                     </div>
                                                 </TableCell>
@@ -371,6 +430,32 @@ export default function InventoryPage() {
                                         ))}
                                 </TableBody>
                             </Table>
+                            {/* Pagination Controls */}
+                            {totalPages > 1 && (
+                                <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-slate-800">
+                                    <span className="text-xs font-bold text-muted-foreground">
+                                        Página {currentPage} de {totalPages} ({filteredVariants.length} items)
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={currentPage === 1}
+                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        >
+                                            <ChevronLeft size={16} /> Anterior
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={currentPage === totalPages}
+                                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                        >
+                                            Siguiente <ChevronRight size={16} />
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>

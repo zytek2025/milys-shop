@@ -17,6 +17,8 @@ interface ProductCardProps {
   promotion?: any;
 }
 
+import { PriceDisplay } from '@/components/store-settings-provider';
+
 export function ProductCard({ product, promotion }: ProductCardProps) {
   const addToCart = useAddToCart();
   const [isAdding, setIsAdding] = useState(false);
@@ -90,7 +92,7 @@ export function ProductCard({ product, promotion }: ProductCardProps) {
             <div className="absolute bottom-4 right-4 z-10">
               <div className="bg-white/95 text-foreground font-black px-4 py-2 rounded-2xl shadow-lg border border-primary/10 transform group-hover:scale-110 transition-transform duration-500 flex flex-col items-end">
                 {hasMultiplePrices && <span className="text-[9px] uppercase tracking-wider text-muted-foreground leading-none">Desde</span>}
-                <span className="text-lg leading-tight text-primary">${minPrice.toFixed(0)}</span>
+                <PriceDisplay amount={minPrice} className="text-lg leading-tight text-primary flex flex-col items-end" />
               </div>
             </div>
 

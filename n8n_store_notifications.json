@@ -1,0 +1,148 @@
+{
+    "name": "Tienda Mily - Order Notification Dispatcher",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "store-notifications",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook Receiver",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                100,
+                300
+            ],
+            "webhookId": "f016b929-e417-4c1d-8e0c-fcf6c5d955eb-store-notifications"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{$json.body.event}}",
+                            "value2": "order.created"
+                        }
+                    ]
+                }
+            },
+            "id": "switch-event",
+            "name": "IF Order Created",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                350,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{$json.body.event}}",
+                            "value2": "order.status_updated"
+                        }
+                    ]
+                }
+            },
+            "id": "if-status",
+            "name": "IF Status Updated",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                350,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "phone": "={{$json.body.payload.admin_phone}}",
+                "message": "=¡Nuevo Pedido en Mily's Design! 🛒\n\nNro: {{$json.body.payload.order_id}}\nCliente: {{$json.body.payload.customer_name}}\nTotal: ${{$json.body.payload.total}}\n\nPor favor, verifica el panel de administrador para procesar el pago o iniciar la producción."
+            },
+            "id": "whatsapp-admin-new",
+            "name": "Notify Admin (New Order)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                650,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "phone": "={{$json.body.payload.customer_phone}}",
+                "message": "=¡Hola {{$json.body.payload.customer_name}}! 👋\n\nHemos recibido tu pedido #{{$json.body.payload.order_id}} en Mily's Design.\n\nTotal a pagar: ${{$json.body.payload.total}}\n\nPuedes ver el estado y las instrucciones de pago aquí: {{$json.body.payload.tracking_url}}\n\n¡Gracias por preferirnos!"
+            },
+            "id": "whatsapp-customer-new",
+            "name": "Notify Customer (New Order)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                650,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "phone": "={{$json.body.payload.customer_phone}}",
+                "message": "=Hola {{$json.body.payload.customer_name}} 📦\n\nEl estado de tu pedido #{{$json.body.payload.order_id}} ha cambiado a: *{{$json.body.payload.new_status}}*.\n\nPuedes revisar los detalles en tu enlace mágico: {{$json.body.payload.tracking_url}}"
+            },
+            "id": "whatsapp-customer-status",
+            "name": "Notify Customer (Status Update)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                650,
+                600
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook Receiver": {
+            "main": [
+                [
+                    {
+                        "node": "IF Order Created",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "IF Status Updated",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Order Created": {
+            "main": [
+                [
+                    {
+                        "node": "Notify Admin (New Order)",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Notify Customer (New Order)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Status Updated": {
+            "main": [
+                [
+                    {
+                        "node": "Notify Customer (Status Update)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

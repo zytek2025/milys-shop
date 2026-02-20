@@ -26,6 +26,7 @@ import {
 } from '@/hooks/use-cart';
 import { useAuth } from '@/store/cart-store';
 import { toast } from 'sonner';
+import { PriceDisplay } from '@/components/store-settings-provider';
 
 interface CartDrawerProps {
   open: boolean;
@@ -156,13 +157,13 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span>${total.toFixed(2)}</span>
+                    <PriceDisplay amount={total} />
                   </div>
                   <Separator />
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Total</span>
                     <div className="flex flex-col items-end">
-                      <span>${total.toFixed(2)}</span>
+                      <PriceDisplay amount={total} className="flex flex-col items-end leading-none" />
                       {hasOnRequestItems && (
                         <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tight">
                           + Presupuesto de diseño

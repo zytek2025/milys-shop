@@ -8,6 +8,7 @@ import { ShoppingBag, Calendar, Package, CreditCard, ChevronLeft, RotateCcw } fr
 import Link from 'next/link';
 import { PaymentInstructions } from '@/components/orders/payment-instructions';
 import { PaymentConfirmationForm } from '@/components/orders/payment-confirmation-form';
+import { PriceDisplay } from '@/components/store-settings-provider';
 
 async function getOrder(id: string) {
     const supabase = await createClient();
@@ -106,7 +107,7 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
                                 <div className="bg-slate-50 dark:bg-slate-900/50 p-6 space-y-2">
                                     <div className="flex justify-between text-xs font-bold uppercase italic text-muted-foreground">
                                         <span>Subtotal</span>
-                                        <span>${(order.total + (order.payment_discount_amount || 0)).toFixed(2)}</span>
+                                        <PriceDisplay amount={order.total + (order.payment_discount_amount || 0)} />
                                     </div>
                                     {order.payment_discount_amount > 0 && (
                                         <div className="flex justify-between text-xs font-black uppercase italic text-primary">
@@ -117,9 +118,7 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
                                     <Separator className="my-2" />
                                     <div className="flex justify-between items-center pt-2">
                                         <span className="font-black uppercase italic tracking-tighter text-lg">Total Pagado</span>
-                                        <span className="font-black text-3xl tracking-tighter text-primary">
-                                            ${order.total.toFixed(2)}
-                                        </span>
+                                        <PriceDisplay amount={order.total} className="font-black text-3xl tracking-tighter text-primary flex flex-col items-end" />
                                     </div>
                                 </div>
                             </CardContent>

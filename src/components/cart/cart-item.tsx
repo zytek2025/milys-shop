@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PriceDisplay } from '@/components/store-settings-provider';
 import type { CartItem } from '@/types';
 
 interface CartItemRowProps {
@@ -104,12 +105,12 @@ export function CartItemRow({
             {isOnRequest ? (
               <span className="text-amber-600 italic">Precio pendiente</span>
             ) : (
-              `$${finalPrice.toFixed(2)}`
+              <PriceDisplay amount={finalPrice} />
             )}
           </p>
           {isOnRequest && finalPrice > 0 && (
             <span className="text-[10px] text-muted-foreground line-through decoration-slate-300">
-              ${finalPrice.toFixed(2)}
+              <PriceDisplay amount={finalPrice} />
             </span>
           )}
         </div>
@@ -181,7 +182,7 @@ export function CartItemRow({
       {/* Subtotal & Remove */}
       <div className="flex flex-col items-end gap-1">
         <span className="font-semibold text-sm">
-          ${subtotal.toFixed(2)}
+          <PriceDisplay amount={subtotal} />
         </span>
         <Button
           variant="ghost"

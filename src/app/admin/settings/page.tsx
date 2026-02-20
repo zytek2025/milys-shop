@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Save, Loader2, Landmark, Smartphone, MessageSquareQuote, Type, Palette, Plus, Trash2, Globe, CreditCard, DollarSign, Wallet, Bitcoin, Zap, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,9 @@ interface StoreSettings {
     tiktok_handle?: string;
     pinterest_handle?: string;
     payment_methods?: PaymentMethod[];
+    store_country?: string;
+    currency_symbol?: string;
+    exchange_rate?: number;
 }
 
 interface PaymentMethod {
@@ -66,7 +70,10 @@ export default function AdminSettingsPage() {
         contact_email: '',
         tiktok_handle: '',
         pinterest_handle: '',
-        payment_methods: []
+        payment_methods: [],
+        store_country: 'VE',
+        currency_symbol: '$',
+        exchange_rate: 60.0
     });
 
     useEffect(() => {
@@ -93,7 +100,10 @@ export default function AdminSettingsPage() {
                     contact_email: data.contact_email || '',
                     tiktok_handle: data.tiktok_handle || '',
                     pinterest_handle: data.pinterest_handle || '',
-                    payment_methods: data.payment_methods || []
+                    payment_methods: data.payment_methods || [],
+                    store_country: data.store_country || 'VE',
+                    currency_symbol: data.currency_symbol || '$',
+                    exchange_rate: Number(data.exchange_rate ?? 60.0)
                 });
             } else {
                 toast.error(data.error || 'Error al cargar ajustes');
@@ -107,6 +117,22 @@ export default function AdminSettingsPage() {
 
     const handleUpdateField = (field: keyof StoreSettings, value: any) => {
         setSettings(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleCountryChange = (countryCode: string) => {
+        let newSymbol = '$';
+        switch (countryCode) {
+            case 'VE': newSymbol = 'Bs'; break;
+            case 'CO': newSymbol = 'COP'; break;
+            case 'CL': newSymbol = 'CLP'; break;
+            case 'MX': newSymbol = '$'; break;
+            case 'AR': newSymbol = 'ARS'; break;
+            case 'PE': newSymbol = 'S/'; break;
+            case 'US': newSymbol = '$'; break;
+            case 'ES': newSymbol = '€'; break;
+            default: newSymbol = '$';
+        }
+        setSettings(prev => ({ ...prev, store_country: countryCode, currency_symbol: newSymbol }));
     };
 
     const handleSave = async () => {
@@ -169,6 +195,59 @@ export default function AdminSettingsPage() {
 
             <div className="grid gap-6">
                 {/* Payment Methods Section Start */}
+
+                {/* Regional & Currency Settings */}
+                <Card className="border-2 border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-900/10">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 uppercase italic font-black tracking-tighter">
+                            <Globe className="text-emerald-600 h-5 w-5" /> Región y Moneda
+                        </CardTitle>
+                        <CardDescription>Configura el país de la tienda, símbolo de moneda y factor de cambio base.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-6 md:grid-cols-3">
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase text-emerald-700">País Base</Label>
+                            <Select value={settings.store_country} onValueChange={handleCountryChange}>
+                                <SelectTrigger className="bg-white dark:bg-slate-900 h-11 border-emerald-100">
+                                    <SelectValue placeholder="Selecciona un país" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="VE">🇻🇪 Venezuela</SelectItem>
+                                    <SelectItem value="CO">🇨🇴 Colombia</SelectItem>
+                                    <SelectItem value="CL">🇨🇱 Chile</SelectItem>
+                                    <SelectItem value="MX">🇲🇽 México</SelectItem>
+                                    <SelectItem value="AR">🇦🇷 Argentina</SelectItem>
+                                    <SelectItem value="PE">🇵🇪 Perú</SelectItem>
+                                    <SelectItem value="US">🇺🇸 Estados Unidos</SelectItem>
+                                    <SelectItem value="ES">🇪🇸 España</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase text-emerald-700">Símbolo Local</Label>
+                            <Input
+                                value={settings.currency_symbol}
+                                onChange={(e) => handleUpdateField('currency_symbol', e.target.value)}
+                                className="bg-white dark:bg-slate-900 h-11 font-black px-4 border-emerald-100"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase text-emerald-700 font-mono">Factor de Cambio</Label>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                value={settings.exchange_rate}
+                                onChange={(e) => handleUpdateField('exchange_rate', Number(e.target.value))}
+                                className="bg-white dark:bg-slate-900 h-11 font-mono font-bold border-emerald-100"
+                            />
+                            <p className="text-[10px] text-muted-foreground italic">
+                                * Multiplicador para moneda local.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {/* Métodos de Pago Dinámicos */}
                 <Card className="border-2 border-primary/20 bg-slate-50/50 dark:bg-slate-900/20">

@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, X as XIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-
+import { PriceDisplay, useStoreSettings } from '@/components/store-settings-provider';
 
 interface Design {
     id: string;
@@ -380,11 +380,11 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
             {/* Price Header */}
             <div className="flex flex-col gap-1 border-b border-lavanda/30 pb-6">
                 <div className="flex items-baseline gap-3">
-                    <span className="text-6xl font-serif font-light text-foreground tracking-tighter">
+                    <span className="text-6xl font-serif font-light text-foreground tracking-tighter flex items-baseline gap-2">
                         {designMode === 'upload' ? (
                             <span className="text-4xl text-muted-foreground">A Cotizar</span>
                         ) : (
-                            `$${totalPrice.toFixed(2)}`
+                            <PriceDisplay amount={totalPrice} />
                         )}
                     </span>
                     {designMode === 'gallery' && <span className="text-xs font-sans font-bold uppercase tracking-[0.2em] text-slate-400">USD</span>}

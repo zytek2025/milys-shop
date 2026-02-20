@@ -1,0 +1,67 @@
+{
+    "name": "Tienda Mily - Return Notifications",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "store-returns",
+                "options": {}
+            },
+            "id": "webhook-return",
+            "name": "Webhook Return Receiver",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                100,
+                300
+            ],
+            "webhookId": "return-notifications-hook"
+        },
+        {
+            "parameters": {
+                "phone": "={{$json.body.payload.admin_phone}}",
+                "message": "=⚠️ Nueva Devolución Procesada\n\nAdmin: {{$json.body.payload.admin_name}}\nCliente: {{$json.body.payload.customer_name}}\nProducto devuelto: {{$json.body.payload.product_name}} ({{$json.body.payload.quantity}}x)\nMotivo: {{$json.body.payload.reason}}\n\nMonto acreditado a billetera: ${{$json.body.payload.credit_amount}}"
+            },
+            "id": "whatsapp-admin-return",
+            "name": "Notify Admin (Return)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                400,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "phone": "={{$json.body.payload.customer_phone}}",
+                "message": "=Hola {{$json.body.payload.customer_name}} ♻️\n\nHemos procesado la devolución de tu producto: {{$json.body.payload.product_name}}.\n\nSe han acreditado ${{$json.body.payload.credit_amount}} a tu billetera virtual en nuestra tienda. Podrás usar este saldo a favor en tu próxima compra.\n\n¡Gracias por tu confianza!"
+            },
+            "id": "whatsapp-customer-return",
+            "name": "Notify Customer (Return)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                400,
+                400
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook Return Receiver": {
+            "main": [
+                [
+                    {
+                        "node": "Notify Admin (Return)",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Notify Customer (Return)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
