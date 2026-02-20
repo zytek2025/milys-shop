@@ -73,6 +73,29 @@ export async function PATCH(
                 .from('returns')
                 .update({ amount_credited: totalToCredit })
                 .eq('id', params.id);
+
+            // D. Dispatch Webhook
+            const { sendWebhook } = await import('@/lib/webhook-dispatcher');
+            if (profile) {
+                // Fetch profile complete details for webhook
+                const { data: fullProfile } = await supabase.from('profiles').select('full_name, email, whatsapp').eq('id', returnReq.customer_id).single();
+
+                await sendWebhook('return_processed', {
+                    return_id: returnReq.id,
+                    control_id: returnReq.control_id,
+                    order_id: returnReq.order_id,
+                    amount_credited: totalToCredit,
+                    items: items.map((i: any) => ({
+                        variant_id: i.variant_id,
+                        quantity: i.quantity,
+                        price: i.price
+                    }))
+                }, {
+                    name: fullProfile?.full_name || fullProfile?.email?.split('@')[0],
+                    email: fullProfile?.email,
+                    phone: fullProfile?.whatsapp || ''
+                });
+            }
         }
 
         // Update return status

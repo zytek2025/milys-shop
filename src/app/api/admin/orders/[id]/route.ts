@@ -95,8 +95,8 @@ export async function PATCH(
             }
         }
 
-        // 2. Trigger Webhook for status changes
-        if (status === 'shipped' || status === 'completed') {
+        // 4. Trigger Webhook for status changes
+        if (['processing', 'shipped', 'completed', 'cancelled'].includes(status)) {
             const { sendWebhook } = await import('@/lib/webhook-dispatcher');
 
             // Fetch full details for the webhook using admin client
@@ -114,7 +114,32 @@ export async function PATCH(
                 .single();
 
             if (orderDetails) {
-                await sendWebhook('order_shipped', orderDetails);
+                let eventName: any = null;
+                switch (status) {
+                    case 'processing': eventName = 'payment_confirmed'; break;
+                    case 'shipped': eventName = 'order_shipped'; break;
+                    case 'completed': eventName = 'order_delivered'; break;
+                    case 'cancelled': eventName = 'order_cancelled'; break;
+                }
+
+                if (eventName) {
+                    await sendWebhook(eventName, {
+                        order_id: orderDetails.id,
+                        control_id: orderDetails.control_id,
+                        total: orderDetails.total,
+                        shipping_address: orderDetails.shipping_address,
+                        items: orderDetails.items.map((i: any) => ({
+                            name: i.product_name,
+                            quantity: i.quantity,
+                            price: i.price,
+                            on_request: i.on_request
+                        }))
+                    }, {
+                        name: orderDetails.profiles?.full_name || orderDetails.profiles?.email?.split('@')[0],
+                        email: orderDetails.profiles?.email,
+                        phone: orderDetails.profiles?.whatsapp || ''
+                    });
+                }
             }
         }
 

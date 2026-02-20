@@ -196,12 +196,13 @@ export async function POST(request: NextRequest) {
     const pm = (settings?.payment_methods as any[])?.find((m: any) => m.id === payment_method_id);
 
     // 5. Trigger Webhook (Fire and forget)
+    // Fetch user profile to get complete Whatsapp and Name data
+    const { data: profile } = await supabase.from('profiles').select('full_name, whatsapp').eq('id', user.id).single();
+
     const { sendWebhook } = await import('@/lib/webhook-dispatcher');
     sendWebhook('order_created', {
       order_id: order.id,
       control_id: order.control_id,
-      user_id: user.id,
-      email: user.email,
       total_paid: finalTotal,
       credit_applied: usedCredit,
       payment_method_id,
@@ -215,6 +216,10 @@ export async function POST(request: NextRequest) {
         on_request: i.on_request
       })),
       shipping_address
+    }, {
+      name: profile?.full_name || user.email?.split('@')[0],
+      email: user.email,
+      phone: profile?.whatsapp || ''
     });
 
     return NextResponse.json({

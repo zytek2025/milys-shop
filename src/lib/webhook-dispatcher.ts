@@ -1,15 +1,35 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-type WebhookEvent = 'welcome' | 'order_created' | 'order_updated' | 'order_shipped' | 'virtual_assistant';
+export type WebhookEvent =
+    | 'customer_registered'
+    | 'order_created'
+    | 'payment_confirmed'
+    | 'order_shipped'
+    | 'order_delivered'
+    | 'order_cancelled'
+    | 'return_processed'
+    | 'virtual_assistant' // Keep legacy if used
+    | 'welcome'; // Keep legacy if used temporarily
 
-interface WebhookPayload {
+export interface WebhookCustomerData {
+    name?: string;
+    email?: string;
+    phone?: string;
+}
+
+export interface WebhookPayload {
     event: WebhookEvent;
+    customer?: WebhookCustomerData;
     data: Record<string, any>;
     timestamp?: string;
 }
 
-export async function sendWebhook(event: WebhookEvent, data: Record<string, any>) {
+export async function sendWebhook(
+    event: WebhookEvent,
+    data: Record<string, any>,
+    customer?: WebhookCustomerData
+) {
     try {
         const supabase = await createClient();
 
@@ -30,6 +50,7 @@ export async function sendWebhook(event: WebhookEvent, data: Record<string, any>
         // 2. Prepare Payload
         const payload: WebhookPayload = {
             event,
+            customer,
             data,
             timestamp: new Date().toISOString()
         };
