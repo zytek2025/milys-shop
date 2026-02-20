@@ -35,16 +35,27 @@ export async function GET() {
 
         const { data: recentOrders } = await supabase
             .from('orders')
-            .select('total')
+            .select('total, status')
             .order('created_at', { ascending: false })
             .limit(100);
 
-        const totalRevenue = recentOrders?.reduce((acc, order) => acc + (order.total || 0), 0) || 0;
+        const validOrders = recentOrders?.filter(o => o.status === 'completed' || o.status === 'shipped') || [];
+        const totalRevenue = validOrders.reduce((acc, order) => acc + (order.total || 0), 0);
+
+        // Get expenses
+        const { data: expenses } = await supabase
+            .from('expenses')
+            .select('amount');
+
+        const totalExpenses = expenses?.reduce((acc, exp) => acc + (Number(exp.amount) || 0), 0) || 0;
+        const netProfit = totalRevenue - totalExpenses;
 
         return NextResponse.json({
             productsCount: productsCount || 0,
             ordersCount: ordersCount || 0,
             totalRevenue,
+            totalExpenses,
+            netProfit
         });
     } catch (error) {
         console.error('Error fetching admin stats:', error);

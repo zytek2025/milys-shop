@@ -7,17 +7,19 @@ import {
     TrendingUp,
     ArrowUpRight,
     Clock,
-    ExternalLink,
     DollarSign,
     Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface AdminStats {
     productsCount: number;
     ordersCount: number;
     totalRevenue: number;
+    totalExpenses: number;
+    netProfit: number;
 }
 
 export default function AdminDashboardPage() {
@@ -99,62 +101,50 @@ export default function AdminDashboardPage() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {/* KPI Cards */}
                 <Card className="border-none shadow-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white overflow-hidden relative">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
-                        <DollarSign size={80} />
-                    </div>
-                    <CardContent className="p-6">
-                        <p className="text-xs font-black uppercase tracking-[0.2em] opacity-80">Facturación Total</p>
-                        <h3 className="text-3xl font-black mt-2">
-                            {loading ? <Loader2 className="animate-spin h-6 w-6" /> : `$${(stats?.totalRevenue || 0).toLocaleString()}`}
+                    <CardContent className="p-4 sm:p-6">
+                        <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] opacity-80">Bruto (Ingresos)</p>
+                        <h3 className="text-xl sm:text-2xl font-black mt-1 sm:mt-2">
+                            {loading ? <Loader2 className="animate-spin h-5 w-5" /> : `$${(stats?.totalRevenue || 0).toLocaleString()}`}
                         </h3>
-                        <div className="flex items-center gap-2 mt-4 text-xs font-bold bg-white/20 w-fit px-2 py-1 rounded-lg">
-                            <ArrowUpRight size={14} />
-                            <span>+12.5% este mes</span>
-                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-xl bg-gradient-to-br from-red-500 to-rose-600 text-white overflow-hidden relative">
+                    <CardContent className="p-4 sm:p-6">
+                        <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] opacity-80">Egresos Totales</p>
+                        <h3 className="text-xl sm:text-2xl font-black mt-1 sm:mt-2">
+                            {loading ? <Loader2 className="animate-spin h-5 w-5" /> : `$${(stats?.totalExpenses || 0).toLocaleString()}`}
+                        </h3>
                     </CardContent>
                 </Card>
 
                 <Card className="border-none shadow-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white overflow-hidden relative">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
-                        <ShoppingBag size={80} />
-                    </div>
-                    <CardContent className="p-6">
-                        <p className="text-xs font-black uppercase tracking-[0.2em] opacity-80">Pedidos Completados</p>
-                        <h3 className="text-3xl font-black mt-2">
+                    <CardContent className="p-4 sm:p-6">
+                        <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] opacity-80">Beneficio Neto</p>
+                        <h3 className="text-xl sm:text-2xl font-black mt-1 sm:mt-2">
+                            {loading ? <Loader2 className="animate-spin h-5 w-5" /> : `$${(stats?.netProfit || 0).toLocaleString()}`}
+                        </h3>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 relative overflow-hidden">
+                    <CardContent className="p-4 sm:p-6">
+                        <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] text-muted-foreground">Pedidos (Éxito)</p>
+                        <h3 className="text-xl sm:text-2xl font-black mt-1 sm:mt-2 text-slate-900 dark:text-white">
                             {loading ? '...' : stats?.ordersCount || 0}
                         </h3>
-                        <div className="flex items-center gap-2 mt-4 text-xs font-bold bg-white/20 w-fit px-2 py-1 rounded-lg">
-                            <Clock size={14} />
-                            <span>8 pendientes hoy</span>
-                        </div>
                     </CardContent>
                 </Card>
 
                 <Card className="border-none shadow-xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 relative overflow-hidden">
-                    <CardContent className="p-6">
-                        <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Conversión Lead</p>
-                        <h3 className="text-3xl font-black mt-2 text-slate-900 dark:text-white">
-                            3.2%
-                        </h3>
-                        <div className="mt-4 h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: '32%' }} />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-none shadow-xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 relative overflow-hidden">
-                    <CardContent className="p-6">
-                        <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Productos Activos</p>
-                        <h3 className="text-3xl font-black mt-2 text-slate-900 dark:text-white">
+                    <CardContent className="p-4 sm:p-6">
+                        <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] text-muted-foreground">Catálogo</p>
+                        <h3 className="text-xl sm:text-2xl font-black mt-1 sm:mt-2 text-slate-900 dark:text-white">
                             {loading ? '...' : stats?.productsCount || 0}
                         </h3>
-                        <div className="flex items-center gap-2 mt-4 text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/30 w-fit px-2 py-1 rounded-lg">
-                            <Package size={14} />
-                            <span>4 sin stock</span>
-                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -168,21 +158,28 @@ export default function AdminDashboardPage() {
                         </div>
                         <TrendingUp className="text-primary" size={24} />
                     </CardHeader>
-                    <CardContent className="h-[300px] flex items-end justify-between gap-2 px-6 pb-8">
-                        {/* Fake Chart Bars */}
-                        {[40, 70, 45, 90, 65, 85, 55].map((h, i) => (
-                            <div key={i} className="flex-1 h-full flex flex-col items-center gap-2 group">
-                                <div
-                                    className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-xl relative overflow-hidden flex items-end flex-1"
-                                >
-                                    <div
-                                        className="w-full bg-primary/20 group-hover:bg-primary/40 transition-all duration-500 rounded-t-xl"
-                                        style={{ height: `${h}%` }}
-                                    />
-                                </div>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][i]}</span>
-                            </div>
-                        ))}
+                    <CardContent className="h-[300px] px-6 pb-8">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={[
+                                { name: 'Lun', ingresos: 4000, egresos: 2400 },
+                                { name: 'Mar', ingresos: 3000, egresos: 1398 },
+                                { name: 'Mié', ingresos: 2000, egresos: 9800 },
+                                { name: 'Jue', ingresos: 2780, egresos: 3908 },
+                                { name: 'Vie', ingresos: 1890, egresos: 4800 },
+                                { name: 'Sáb', ingresos: 2390, egresos: 3800 },
+                                { name: 'Dom', ingresos: 3490, egresos: 4300 },
+                            ]} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888888' }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888888' }} tickFormatter={(value) => `$${value}`} />
+                                <Tooltip
+                                    cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                                />
+                                <Bar dataKey="ingresos" name="Ingresos" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="egresos" name="Egresos" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </CardContent>
                 </Card>
 

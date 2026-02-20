@@ -1,266 +1,209 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-    DollarSign,
-    CreditCard,
-    RotateCcw,
-    TrendingUp,
-    Users,
-    History,
-    Search,
-    Loader2,
-    ArrowUpRight,
-    ArrowDownRight,
-    Wallet,
-    BadgeDollarSign
-} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2, TrendingDown, Trash2, PlusCircle, AlertCircle } from 'lucide-react';
+
+interface Expense {
+    id: string;
+    amount: number;
+    description: string;
+    category: string;
+    expense_date: string;
+    profiles?: { full_name: string; email: string };
+}
 
 export default function FinancesPage() {
-    const [data, setData] = useState<any>(null);
+    const [expenses, setExpenses] = useState<Expense[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Form state
+    const [amount, setAmount] = useState('');
+    const [description, setDescription] = useState('');
+    const [category, setCategory] = useState('Operativo');
 
     useEffect(() => {
-        fetchFinances();
+        fetchExpenses();
     }, []);
 
-    const fetchFinances = async () => {
+    const fetchExpenses = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/admin/finances');
-            const result = await res.json();
-            if (res.ok) {
-                setData(result);
-            } else {
-                toast.error(result.error || 'Error al cargar finanzas');
-            }
-        } catch (error) {
-            toast.error('Error de conexión');
+            const res = await fetch('/api/admin/finances/expenses');
+            if (!res.ok) throw new Error('Error al cargar egresos');
+            const data = await res.json();
+            setExpenses(data);
+        } catch (err: any) {
+            setError(err.message);
         } finally {
             setLoading(false);
         }
     };
 
-    if (loading) {
-        return (
-            <div className="flex h-[400px] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        );
-    }
+    const handleCreateExpense = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!amount || !description || !category) return;
 
-    const {
-        stats = { totalRevenue: 0, totalCreditLiability: 0, totalReturnsAmount: 0, returnsCount: 0 },
-        topCustomersByCredit = [],
-        recentMovements = []
-    } = data || {};
+        setSubmitting(true);
+        setError(null);
+
+        try {
+            const res = await fetch('/api/admin/finances/expenses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount, description, category })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Error al registrar egreso');
+            }
+
+            setAmount('');
+            setDescription('');
+            await fetchExpenses();
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('¿Seguro de eliminar este registro?')) return;
+
+        try {
+            const res = await fetch(`/api/admin/finances/expenses/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Error eliminando gasto');
+            await fetchExpenses();
+        } catch (err: any) {
+            alert(err.message);
+        }
+    };
+
+    const totalEgresos = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
 
     return (
-        <div className="space-y-8 pb-12">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-4xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white">
-                        Gestión <span className="text-primary">Financiera</span>
-                    </h1>
-                    <p className="text-muted-foreground mt-1 font-medium italic">Control de ingresos, devoluciones y saldos a favor.</p>
-                </div>
-                <Button
-                    className="rounded-2xl font-bold uppercase text-xs tracking-widest h-12 shadow-lg shadow-primary/20"
-                    onClick={fetchFinances}
-                >
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    Actualizar Datos
-                </Button>
-            </div>
-
-            {/* KPI Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card className="border-none shadow-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white overflow-hidden relative">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
-                        <DollarSign size={80} />
-                    </div>
-                    <CardContent className="p-6">
-                        <p className="text-xs font-black uppercase tracking-[0.2em] opacity-80">Facturación Total</p>
-                        <h3 className="text-3xl font-black mt-2">
-                            ${(stats?.totalRevenue || 0).toLocaleString()}
-                        </h3>
-                        <div className="flex items-center gap-2 mt-4 text-xs font-bold bg-white/20 w-fit px-2 py-1 rounded-lg">
-                            <ArrowUpRight size={14} />
-                            <span>Ingresos Brutos</span>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-none shadow-xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 relative overflow-hidden">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Crédito Pendiente</p>
-                            <Wallet className="text-primary" size={20} />
-                        </div>
-                        <h3 className="text-3xl font-black text-slate-900 dark:text-white">
-                            ${(stats?.totalCreditLiability || 0).toLocaleString()}
-                        </h3>
-                        <p className="text-[10px] text-muted-foreground mt-2 font-medium">Deuda en saldos a favor para clientes.</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-none shadow-xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 relative overflow-hidden">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Devoluciones</p>
-                            <RotateCcw className="text-rose-500" size={20} />
-                        </div>
-                        <h3 className="text-3xl font-black text-slate-900 dark:text-white">
-                            ${(stats?.totalReturnsAmount || 0).toLocaleString()}
-                        </h3>
-                        <p className="text-[10px] text-rose-500 mt-2 font-bold">{stats?.returnsCount || 0} productos devueltos.</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-none shadow-xl bg-slate-900 text-white relative overflow-hidden">
-                    <div className="absolute -bottom-4 -right-4 h-24 w-24 bg-primary/20 rounded-full blur-2xl" />
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <p className="text-xs font-black uppercase tracking-[0.2em] opacity-80">Retención Rate</p>
-                            <TrendingUp className="text-primary" size={20} />
-                        </div>
-                        <h3 className="text-3xl font-black mb-2 italic">
-                            94.2%
-                        </h3>
-                        <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-primary rounded-full" style={{ width: '94.2%' }} />
-                        </div>
-                    </CardContent>
-                </Card>
+        <div className="space-y-8 pb-8">
+            <div>
+                <h1 className="text-4xl font-black italic uppercase tracking-tighter text-slate-900 dark:text-white">
+                    Finanzas <span className="text-red-500">Tienda</span>
+                </h1>
+                <p className="text-muted-foreground mt-1 font-medium italic">Control estricto de egresos y costos operativos.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Customers with Credit */}
-                <Card className="lg:col-span-2 border-none shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                    <CardHeader className="border-b border-slate-50 dark:border-slate-800 px-8 py-8">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div>
-                                <CardTitle className="text-xl font-black uppercase italic tracking-tight flex items-center gap-2">
-                                    <Users className="text-primary" size={24} />
-                                    Cartera de Clientes (Saldos)
-                                </CardTitle>
-                                <CardDescription className="font-medium">Clientes con saldo a favor activo en su cuenta.</CardDescription>
-                            </div>
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                {/* Formulario de Registro */}
+                <Card className="shadow-xl bg-white dark:bg-slate-900 h-fit">
+                    <CardHeader>
+                        <CardTitle className="text-xl font-black uppercase italic tracking-tight flex items-center gap-2">
+                            <PlusCircle className="text-primary" />
+                            Registrar Egreso
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleCreateExpense} className="space-y-4">
+                            {error && (
+                                <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium flex items-center gap-2">
+                                    <AlertCircle size={16} />
+                                    {error}
+                                </div>
+                            )}
+
+                            <div className="space-y-2">
+                                <Label>Monto ($)</Label>
                                 <Input
-                                    placeholder="Buscar por cliente..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10 h-11 w-full md:w-64 rounded-xl border-2"
+                                    type="number"
+                                    step="0.01"
+                                    min="0.1"
+                                    required
+                                    value={amount}
+                                    onChange={e => setAmount(e.target.value)}
+                                    placeholder="Ej. 150.00"
                                 />
                             </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-slate-50/50 dark:bg-slate-800/50">
-                                    <TableHead className="px-8 font-black uppercase text-[10px] tracking-widest h-14">Cliente</TableHead>
-                                    <TableHead className="font-black uppercase text-[10px] tracking-widest h-14">Email</TableHead>
-                                    <TableHead className="font-black uppercase text-[10px] tracking-widest h-14 text-right">Saldo a Favor</TableHead>
-                                    <TableHead className="px-8 font-black uppercase text-[10px] tracking-widest h-14 text-right">Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {topCustomersByCredit?.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-12 text-muted-foreground font-medium italic">
-                                            No hay clientes con saldo pendiente.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : topCustomersByCredit?.filter((c: any) =>
-                                    (c.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                    (c.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-                                ).map((customer: any) => (
-                                    <TableRow key={customer.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                        <TableCell className="px-8 font-black italic tracking-tight">{customer.full_name || 'Sin Nombre'}</TableCell>
-                                        <TableCell className="text-slate-500 font-medium text-xs">{customer.email}</TableCell>
-                                        <TableCell className="text-right">
-                                            <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 font-black px-3 py-1 text-sm border-none shadow-sm h-8 rounded-lg">
-                                                ${Number(customer.store_credit).toLocaleString()}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="px-8 text-right">
-                                            <Button variant="outline" size="sm" className="rounded-xl border-2 font-black uppercase text-[10px] tracking-widest h-9" asChild>
-                                                <a href={`/admin/customers?search=${customer.email}`}>Ver CRM</a>
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+
+                            <div className="space-y-2">
+                                <Label>Descripción</Label>
+                                <Input
+                                    required
+                                    value={description}
+                                    onChange={e => setDescription(e.target.value)}
+                                    placeholder="Ej. Cajas de envío, Publicidad"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Categoría</Label>
+                                <select
+                                    value={category}
+                                    onChange={e => setCategory(e.target.value)}
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <option value="Operativo">Operativo</option>
+                                    <option value="Inventario">Inventario</option>
+                                    <option value="Marketing">Marketing</option>
+                                    <option value="Logística">Logística</option>
+                                    <option value="Servicios">Servicios (Suscripciones, Hosting)</option>
+                                </select>
+                            </div>
+
+                            <Button type="submit" disabled={submitting} className="w-full font-bold uppercase tracking-widest rounded-xl">
+                                {submitting ? <Loader2 className="animate-spin mr-2" /> : 'Registrar'}
+                            </Button>
+                        </form>
                     </CardContent>
                 </Card>
 
-                {/* Audit Trail / History */}
-                <Card className="border-none shadow-xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 rounded-[2.5rem]">
-                    <CardHeader>
-                        <CardTitle className="text-lg font-black uppercase italic tracking-tight flex items-center gap-2">
-                            <History className="text-primary" size={20} />
-                            Auditoría de Fondos
-                        </CardTitle>
-                        <CardDescription className="text-xs">Últimos movimientos de crédito.</CardDescription>
+                {/* Lista de Egresos */}
+                <Card className="lg:col-span-2 shadow-xl bg-white dark:bg-slate-900">
+                    <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+                        <div>
+                            <CardTitle className="text-xl font-black uppercase italic tracking-tight">Historial de Salidas</CardTitle>
+                            <CardDescription>
+                                Total egresado: <span className="font-bold text-red-500">${totalEgresos.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </CardDescription>
+                        </div>
+                        <TrendingDown className="text-red-500" />
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                        {recentMovements?.length === 0 ? (
-                            <div className="py-12 text-center text-muted-foreground italic text-xs font-medium">
-                                No hay movimientos registrados.
+                    <CardContent className="p-0">
+                        {loading ? (
+                            <div className="flex justify-center py-12">
+                                <Loader2 className="animate-spin text-muted-foreground" />
                             </div>
-                        ) : recentMovements?.map((move: any) => (
-                            <div key={move.id} className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group hover:border-primary/20 transition-all">
-                                <div className={cn(
-                                    "mt-1 h-8 w-8 rounded-full flex items-center justify-center shrink-0",
-                                    Number(move.amount) > 0 ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"
-                                )}>
-                                    {Number(move.amount) > 0 ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-                                </div>
-                                <div className="flex-1 space-y-1 min-w-0">
-                                    <div className="flex justify-between items-center">
-                                        <p className="font-black text-[11px] uppercase tracking-tight truncate pr-2">
-                                            {move.profiles?.full_name || move.profiles?.email || 'Sistema'}
-                                        </p>
-                                        <span className={cn(
-                                            "font-black text-xs",
-                                            Number(move.amount) > 0 ? "text-emerald-600" : "text-rose-600"
-                                        )}>
-                                            {Number(move.amount) > 0 ? '+' : ''}{Number(move.amount).toLocaleString()}
-                                        </span>
-                                    </div>
-                                    <p className="text-[10px] text-muted-foreground font-medium italic line-clamp-2">
-                                        {move.reason || 'Sin descripción'}
-                                    </p>
-                                    <div className="flex justify-between items-center pt-1">
-                                        <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest px-1.5 h-4 border-slate-200">
-                                            {move.type === 'return' ? 'Devolución' : move.type === 'purchase' ? 'Gasto' : 'Ajuste'}
-                                        </Badge>
-                                        <span className="text-[8px] font-bold text-slate-400 capitalize">
-                                            {new Date(move.created_at).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                </div>
+                        ) : expenses.length === 0 ? (
+                            <div className="text-center py-12 text-muted-foreground italic">
+                                No hay egresos registrados.
                             </div>
-                        ))}
+                        ) : (
+                            <div className="divide-y max-h-[500px] overflow-y-auto">
+                                {expenses.map(expense => (
+                                    <div key={expense.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <div>
+                                            <div className="font-bold">{expense.description}</div>
+                                            <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
+                                                <span className="bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-full">{expense.category}</span>
+                                                <span>•</span>
+                                                {new Date(expense.expense_date).toLocaleDateString()}
+                                                <span>•</span>
+                                                {expense.profiles?.full_name || expense.profiles?.email?.split('@')[0] || 'Admin'}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <span className="font-black text-red-500">-${Number(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-500 hover:bg-red-50" onClick={() => handleDelete(expense.id)}>
+                                                <Trash2 size={16} />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
