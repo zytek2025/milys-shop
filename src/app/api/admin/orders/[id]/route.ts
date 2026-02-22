@@ -81,7 +81,7 @@ export async function PATCH(
                         ? Number(currentOrder.total) / Number(rate)
                         : Number(currentOrder.total);
 
-                    await adminSupabase.from('finance_transactions').insert({
+                    const { error: txError } = await adminSupabase.from('finance_transactions').insert({
                         account_id: finance_data.account_id,
                         category_id: finance_data.category_id,
                         order_id: id,
@@ -93,6 +93,12 @@ export async function PATCH(
                         description: finance_data.description || `Pago verificado: Pedido #${id.slice(0, 8)}`,
                         created_by: currentUser?.id
                     });
+
+                    if (txError) {
+                        console.error('Finance transaction error:', txError);
+                    } else {
+                        console.log('Finance transaction recorded successfully for order:', id);
+                    }
                 }
             }
         }
