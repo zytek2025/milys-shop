@@ -148,7 +148,7 @@ export default function AdminOrdersPage() {
         }
     };
 
-    const handleVerifyPayment = async (orderId: string, confirmationId: string, status: 'verified' | 'rejected', accountId?: string) => {
+    const handleVerifyPayment = async (orderId: string, confirmationId: string, status: 'approved' | 'rejected', accountId?: string) => {
         setVerifyingPaymentId(confirmationId);
         try {
             const res = await fetch(`/api/admin/orders/${orderId}/verify-payment`, {
@@ -162,7 +162,7 @@ export default function AdminOrdersPage() {
             });
 
             if (res.ok) {
-                toast.success(status === 'verified' ? 'Pago verificado y registrado' : 'Pago rechazado');
+                toast.success(status === 'approved' ? 'Pago verificado y registrado' : 'Pago rechazado');
                 fetchPaymentProofs(orderId);
                 refreshOrder();
             } else {
@@ -992,7 +992,7 @@ export default function AdminOrdersPage() {
                                             {paymentProofs.map((proof) => (
                                                 <div key={proof.id} className={cn(
                                                     "p-5 rounded-3xl border-2 transition-all space-y-4",
-                                                    proof.status === 'verified' ? "border-emerald-100 bg-emerald-50/20" :
+                                                    proof.status === 'approved' ? "border-emerald-100 bg-emerald-50/20" :
                                                         proof.status === 'rejected' ? "border-rose-100 bg-rose-50/20" :
                                                             "border-amber-100 bg-amber-50/20 shadow-lg shadow-amber-500/5"
                                                 )}>
@@ -1000,7 +1000,7 @@ export default function AdminOrdersPage() {
                                                         <div className="flex items-center gap-3">
                                                             <div className={cn(
                                                                 "p-2 rounded-xl",
-                                                                proof.status === 'verified' ? "bg-emerald-100 text-emerald-600" :
+                                                                proof.status === 'approved' ? "bg-emerald-100 text-emerald-600" :
                                                                     proof.status === 'rejected' ? "bg-rose-100 text-rose-600" :
                                                                         "bg-amber-100 text-amber-600"
                                                             )}>
@@ -1013,19 +1013,25 @@ export default function AdminOrdersPage() {
                                                         </div>
                                                         <Badge className={cn(
                                                             "rounded-lg font-black italic text-[10px] uppercase",
-                                                            proof.status === 'verified' ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" :
+                                                            proof.status === 'approved' ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" :
                                                                 proof.status === 'rejected' ? "bg-rose-100 text-rose-700 hover:bg-rose-100" :
                                                                     "bg-amber-100 text-amber-700 hover:bg-amber-100"
                                                         )}>
                                                             {proof.status === 'pending' ? 'Pendiente' :
-                                                                proof.status === 'verified' ? 'Verificado' : 'Rechazado'}
+                                                                proof.status === 'approved' ? 'Verificado' : 'Rechazado'}
                                                         </Badge>
                                                     </div>
 
-                                                    <div className="grid grid-cols-2 gap-4 bg-white dark:bg-slate-900/50 p-4 rounded-2xl border">
+                                                    <div className="grid grid-cols-3 gap-4 bg-white dark:bg-slate-900/50 p-4 rounded-2xl border">
                                                         <div>
                                                             <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Monto Informado</p>
                                                             <p className="font-black text-lg text-primary">${proof.amount_paid.toFixed(2)}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Cuenta Destino</p>
+                                                            <p className="text-sm font-bold truncate" title={proof.finance_accounts?.name || 'No especificada'}>
+                                                                {proof.finance_accounts?.name || 'No especificada'}
+                                                            </p>
                                                         </div>
                                                         <div>
                                                             <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Fecha de Registro</p>
@@ -1049,7 +1055,7 @@ export default function AdminOrdersPage() {
                                                                 <div className="space-y-2">
                                                                     <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Cuenta de Destino</Label>
                                                                     <Select
-                                                                        value={selectedAccountId}
+                                                                        value={selectedAccountId || proof.account_id}
                                                                         onValueChange={setSelectedAccountId}
                                                                     >
                                                                         <SelectTrigger className="rounded-xl h-10 text-xs">
@@ -1068,8 +1074,8 @@ export default function AdminOrdersPage() {
                                                                     <Button
                                                                         size="sm"
                                                                         className="flex-1 h-9 bg-emerald-600 hover:bg-emerald-700 text-white font-black italic text-[10px] uppercase rounded-xl gap-2 shadow-lg shadow-emerald-500/20"
-                                                                        onClick={() => handleVerifyPayment(selectedOrder.id, proof.id, 'verified', selectedAccountId)}
-                                                                        disabled={!selectedAccountId || verifyingPaymentId === proof.id}
+                                                                        onClick={() => handleVerifyPayment(selectedOrder.id, proof.id, 'approved', selectedAccountId || proof.account_id)}
+                                                                        disabled={!(selectedAccountId || proof.account_id) || verifyingPaymentId === proof.id}
                                                                     >
                                                                         {verifyingPaymentId === proof.id ? <Loader2 size={14} className="animate-spin" /> : 'Aprobar'}
                                                                     </Button>

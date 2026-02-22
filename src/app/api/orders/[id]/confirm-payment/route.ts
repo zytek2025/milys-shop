@@ -40,7 +40,8 @@ export async function POST(
                 reference_number: reference,
                 amount_paid: amount,
                 screenshot_url,
-                status: 'pending'
+                status: 'pending',
+                account_id: account_id || null
             })
             .select()
             .single();
@@ -89,7 +90,13 @@ export async function GET(
     try {
         let query = supabase
             .from('payment_confirmations')
-            .select('*')
+            .select(`
+                    *,
+                    finance_accounts (
+                        name,
+                        currency
+                    )
+                `)
             .eq('order_id', orderId);
 
         if (user) {

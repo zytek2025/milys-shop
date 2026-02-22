@@ -305,6 +305,13 @@ export function PaymentConfirmationForm({ orderId, total, onSuccess }: PaymentCo
                                 </p>
                             </div>
 
+                            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl space-y-2 border border-slate-100 dark:border-slate-800">
+                                <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Política de Devolución</h4>
+                                <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 italic leading-tight">
+                                    Solo se permiten cambios por otros productos. Si el nuevo artículo es de menor valor, la diferencia se acreditará a tu cuenta como saldo a favor.
+                                </p>
+                            </div>
+
                             <Button
                                 type="submit"
                                 disabled={isSubmitting}
