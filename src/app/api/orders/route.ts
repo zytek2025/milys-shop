@@ -134,7 +134,6 @@ export async function POST(request: NextRequest) {
       if (user && usedCredit > 0) {
         const { data: currentP } = await supabase.from('profiles').select('store_credit').eq('id', user.id).single();
         await supabase.from('profiles').update({ store_credit: (currentP?.store_credit || 0) + usedCredit }).eq('id', user.id);
-        // Note: History ideally should be deleted or marked as reverted.
       }
       return NextResponse.json({ error: orderError.message }, { status: 500 });
     }
@@ -156,65 +155,62 @@ export async function POST(request: NextRequest) {
       .insert(orderItems);
 
     if (itemsError) {
-      // ... existing error handling
       await supabase.from('orders').delete().eq('id', order.id);
-      // Also revert credit
-      if (usedCredit > 0) {
-        // ... existing credit reversion
-      }
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
     }
 
-    // 4. Update Stock & Log Movements
-    // We log to stock_movements (preferred), or fallback to direct update if table/trigger is missing.
-    for (const item of orderItems) {
-      try {
+    // 4. Update Stock & Log Movements (USE ADMIN CLIENT)
+    try {
+      const { createAdminClient } = await import('@/lib/supabase/server');
+      const adminClient = await createAdminClient();
+
+      for (const item of orderItems) {
+        if (item.on_request) continue; // Skip stock deduction for "on request" items
+
         if (item.variant_id) {
           // 1. Try to record movement (Trigger tr_update_stock_on_movement will deduct stock)
-          const { error: moveError } = await supabase.from('stock_movements').insert({
+          const { error: moveError } = await adminClient.from('stock_movements').insert({
             variant_id: item.variant_id,
             quantity: -item.quantity,
             type: 'order',
-            reason: `Pedido #${order.id.slice(0, 8)}`,
+            reason: `Pedido #${order.control_id || order.id.slice(0, 8)}`,
             created_by: user?.id || null
           });
 
-          // 2. Fallback: If movement fails (likely missing table), do a direct update on variant
+          // 2. Fallback: If movement fails or trigger is missing, do a direct update
           if (moveError) {
-            const { data: v } = await supabase.from('product_variants').select('stock').eq('id', item.variant_id).single();
+            const { data: v } = await adminClient.from('product_variants').select('stock').eq('id', item.variant_id).single();
             if (v) {
-              await supabase.from('product_variants').update({ stock: v.stock - item.quantity }).eq('id', item.variant_id);
+              await adminClient.from('product_variants').update({ stock: v.stock - item.quantity }).eq('id', item.variant_id);
             }
           }
         } else if (item.product_id) {
-          // Simple products
-          const { data: vars } = await supabase.from('product_variants').select('id, stock').eq('product_id', item.product_id).limit(1);
+          // Simple products logic with Admin Client
+          const { data: vars } = await adminClient.from('product_variants').select('id, stock').eq('product_id', item.product_id).limit(1);
           let variant = vars?.[0];
 
           if (!variant) {
-            // Direct product update
-            const { data: p } = await supabase.from('products').select('stock').eq('id', item.product_id).single();
+            const { data: p } = await adminClient.from('products').select('stock').eq('id', item.product_id).single();
             if (p) {
-              await supabase.from('products').update({ stock: p.stock - item.quantity }).eq('id', item.product_id);
+              await adminClient.from('products').update({ stock: p.stock - item.quantity }).eq('id', item.product_id);
             }
           } else {
-            // Try movement first
-            const { error: moveError } = await supabase.from('stock_movements').insert({
+            const { error: moveError } = await adminClient.from('stock_movements').insert({
               variant_id: variant.id,
               quantity: -item.quantity,
               type: 'order',
-              reason: `Pedido #${order.id.slice(0, 8)}`,
+              reason: `Pedido #${order.control_id || order.id.slice(0, 8)}`,
               created_by: user?.id || null
             });
 
             if (moveError) {
-              await supabase.from('product_variants').update({ stock: variant.stock - item.quantity }).eq('id', variant.id);
+              await adminClient.from('product_variants').update({ stock: variant.stock - item.quantity }).eq('id', variant.id);
             }
           }
         }
-      } catch (stockErr) {
-        console.error(`Failed to update stock/log for item ${item.product_name}:`, stockErr);
       }
+    } catch (stockErr) {
+      console.error('Critical Error in Admin Stock Sync:', stockErr);
     }
 
     // 4. Fetch Payment Method Details for Notification
