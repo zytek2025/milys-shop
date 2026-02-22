@@ -433,8 +433,8 @@ export default function AdminOrdersPage() {
                                                                 size="sm"
                                                                 className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold italic text-[10px] uppercase rounded-lg shadow-lg shadow-emerald-500/20 gap-2"
                                                                 onClick={() => {
-                                                                    setPaymentTargetOrderId(order.id);
-                                                                    setIsPaymentDialogOpen(true);
+                                                                    setSelectedOrder(order);
+                                                                    setIsDetailsOpen(true);
                                                                 }}
                                                                 disabled={processingOrders.has(order.id)}
                                                             >
@@ -1060,7 +1060,7 @@ export default function AdminOrdersPage() {
                                                                 <div className="space-y-2">
                                                                     <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Cuenta de Destino</Label>
                                                                     <Select
-                                                                        value={selectedAccountId || proof.account_id}
+                                                                        value={selectedAccountId || proof.account_id || ''}
                                                                         onValueChange={setSelectedAccountId}
                                                                     >
                                                                         <SelectTrigger className="rounded-xl h-10 text-xs">
@@ -1074,6 +1074,11 @@ export default function AdminOrdersPage() {
                                                                             ))}
                                                                         </SelectContent>
                                                                     </Select>
+                                                                    {proof.account_id && (
+                                                                        <p className="text-[9px] text-emerald-600 font-bold italic uppercase">
+                                                                            ✓ Cuenta pre-seleccionada por el cliente
+                                                                        </p>
+                                                                    )}
                                                                 </div>
                                                                 <div className="flex gap-2">
                                                                     <Button
@@ -1082,7 +1087,7 @@ export default function AdminOrdersPage() {
                                                                         onClick={() => handleVerifyPayment(selectedOrder.id, proof.id, 'approved', selectedAccountId || proof.account_id)}
                                                                         disabled={!(selectedAccountId || proof.account_id) || verifyingPaymentId === proof.id}
                                                                     >
-                                                                        {verifyingPaymentId === proof.id ? <Loader2 size={14} className="animate-spin" /> : 'Aprobar'}
+                                                                        {verifyingPaymentId === proof.id ? <Loader2 size={14} className="animate-spin" /> : 'Aprobar Pago'}
                                                                     </Button>
                                                                     <Button
                                                                         size="sm"
