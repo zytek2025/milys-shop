@@ -32,7 +32,7 @@ export function StoreSettingsProvider({ children }: { children: React.ReactNode 
 
     const settings = {
         store_country: data?.store_country || 'VE',
-        currency_symbol: data?.currency_symbol || '$',
+        currency_symbol: data?.currency_symbol || (data?.store_country === 'US' ? '$' : 'Bs'),
         exchange_rate: Number(data?.exchange_rate ?? 60.0),
         isLoading
     };

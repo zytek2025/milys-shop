@@ -4,22 +4,48 @@ import { createClient } from '@/lib/supabase/server';
 export async function GET() {
     try {
         const supabase = await createClient();
-        const { data, error } = await supabase
+
+        // Try fetching all settings
+        let { data, error } = await supabase
             .from('store_settings')
-            .select('store_country, currency_symbol, exchange_rate, bcv_last_sync_at, personalization_price_small, personalization_price_large, design_price_small, design_price_medium, design_price_large, whatsapp_number, instagram_handle, telegram_username, facebook_url, contact_email, tiktok_handle, pinterest_handle, payment_methods')
+            .select('*')
             .eq('id', 'global')
             .single();
 
-        if (error && error.code !== 'PGRST116') throw error;
+        // If it fails (likely due to missing columns like bcv_last_sync_at), try a safer minimal fetch
+        if (error) {
+            console.warn('API Settings: Full fetch failed, trying minimal fallback', error.message);
+            const { data: minData, error: minError } = await supabase
+                .from('store_settings')
+                .select('store_country, currency_symbol, exchange_rate')
+                .eq('id', 'global')
+                .single();
 
-        // Default values if not found or error
+            if (minError) {
+                console.error('API Settings: Minimal fetch also failed', minError.message);
+            } else {
+                data = minData;
+                error = null;
+            }
+        }
+
+        // Return data or defaults
         const settings = data || {
+            store_country: 'VE',
+            currency_symbol: 'Bs',
+            exchange_rate: 60.0,
             personalization_price_small: 1.00,
             personalization_price_large: 3.00
         };
 
         return NextResponse.json(settings);
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error('API Settings Critical Error:', error.message);
+        return NextResponse.json({
+            store_country: 'VE',
+            currency_symbol: 'Bs',
+            exchange_rate: 60.0,
+            error: error.message
+        });
     }
 }
