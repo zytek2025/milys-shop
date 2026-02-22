@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge'; // Added import for Badge
 
 export function PaymentInstructions({ paymentMethodId, orderTotal = 0 }: { paymentMethodId?: string, orderTotal?: number }) {
+    const safeOrderTotal = orderTotal || 0;
     const [methods, setMethods] = useState<any[]>([]);
     const [copiedKey, setCopiedKey] = useState<string | null>(null);
 

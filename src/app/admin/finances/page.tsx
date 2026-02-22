@@ -76,7 +76,15 @@ export default function FinancesDashboard() {
 
     // Form States
     const [newAccount, setNewAccount] = useState({ name: '', type: 'bank', currency: 'USD', balance: '' });
+    const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+
     const [newTx, setNewTx] = useState({ account_id: '', category_id: '', amount: '', description: '', transaction_date: '' });
+
+    // Category management
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+    const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+    const [newCategory, setNewCategory] = useState({ name: '', type: 'income', icon: '' });
 
     useEffect(() => {
         setIsMounted(true);
@@ -124,11 +132,103 @@ export default function FinancesDashboard() {
             if (!res.ok) throw new Error('Error al crear cuenta');
             toast.success('Cuenta creada correctamente');
             setNewAccount({ name: '', type: 'bank', currency: 'USD', balance: '' });
+            setIsAccountModalOpen(false);
             fetchData();
         } catch (error: any) {
             toast.error(error.message);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleUpdateAccount = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingAccount) return;
+        setIsSubmitting(true);
+        try {
+            const res = await fetch('/api/admin/finances/accounts', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editingAccount)
+            });
+            if (!res.ok) throw new Error('Error al actualizar cuenta');
+            toast.success('Cuenta actualizada correctamente');
+            setEditingAccount(null);
+            setIsAccountModalOpen(false);
+            fetchData();
+        } catch (error: any) {
+            toast.error(error.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteAccount = async (id: string) => {
+        if (!confirm('¿Estás seguro de que deseas eliminar esta cuenta?')) return;
+        try {
+            const res = await fetch(`/api/admin/finances/accounts?id=${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al eliminar cuenta');
+            toast.success('Cuenta eliminada');
+            fetchData();
+        } catch (error: any) {
+            toast.error(error.message);
+        }
+    };
+
+    const handleCreateCategory = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const res = await fetch('/api/admin/finances/categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newCategory)
+            });
+            if (!res.ok) throw new Error('Error al crear categoría');
+            toast.success('Categoría creada');
+            setNewCategory({ name: '', type: 'income', icon: '' });
+            setIsCategoryModalOpen(false);
+            fetchData();
+        } catch (error: any) {
+            toast.error(error.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleUpdateCategory = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingCategory) return;
+        setIsSubmitting(true);
+        try {
+            const res = await fetch('/api/admin/finances/categories', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editingCategory)
+            });
+            if (!res.ok) throw new Error('Error al actualizar categoría');
+            toast.success('Categoría actualizada');
+            setEditingCategory(null);
+            setIsCategoryModalOpen(false);
+            fetchData();
+        } catch (error: any) {
+            toast.error(error.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteCategory = async (id: string) => {
+        if (!confirm('¿Estás seguro de que deseas eliminar esta categoría?')) return;
+        try {
+            const res = await fetch(`/api/admin/finances/categories?id=${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al eliminar categoría');
+            toast.success('Categoría eliminada');
+            fetchData();
+        } catch (error: any) {
+            toast.error(error.message);
         }
     };
 
@@ -471,23 +571,44 @@ export default function FinancesDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <Card className="md:col-span-1 shadow-xl border-none bg-white dark:bg-slate-900 rounded-3xl h-fit">
                             <CardHeader>
-                                <CardTitle className="text-xl font-black uppercase italic tracking-tight">Nueva Cuenta</CardTitle>
+                                <CardTitle className="text-xl font-black uppercase italic tracking-tight">Gestión de Cuenta</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <form onSubmit={handleCreateAccount} className="space-y-4">
+                                <form onSubmit={editingAccount ? handleUpdateAccount : handleCreateAccount} className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Nombre</Label>
+                                        <div className="flex justify-between items-center">
+                                            <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Nombre</Label>
+                                            {editingAccount && (
+                                                <Button
+                                                    type="button"
+                                                    variant="link"
+                                                    className="h-auto p-0 text-[10px] font-black uppercase text-red-500"
+                                                    onClick={() => setEditingAccount(null)}
+                                                >
+                                                    Cancelar Edición
+                                                </Button>
+                                            )}
+                                        </div>
                                         <Input
                                             required placeholder="Ej. Banesco"
                                             className="rounded-xl"
-                                            value={newAccount.name}
-                                            onChange={e => setNewAccount({ ...newAccount, name: e.target.value })}
+                                            value={editingAccount ? editingAccount.name : newAccount.name}
+                                            onChange={e => editingAccount
+                                                ? setEditingAccount({ ...editingAccount, name: e.target.value })
+                                                : setNewAccount({ ...newAccount, name: e.target.value })
+                                            }
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Tipo</Label>
-                                            <Select value={newAccount.type} onValueChange={v => setNewAccount({ ...newAccount, type: v as any })}>
+                                            <Select
+                                                value={editingAccount ? editingAccount.type : newAccount.type}
+                                                onValueChange={v => editingAccount
+                                                    ? setEditingAccount({ ...editingAccount, type: v as any })
+                                                    : setNewAccount({ ...newAccount, type: v as any })
+                                                }
+                                            >
                                                 <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                                                 <SelectContent className="rounded-xl">
                                                     <SelectItem value="bank">Banco</SelectItem>
@@ -499,7 +620,13 @@ export default function FinancesDashboard() {
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Moneda</Label>
-                                            <Select value={newAccount.currency} onValueChange={v => setNewAccount({ ...newAccount, currency: v })}>
+                                            <Select
+                                                value={editingAccount ? editingAccount.currency : newAccount.currency}
+                                                onValueChange={v => editingAccount
+                                                    ? setEditingAccount({ ...editingAccount, currency: v })
+                                                    : setNewAccount({ ...newAccount, currency: v })
+                                                }
+                                            >
                                                 <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                                                 <SelectContent className="rounded-xl">
                                                     <SelectItem value="USD">USD ($)</SelectItem>
@@ -509,16 +636,21 @@ export default function FinancesDashboard() {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Saldo Inicial</Label>
+                                        <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">
+                                            {editingAccount ? 'Ajustar Saldo' : 'Saldo Inicial'}
+                                        </Label>
                                         <Input
                                             type="number" step="0.01"
                                             className="rounded-xl font-bold"
-                                            value={newAccount.balance}
-                                            onChange={e => setNewAccount({ ...newAccount, balance: e.target.value })}
+                                            value={editingAccount ? editingAccount.balance : newAccount.balance}
+                                            onChange={e => editingAccount
+                                                ? setEditingAccount({ ...editingAccount, balance: Number(e.target.value) })
+                                                : setNewAccount({ ...newAccount, balance: e.target.value })
+                                            }
                                         />
                                     </div>
                                     <Button type="submit" disabled={isSubmitting} className="w-full rounded-xl font-black uppercase italic">
-                                        {isSubmitting ? <Loader2 className="animate-spin" /> : 'Guardar Cuenta'}
+                                        {isSubmitting ? <Loader2 className="animate-spin" /> : (editingAccount ? 'Actualizar Cuenta' : 'Guardar Cuenta')}
                                     </Button>
                                 </form>
                             </CardContent>
@@ -526,7 +658,7 @@ export default function FinancesDashboard() {
 
                         <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 h-fit">
                             {accounts.map(acc => (
-                                <Card key={acc.id} className="border-none shadow-lg bg-white dark:bg-slate-900 rounded-3xl overflow-hidden">
+                                <Card key={acc.id} className="border-none shadow-lg bg-white dark:bg-slate-900 rounded-3xl overflow-hidden group">
                                     <CardContent className="p-6">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-4">
@@ -541,14 +673,152 @@ export default function FinancesDashboard() {
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase">{acc.currency}</p>
                                                 </div>
                                             </div>
-                                            <div className="text-right">
+                                            <div className="flex flex-col items-end gap-2">
                                                 <p className="text-lg font-black">{acc.currency} {acc.balance.toLocaleString()}</p>
+                                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-8 w-8 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10"
+                                                        onClick={() => {
+                                                            setEditingAccount(acc);
+                                                        }}
+                                                    >
+                                                        <Settings2 size={14} />
+                                                    </Button>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50/50"
+                                                        onClick={() => handleDeleteAccount(acc.id)}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
                                     </CardContent>
                                 </Card>
                             ))}
                         </div>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="settings" className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Category Creation/Edit */}
+                        <Card className="shadow-xl border-none bg-white dark:bg-slate-900 rounded-3xl h-fit">
+                            <CardHeader>
+                                <CardTitle className="text-xl font-black uppercase italic tracking-tight">Gestión de Categorías</CardTitle>
+                                <CardDescription>Crea o modifica categorías de ingresos y egresos.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <form onSubmit={editingCategory ? handleUpdateCategory : handleCreateCategory} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Nombre</Label>
+                                        <Input
+                                            required placeholder="Ej. Ventas, Alquiler, Publicidad..."
+                                            className="rounded-xl"
+                                            value={editingCategory ? editingCategory.name : newCategory.name}
+                                            onChange={e => editingCategory
+                                                ? setEditingCategory({ ...editingCategory, name: e.target.value })
+                                                : setNewCategory({ ...newCategory, name: e.target.value })
+                                            }
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Tipo</Label>
+                                            <Select
+                                                value={editingCategory ? editingCategory.type : newCategory.type}
+                                                onValueChange={v => editingCategory
+                                                    ? setEditingCategory({ ...editingCategory, type: v as any })
+                                                    : setNewCategory({ ...newCategory, type: v as any })
+                                                }
+                                            >
+                                                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                                                <SelectContent className="rounded-xl">
+                                                    <SelectItem value="income">Ingreso</SelectItem>
+                                                    <SelectItem value="expense">Egreso</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Emoji / Icono</Label>
+                                            <Input
+                                                placeholder="Ej. 💰, 🛒, 🏢"
+                                                className="rounded-xl text-center text-xl"
+                                                value={editingCategory ? (editingCategory.icon || '') : newCategory.icon}
+                                                onChange={e => editingCategory
+                                                    ? setEditingCategory({ ...editingCategory, icon: e.target.value })
+                                                    : setNewCategory({ ...newCategory, icon: e.target.value })
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="pt-2 flex gap-2">
+                                        <Button type="submit" disabled={isSubmitting} className="flex-1 rounded-xl font-black uppercase italic">
+                                            {isSubmitting ? <Loader2 className="animate-spin" /> : (editingCategory ? 'Actualizar' : 'Crear Categoría')}
+                                        </Button>
+                                        {editingCategory && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="rounded-xl font-black uppercase italic"
+                                                onClick={() => setEditingCategory(null)}
+                                            >
+                                                Cancelar
+                                            </Button>
+                                        )}
+                                    </div>
+                                </form>
+                            </CardContent>
+                        </Card>
+
+                        {/* Category List */}
+                        <Card className="shadow-xl border-none bg-white dark:bg-slate-900 rounded-3xl">
+                            <CardHeader>
+                                <CardTitle className="text-xl font-black uppercase italic tracking-tight">Categorías Existentes</CardTitle>
+                            </CardHeader>
+                            <CardContent className="max-h-[500px] overflow-y-auto pl-2 pr-4 custom-scrollbar">
+                                <div className="space-y-2">
+                                    {categories.map(cat => (
+                                        <div key={cat.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 group">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-2xl">{cat.icon || '📁'}</span>
+                                                <div>
+                                                    <p className="text-sm font-black tracking-tight">{cat.name}</p>
+                                                    <p className={cn(
+                                                        "text-[10px] font-black uppercase tracking-widest",
+                                                        cat.type === 'income' ? "text-emerald-500" : "text-red-500"
+                                                    )}>
+                                                        {cat.type === 'income' ? 'Ingreso' : 'Egreso'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="h-8 w-8 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10"
+                                                    onClick={() => setEditingCategory(cat)}
+                                                >
+                                                    <Settings2 size={14} />
+                                                </Button>
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50/50"
+                                                    onClick={() => handleDeleteCategory(cat.id)}
+                                                >
+                                                    <Trash2 size={14} />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
                 </TabsContent>
             </Tabs>

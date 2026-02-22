@@ -41,6 +41,7 @@ interface PaymentMethod {
     icon: string;
     discount_percentage: number;
     is_discount_active: boolean;
+    account_id?: string;
 }
 
 const AVAILABLE_ICONS = [
@@ -59,6 +60,7 @@ export default function AdminSettingsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [accounts, setAccounts] = useState<any[]>([]);
     const [settings, setSettings] = useState<StoreSettings>({
         personalization_price_small: 1.00,
         personalization_price_large: 3.00,
@@ -82,7 +84,18 @@ export default function AdminSettingsPage() {
 
     useEffect(() => {
         fetchSettings();
+        fetchAccounts();
     }, []);
+
+    const fetchAccounts = async () => {
+        try {
+            const res = await fetch('/api/admin/finances/accounts');
+            const data = await res.json();
+            if (res.ok) setAccounts(data);
+        } catch (error) {
+            console.error('Error fetching accounts:', error);
+        }
+    };
 
     const fetchSettings = async () => {
         try {
@@ -339,14 +352,34 @@ export default function AdminSettingsPage() {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-4">
-                                                <div className="space-y-2">
-                                                    <Label className="text-[10px] font-black uppercase italic text-primary">Nombre del Método</Label>
-                                                    <Input
-                                                        value={method.name}
-                                                        onChange={(e) => updatePaymentMethod(method.id, { name: e.target.value })}
-                                                        placeholder="Ej: Binance (USDT), Pago Móvil..."
-                                                        className="h-11 bg-slate-50 border-none dark:bg-slate-900 font-bold"
-                                                    />
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] font-black uppercase italic text-primary">Nombre del Método</Label>
+                                                        <Input
+                                                            value={method.name}
+                                                            onChange={(e) => updatePaymentMethod(method.id, { name: e.target.value })}
+                                                            placeholder="Ej: Binance (USDT), Pago Móvil..."
+                                                            className="h-11 bg-slate-50 border-none dark:bg-slate-900 font-bold"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] font-black uppercase italic text-primary">Cuenta Destino (Libro Mayor)</Label>
+                                                        <Select
+                                                            value={method.account_id}
+                                                            onValueChange={(val) => updatePaymentMethod(method.id, { account_id: val })}
+                                                        >
+                                                            <SelectTrigger className="h-11 bg-slate-50 border-none dark:bg-slate-900 font-bold">
+                                                                <SelectValue placeholder="Seleccionar Cuenta" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {accounts.map(acc => (
+                                                                    <SelectItem key={acc.id} value={acc.id}>
+                                                                        {acc.name} ({acc.currency})
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-4">

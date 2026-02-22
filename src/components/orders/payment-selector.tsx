@@ -75,7 +75,7 @@ export function PaymentSelector({ onSelect, selectedId }: PaymentSelectorProps) 
                 </Badge>
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                 {methods.map((method) => {
                     const Icon = ICON_MAP[method.icon] || Landmark;
                     const isSelected = selectedId === method.id;
@@ -85,41 +85,36 @@ export function PaymentSelector({ onSelect, selectedId }: PaymentSelectorProps) 
                             key={method.id}
                             onClick={() => onSelect(method)}
                             className={cn(
-                                "relative p-4 cursor-pointer transition-all border-2 overflow-hidden group",
+                                "relative p-2 cursor-pointer transition-all border-2 overflow-hidden group min-h-[60px] flex flex-col items-center justify-center text-center",
                                 isSelected
-                                    ? "border-primary bg-primary/5 shadow-md shadow-primary/10"
+                                    ? "border-primary bg-primary/5 shadow-sm shadow-primary/10"
                                     : "border-slate-100 hover:border-primary/40 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900/50"
                             )}
                         >
-                            <div className="flex items-center gap-3">
-                                <div className={cn(
-                                    "p-2 rounded-lg transition-colors",
-                                    isSelected ? "bg-primary text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:text-primary"
-                                )}>
-                                    <Icon size={18} />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className={cn(
-                                        "text-sm font-black uppercase italic truncate tracking-tight leading-none",
-                                        isSelected ? "text-primary" : "text-slate-700 dark:text-slate-200"
-                                    )}>
-                                        {method.name}
-                                    </p>
-                                    {method.is_discount_active && method.discount_percentage > 0 && (
-                                        <div className="flex items-center gap-1 mt-1">
-                                            <Percent size={10} className="text-emerald-500" />
-                                            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">
-                                                -{method.discount_percentage}% ahorro
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                                {isSelected && (
-                                    <div className="bg-primary rounded-full p-0.5 text-white">
-                                        <Check size={12} />
-                                    </div>
-                                )}
+                            <div className={cn(
+                                "p-1.5 rounded-lg mb-1",
+                                isSelected ? "bg-primary text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:text-primary"
+                            )}>
+                                <Icon size={14} />
                             </div>
+                            <p className={cn(
+                                "text-[10px] font-black uppercase italic leading-tight tracking-tighter line-clamp-2",
+                                isSelected ? "text-primary" : "text-slate-700 dark:text-slate-200"
+                            )}>
+                                {method.name}
+                            </p>
+
+                            {method.is_discount_active && method.discount_percentage > 0 && (
+                                <div className="absolute top-0 right-0 bg-emerald-500 text-white px-1 py-0.5 rounded-bl-lg">
+                                    <span className="text-[7px] font-black italic">-{method.discount_percentage}%</span>
+                                </div>
+                            )}
+
+                            {isSelected && (
+                                <div className="absolute top-1 left-1 bg-primary rounded-full p-0.5 text-white">
+                                    <Check size={8} />
+                                </div>
+                            )}
                         </Card>
                     );
                 })}

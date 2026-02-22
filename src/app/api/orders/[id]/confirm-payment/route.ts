@@ -14,7 +14,7 @@ export async function POST(
 
     try {
         const body = await request.json();
-        const { reference, amount, screenshot_url } = body;
+        const { reference, amount, screenshot_url, account_id } = body;
 
         if (!reference || !amount || !screenshot_url) {
             return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
@@ -96,11 +96,11 @@ export async function GET(
             query = query.eq('user_id', user.id);
         }
 
-        const { data, error } = await query.maybeSingle();
+        const { data, error } = await query.order('created_at', { ascending: false });
 
         if (error) throw error;
 
-        return NextResponse.json(data);
+        return NextResponse.json(data || []);
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

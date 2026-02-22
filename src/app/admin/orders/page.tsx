@@ -59,11 +59,12 @@ export default function AdminOrdersPage() {
     const [editingItem, setEditingItem] = useState<{ id: string, price: string } | null>(null);
     const [editingMetadata, setEditingMetadata] = useState<string | null>(null);
     const [tempMetadata, setTempMetadata] = useState<any>(null);
-    const [paymentProof, setPaymentProof] = useState<any | null>(null);
+    const [paymentProofs, setPaymentProofs] = useState<any[]>([]);
     const [financeAccounts, setFinanceAccounts] = useState<any[]>([]);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
     const [paymentTargetOrderId, setPaymentTargetOrderId] = useState<string | null>(null);
     const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+    const [verifyingPaymentId, setVerifyingPaymentId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchOrders();
@@ -128,22 +129,50 @@ export default function AdminOrdersPage() {
 
     useEffect(() => {
         if (selectedOrder && isDetailsOpen) {
-            fetchPaymentProof(selectedOrder.id);
+            fetchPaymentProofs(selectedOrder.id);
         } else {
-            setPaymentProof(null);
+            setPaymentProofs([]);
             setEditingItem(null);
         }
     }, [selectedOrder, isDetailsOpen]);
 
-    const fetchPaymentProof = async (orderId: string) => {
+    const fetchPaymentProofs = async (orderId: string) => {
         try {
             const res = await fetch(`/api/orders/${orderId}/confirm-payment`);
             if (res.ok) {
                 const data = await res.json();
-                setPaymentProof(data);
+                setPaymentProofs(Array.isArray(data) ? data : (data ? [data] : []));
             }
         } catch (error) {
-            console.error('Error fetching payment proof:', error);
+            console.error('Error fetching payment proofs:', error);
+        }
+    };
+
+    const handleVerifyPayment = async (orderId: string, confirmationId: string, status: 'verified' | 'rejected', accountId?: string) => {
+        setVerifyingPaymentId(confirmationId);
+        try {
+            const res = await fetch(`/api/admin/orders/${orderId}/verify-payment`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    confirmation_id: confirmationId,
+                    status,
+                    account_id: accountId
+                }),
+            });
+
+            if (res.ok) {
+                toast.success(status === 'verified' ? 'Pago verificado y registrado' : 'Pago rechazado');
+                fetchPaymentProofs(orderId);
+                refreshOrder();
+            } else {
+                const data = await res.json();
+                toast.error(data.error || 'Error al procesar verificación');
+            }
+        } catch (error: any) {
+            toast.error(error.message || 'Error de conexión');
+        } finally {
+            setVerifyingPaymentId(null);
         }
     };
 
@@ -195,8 +224,8 @@ export default function AdminOrdersPage() {
 
     const refreshOrder = async () => {
         const updatedOrders = await fetch('/api/admin/orders').then(r => r.json());
-        setOrders(updatedOrders);
-        const updatedOrder = updatedOrders.find((o: any) => o.id === selectedOrder.id);
+        setOrders(Array.isArray(updatedOrders) ? updatedOrders : []);
+        const updatedOrder = updatedOrders.find((o: any) => o.id === selectedOrder?.id);
         if (updatedOrder) setSelectedOrder(updatedOrder);
     };
 
@@ -952,32 +981,113 @@ export default function AdminOrdersPage() {
                                     })}
                                 </div>
 
-                                {/* Payment Proof Section */}
-                                {paymentProof && (
-                                    <div className="mt-8 p-6 rounded-3xl border-2 border-emerald-100 bg-emerald-50/20 space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <h3 className="text-sm font-black uppercase italic tracking-tighter flex items-center gap-2 text-emerald-700">
-                                                <CheckCircle2 size={16} /> Comprobante de Pago Informado
-                                            </h3>
-                                            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
-                                                {paymentProof.status === 'pending' ? 'Pendiente Verificación' : 'Verificado'}
-                                            </Badge>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Referencia</p>
-                                                <p className="font-mono font-bold text-sm tracking-tighter">{paymentProof.reference_number}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Monto Informado</p>
-                                                <p className="font-bold text-sm text-emerald-700">${paymentProof.amount_paid.toFixed(2)}</p>
-                                            </div>
-                                        </div>
-                                        <div className="relative aspect-video rounded-2xl border bg-white overflow-hidden group cursor-pointer" onClick={() => window.open(paymentProof.screenshot_url, '_blank')}>
-                                            <img src={paymentProof.screenshot_url} className="w-full h-full object-contain" alt="Payment Proof" />
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
-                                                <span className="text-white text-xs font-black uppercase">Ver Imagen Completa</span>
-                                            </div>
+                                {/* Payment Proofs Section */}
+                                {paymentProofs.length > 0 && (
+                                    <div className="mt-8 space-y-4">
+                                        <h3 className="text-sm font-bold flex items-center gap-2">
+                                            <span className="w-1 h-3 bg-emerald-500 rounded-full"></span>
+                                            Pagos Informados ({paymentProofs.length})
+                                        </h3>
+                                        <div className="grid gap-4">
+                                            {paymentProofs.map((proof) => (
+                                                <div key={proof.id} className={cn(
+                                                    "p-5 rounded-3xl border-2 transition-all space-y-4",
+                                                    proof.status === 'verified' ? "border-emerald-100 bg-emerald-50/20" :
+                                                        proof.status === 'rejected' ? "border-rose-100 bg-rose-50/20" :
+                                                            "border-amber-100 bg-amber-50/20 shadow-lg shadow-amber-500/5"
+                                                )}>
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={cn(
+                                                                "p-2 rounded-xl",
+                                                                proof.status === 'verified' ? "bg-emerald-100 text-emerald-600" :
+                                                                    proof.status === 'rejected' ? "bg-rose-100 text-rose-600" :
+                                                                        "bg-amber-100 text-amber-600"
+                                                            )}>
+                                                                <Banknote size={16} />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Referencia</p>
+                                                                <p className="font-mono font-bold text-sm">{proof.reference_number}</p>
+                                                            </div>
+                                                        </div>
+                                                        <Badge className={cn(
+                                                            "rounded-lg font-black italic text-[10px] uppercase",
+                                                            proof.status === 'verified' ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" :
+                                                                proof.status === 'rejected' ? "bg-rose-100 text-rose-700 hover:bg-rose-100" :
+                                                                    "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                                                        )}>
+                                                            {proof.status === 'pending' ? 'Pendiente' :
+                                                                proof.status === 'verified' ? 'Verificado' : 'Rechazado'}
+                                                        </Badge>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-4 bg-white dark:bg-slate-900/50 p-4 rounded-2xl border">
+                                                        <div>
+                                                            <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Monto Informado</p>
+                                                            <p className="font-black text-lg text-primary">${proof.amount_paid.toFixed(2)}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Fecha de Registro</p>
+                                                            <p className="text-xs font-medium">{new Date(proof.created_at).toLocaleString()}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex gap-4 items-start">
+                                                        <div
+                                                            className="relative aspect-video w-48 rounded-2xl border bg-slate-100 overflow-hidden group cursor-pointer shrink-0"
+                                                            onClick={() => window.open(proof.screenshot_url, '_blank')}
+                                                        >
+                                                            <img src={proof.screenshot_url} className="w-full h-full object-contain" alt="Comprobante" />
+                                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <Eye className="text-white" size={20} />
+                                                            </div>
+                                                        </div>
+
+                                                        {proof.status === 'pending' && (
+                                                            <div className="grow space-y-4">
+                                                                <div className="space-y-2">
+                                                                    <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Cuenta de Destino</Label>
+                                                                    <Select
+                                                                        value={selectedAccountId}
+                                                                        onValueChange={setSelectedAccountId}
+                                                                    >
+                                                                        <SelectTrigger className="rounded-xl h-10 text-xs">
+                                                                            <SelectValue placeholder="Elegir cuenta..." />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent className="rounded-xl">
+                                                                            {financeAccounts.map((acc: any) => (
+                                                                                <SelectItem key={acc.id} value={acc.id} className="text-xs font-bold uppercase italic">
+                                                                                    {acc.name} ({acc.currency})
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                </div>
+                                                                <div className="flex gap-2">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        className="flex-1 h-9 bg-emerald-600 hover:bg-emerald-700 text-white font-black italic text-[10px] uppercase rounded-xl gap-2 shadow-lg shadow-emerald-500/20"
+                                                                        onClick={() => handleVerifyPayment(selectedOrder.id, proof.id, 'verified', selectedAccountId)}
+                                                                        disabled={!selectedAccountId || verifyingPaymentId === proof.id}
+                                                                    >
+                                                                        {verifyingPaymentId === proof.id ? <Loader2 size={14} className="animate-spin" /> : 'Aprobar'}
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        className="flex-1 h-9 border-rose-200 text-rose-600 hover:bg-rose-50 font-black italic text-[10px] uppercase rounded-xl"
+                                                                        onClick={() => handleVerifyPayment(selectedOrder.id, proof.id, 'rejected')}
+                                                                        disabled={verifyingPaymentId === proof.id}
+                                                                    >
+                                                                        Rechazar
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
@@ -1043,6 +1153,7 @@ export default function AdminOrdersPage() {
                     </div>
                 </DialogContent>
             </Dialog>
-        </div >
+        </div>
     );
 }
+
