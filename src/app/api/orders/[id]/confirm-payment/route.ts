@@ -106,6 +106,28 @@ export async function GET(
     } = await supabase.auth.getUser();
 
     try {
+        // Check if user is admin
+        let isAdmin = false;
+        if (user) {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            if (profile?.role === 'admin') {
+                isAdmin = true;
+            } else {
+                // Also check staff_users table
+                const { data: staff } = await supabase
+                    .from('staff_users')
+                    .select('id')
+                    .eq('email', user.email)
+                    .single();
+                if (staff) isAdmin = true;
+            }
+        }
+
         let query = supabase
             .from('payment_confirmations')
             .select(`
@@ -117,7 +139,8 @@ export async function GET(
                 `)
             .eq('order_id', orderId);
 
-        if (user) {
+        // Only filter by user_id for non-admin authenticated users
+        if (user && !isAdmin) {
             query = query.eq('user_id', user.id);
         }
 
