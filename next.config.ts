@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  serverExternalPackages: ['@supabase/supabase-js'],
+  serverExternalPackages: ['@supabase/supabase-js', '@supabase/ssr'],
 };
 
 export default nextConfig;
