@@ -30,6 +30,7 @@ export function PaymentConfirmationForm({ orderId, total, onSuccess }: PaymentCo
     const [showForm, setShowForm] = useState(false);
     const [methods, setMethods] = useState<any[]>([]);
     const [selectedMethodId, setSelectedMethodId] = useState<string>('');
+    const [exchangeRate, setExchangeRate] = useState<number>(1);
 
     useEffect(() => {
         fetchData();
@@ -47,14 +48,15 @@ export function PaymentConfirmationForm({ orderId, total, onSuccess }: PaymentCo
                 setExistingConfirmations([data]);
             }
 
-            // Fetch payment methods to get account_ids
+            // Fetch payment methods to get account_ids and currencies
             const settingsRes = await fetch('/api/settings');
             const settingsData = await settingsRes.json();
+            if (settingsData.exchange_rate) {
+                setExchangeRate(Number(settingsData.exchange_rate) || 1);
+            }
             if (settingsData.payment_methods) {
                 setMethods(settingsData.payment_methods);
-                if (settingsData.payment_methods.length > 0) {
-                    setSelectedMethodId(settingsData.payment_methods[0].id);
-                }
+                // Do not auto-select, force user to choose
             }
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -133,6 +135,14 @@ export function PaymentConfirmationForm({ orderId, total, onSuccess }: PaymentCo
 
     const totalReported = existingConfirmations.reduce((sum, c) => sum + (c.amount_paid || 0), 0);
     const isFullyReported = totalReported >= total && total > 0;
+
+    // Determine currency of selected method
+    const selectedMethod = methods.find(m => m.id === selectedMethodId);
+    const selectedCurrency = selectedMethod?.currency || 'USD';
+    const isLocalCurrency = selectedCurrency !== 'USD';
+    const displayTotal = isLocalCurrency ? total * exchangeRate : total;
+    const displayRemaining = isLocalCurrency ? (total - totalReported) * exchangeRate : (total - totalReported);
+    const currencyLabel = isLocalCurrency ? selectedCurrency : '$';
 
     if (isLoading) {
         return (
@@ -250,17 +260,39 @@ export function PaymentConfirmationForm({ orderId, total, onSuccess }: PaymentCo
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="amount" className="text-[10px] font-black uppercase italic">Monto ($)</Label>
+                                    <Label htmlFor="amount" className={cn(
+                                        "text-[10px] font-black uppercase italic transition-colors",
+                                        isLocalCurrency ? "text-emerald-600" : "text-slate-700"
+                                    )}>
+                                        Monto ({currencyLabel})
+                                    </Label>
                                     <Input
                                         id="amount"
                                         type="number"
                                         step="0.01"
-                                        placeholder={existingConfirmations.length > 0 ? (total - totalReported).toFixed(2) : total.toString()}
+                                        placeholder={(existingConfirmations.length > 0 ? displayRemaining : displayTotal).toFixed(2)}
                                         value={amount}
                                         onChange={(e) => setAmount(e.target.value)}
-                                        className="rounded-xl border-2 font-mono h-11"
+                                        className={cn(
+                                            "rounded-xl border-2 font-mono h-11 transition-all",
+                                            isLocalCurrency && "border-emerald-200 focus:border-emerald-500 bg-emerald-50/30"
+                                        )}
                                         required
                                     />
+                                    {isLocalCurrency ? (
+                                        <div className="flex flex-col gap-1">
+                                            <p className="text-[10px] text-emerald-700 font-black italic uppercase leading-none">
+                                                * Ingresa el monto exacto en {selectedCurrency}
+                                            </p>
+                                            <p className="text-[9px] text-muted-foreground font-bold italic">
+                                                Equivale a ${(parseFloat(amount || '0') / exchangeRate).toFixed(2)} USD (Tasa: {exchangeRate.toFixed(2)})
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <p className="text-[9px] text-muted-foreground font-bold italic">
+                                            Ingresa el monto pagado en Dólares ($)
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
