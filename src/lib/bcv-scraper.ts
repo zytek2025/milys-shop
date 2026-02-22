@@ -1,14 +1,11 @@
-import * as cheerio from 'cheerio';
-
 export async function fetchBcvExchangeRate(): Promise<number | null> {
     try {
-        const url = 'https://www.bcv.org.ve/';
+        // We use ve.dolarapi.com/v1/dolares/oficial which tracks the BCV rate reliably
+        // This avoids SSL certificate errors from bcv.org.ve and HTML parsing issues.
+        const url = 'https://ve.dolarapi.com/v1/dolares/oficial';
         const response = await fetch(url, {
             headers: {
-                // User Agent required to avoid 403 Forbidden or captchas from BCV
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                'Accept-Language': 'es-VE,es;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Accept': 'application/json',
                 'Cache-Control': 'no-cache',
                 'Pragma': 'no-cache',
             },
@@ -16,37 +13,22 @@ export async function fetchBcvExchangeRate(): Promise<number | null> {
         });
 
         if (!response.ok) {
-            console.error('[BCV Scraper] Failed to fetch:', response.status, response.statusText);
+            console.error('[BCV Scraper] Failed to fetch from DolarAPI:', response.status, response.statusText);
             return null;
         }
 
-        const html = await response.text();
-        const $ = cheerio.load(html);
+        const data = await response.json();
 
-        // Find the dollar container and extract text
-        const dolarContainer = $('#dolar');
-        if (!dolarContainer.length) {
-            console.error('[BCV Scraper] Could not find #dolar container in HTML');
-            return null;
+        if (data && data.promedio && typeof data.promedio === 'number') {
+            // The API returns the official average rate directly
+            return data.promedio;
         }
 
-        const rawText = dolarContainer.text().trim();
-        // Look for the number formatted as XX,XXXXXX (e.g., 50,123456)
-        const match = rawText.match(/([0-9]+,[0-9]+)/);
-
-        if (match && match[1]) {
-            const numStr = match[1].replace(',', '.');
-            const rate = parseFloat(numStr);
-            if (!isNaN(rate) && rate > 0) {
-                return rate;
-            }
-        }
-
-        console.error('[BCV Scraper] Could not parse numeric rate from text:', rawText);
+        console.error('[BCV Scraper] Invalid data format from DolarAPI:', data);
         return null;
 
     } catch (error) {
-        console.error('[BCV Scraper] Error during fetch/parse:', error);
-        return null;
+        console.error('[BCV Scraper] Error during fetch:', error);
+        return null; // Fallback happens gracefully in the caller
     }
 }
