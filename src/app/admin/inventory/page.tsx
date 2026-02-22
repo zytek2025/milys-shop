@@ -60,6 +60,7 @@ import {
 import { toast } from 'sonner';
 import { InventoryQuickAction } from '@/components/admin/inventory/InventoryQuickAction';
 import { InventoryStats } from '@/components/admin/inventory/InventoryStats';
+import { PrintButton } from '@/components/admin/shared/PrintButton';
 
 export default function InventoryPage() {
     const [variants, setVariants] = useState<any[]>([]);
@@ -313,7 +314,8 @@ export default function InventoryPage() {
                     </h1>
                     <p className="text-slate-500 font-medium italic">Gestión inteligente de stock y precios ERP.</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 no-print">
+                    <PrintButton label="Imprimir Stock" />
                     <Card className="bg-primary/5 border-primary/10 px-4 py-2 flex items-center gap-3 rounded-2xl">
                         <DollarSign className="text-primary w-5 h-5" />
                         <div>

@@ -69,8 +69,25 @@ export async function PATCH(
 
             // Optional: Automatically update order status if this is the first payment and it puts it in processing
             // For now, we'll let the admin handle order status manually or maybe we can auto-update if order is 'pending'
-            const { data: currentOrder } = await supabase.from('orders').select('status').eq('id', orderId).single();
-            if (currentOrder?.status === 'pending') {
+            // Optional: Automatically update order status if this is the first payment and it puts it in processing
+            const { data: currentOrder } = await supabase.from('orders').select('status, items:order_items(*)').eq('id', orderId).single();
+
+            if (currentOrder?.status === 'pending' || currentOrder?.status === 'quote') {
+                // If it was a quote, we MUST deduct stock now
+                if (currentOrder.status === 'quote') {
+                    for (const item of currentOrder.items) {
+                        if (item.variant_id) {
+                            await supabase.from('stock_movements').insert({
+                                variant_id: item.variant_id,
+                                quantity: -item.quantity,
+                                type: 'order',
+                                reason: `Pago de presupuesto #${orderId.slice(0, 8)}`,
+                                created_by: currentUser?.id
+                            });
+                        }
+                    }
+                }
+
                 await supabase.from('orders').update({ status: 'processing' }).eq('id', orderId);
             }
         }

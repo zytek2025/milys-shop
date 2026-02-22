@@ -16,7 +16,8 @@ import {
     TrendingUp,
     Palette,
     Plus,
-    Banknote
+    Banknote,
+    FileText
 } from 'lucide-react';
 import {
     Select,
@@ -48,6 +49,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { PrintButton } from '@/components/admin/shared/PrintButton';
+import { ReceiptDocument } from '@/components/admin/orders/ReceiptDocument';
+import { useStoreSettings } from '@/components/store-settings-provider';
 
 export default function AdminOrdersPage() {
     const [orders, setOrders] = useState<any[]>([]);
@@ -55,6 +59,8 @@ export default function AdminOrdersPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+    const storeSettings = useStoreSettings();
     const [processingOrders, setProcessingOrders] = useState<Set<string>>(new Set());
     const [editingItem, setEditingItem] = useState<{ id: string, price: string } | null>(null);
     const [editingMetadata, setEditingMetadata] = useState<string | null>(null);
@@ -307,9 +313,12 @@ export default function AdminOrdersPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">Seguimiento de Pedidos</h1>
-                <p className="text-muted-foreground">Gestiona los pedidos y estados de envío.</p>
+            <div className="flex items-center justify-between no-print">
+                <div>
+                    <h1 className="text-2xl font-black italic uppercase tracking-tighter">Seguimiento de Pedidos</h1>
+                    <p className="text-[10px] font-bold uppercase italic text-muted-foreground">Gestiona los pedidos y estados de envío.</p>
+                </div>
+                <PrintButton label="Imprimir Listado" />
             </div>
 
             <Card className="border-none shadow-sm">
@@ -591,6 +600,15 @@ export default function AdminOrdersPage() {
                             <Button
                                 variant="outline"
                                 size="sm"
+                                className="rounded-xl gap-2 font-bold uppercase text-[10px] text-blue-600 border-blue-100 bg-blue-50 hover:bg-blue-100"
+                                onClick={() => setIsReceiptOpen(true)}
+                            >
+                                <FileText size={14} />
+                                Emitir Recibo
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 className="rounded-xl gap-2 font-bold uppercase text-[10px]"
                                 onClick={() => window.print()}
                             >
@@ -598,6 +616,27 @@ export default function AdminOrdersPage() {
                             </Button>
                         </div>
                     </DialogHeader>
+
+                    {/* RECEIPT DIALOG (HIDDEN UNTIL TRIGGERED) */}
+                    <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
+                        <DialogContent className="sm:max-w-[800px] rounded-3xl p-0 overflow-hidden">
+                            <div className="p-6 border-b flex justify-between items-center no-print">
+                                <div>
+                                    <h3 className="font-black uppercase italic">Vista Previa del Recibo</h3>
+                                    <p className="text-xs text-slate-500">Documento profesional para el cliente.</p>
+                                </div>
+                                <Button
+                                    onClick={() => window.print()}
+                                    className="rounded-xl font-black uppercase italic tracking-widest gap-2"
+                                >
+                                    <Printer size={16} /> Imprimir Recibo
+                                </Button>
+                            </div>
+                            <div className="max-h-[80vh] overflow-y-auto">
+                                <ReceiptDocument order={selectedOrder} settings={storeSettings} />
+                            </div>
+                        </DialogContent>
+                    </Dialog>
 
                     {selectedOrder && (
                         <div className="space-y-6 py-4 print:p-0">

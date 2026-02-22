@@ -27,6 +27,7 @@ import {
 } from 'recharts';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { PrintButton } from '@/components/admin/shared/PrintButton';
 import { useStoreSettings } from '@/components/store-settings-provider';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -691,7 +692,8 @@ export default function FinancesDashboard() {
                         </TabsTrigger>
                     </TabsList>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 no-print">
+                        <PrintButton label="Imprimir Reporte" />
                         <Dialog open={isTransactionModalOpen} onOpenChange={setIsTransactionModalOpen}>
                             <DialogTrigger asChild>
                                 <Button

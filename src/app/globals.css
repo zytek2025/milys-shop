@@ -131,3 +131,70 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Universal Print Styles */
+@media print {
+
+  .no-print,
+  nav,
+  aside,
+  header:not(.report-header),
+  footer,
+  button:not(.print-only),
+  .ai-assistant-trigger,
+  [role="tablist"] {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .print-container {
+    padding: 20px !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  th,
+  td {
+    padding: 8px !important;
+    border: 1px solid #ddd !important;
+    font-size: 10pt !important;
+  }
+
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .report-header {
+    display: block !important;
+    margin-bottom: 30px;
+    border-bottom: 2px solid black;
+    padding-bottom: 10px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    color: black !important;
+  }
+}
+
+.report-header {
+  display: none;
+}

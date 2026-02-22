@@ -127,13 +127,79 @@ export async function GET(request: NextRequest) {
         else if (type === 'finances') {
             const { data: transactions, error } = await supabase
                 .from('finance_transactions')
-                .select('amount_usd_equivalent, type, category_id, transaction_date, finance_categories(name)')
+                .select('*, finance_categories(name), finance_accounts(name)')
                 .gte('transaction_date', startDate.toISOString())
                 .order('transaction_date', { ascending: true });
 
             if (error) throw error;
 
             return NextResponse.json({ transactions });
+        }
+        else if (type === 'inventory_full') {
+            const { data: products, error } = await supabase
+                .from('products')
+                .select('id, name, stock, price, category_id, finance_categories(name)')
+                .order('name', { ascending: true });
+
+            if (error) throw error;
+
+            return NextResponse.json({ products });
+        }
+        else if (type === 'orders_list') {
+            const statusParams = searchParams.get('status');
+            let query = supabase
+                .from('orders')
+                .select('id, customer_email, total, created_at, status, payment_method_id')
+                .gte('created_at', startDate.toISOString())
+                .order('created_at', { ascending: false });
+
+            if (statusParams && statusParams !== 'all') {
+                query = query.eq('status', statusParams);
+            }
+
+            const { data: orders, error } = await query;
+            if (error) throw error;
+
+            return NextResponse.json({ orders });
+        }
+        else if (type === 'sales_detailed') {
+            // Detailed sales metrics
+            const { data: orderItems, error: itemsError } = await supabase
+                .from('order_items')
+                .select('*, product_id, product_name, quantity, unit_price, orders!inner(status, created_at, customer_email)')
+                .gte('created_at', startDate.toISOString())
+                .in('orders.status', ['processing', 'shipped', 'completed']);
+
+            if (itemsError) throw itemsError;
+
+            // 1. Group by Product
+            const byProduct: Record<string, any> = {};
+            orderItems?.forEach(item => {
+                const id = item.product_id || 'unknown';
+                if (!byProduct[id]) byProduct[id] = { name: item.product_name, qty: 0, revenue: 0 };
+                byProduct[id].qty += item.quantity;
+                byProduct[id].revenue += item.quantity * item.unit_price;
+            });
+
+            // 2. Group by Customer
+            const byCustomer: Record<string, any> = {};
+            orderItems?.forEach(item => {
+                const email = item.orders.customer_email || 'Invitado';
+                if (!byCustomer[email]) byCustomer[email] = { qty: 0, revenue: 0, orders: new Set() };
+                byCustomer[email].qty += item.quantity;
+                byCustomer[email].revenue += item.quantity * item.unit_price;
+                byCustomer[email].orders.add(item.order_id);
+            });
+
+            return NextResponse.json({
+                products: Object.values(byProduct).sort((a, b) => b.revenue - a.revenue),
+                customers: Object.entries(byCustomer).map(([email, data]: [string, any]) => ({
+                    email,
+                    qty: data.qty,
+                    revenue: data.revenue,
+                    orderCount: data.orders.size
+                })).sort((a, b) => b.revenue - a.revenue)
+            });
         }
 
         return NextResponse.json({ error: 'Invalid report type' }, { status: 400 });

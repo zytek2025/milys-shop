@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Save, Loader2, Landmark, Smartphone, MessageSquareQuote, Type, Palette, Plus, Trash2, Globe, CreditCard, DollarSign, Wallet, Bitcoin, Zap, Info, RefreshCw } from 'lucide-react';
+import { Save, Loader2, Landmark, Smartphone, MessageSquareQuote, Type, Palette, Plus, Trash2, Globe, CreditCard, DollarSign, Wallet, Bitcoin, Zap, Info, RefreshCw, Database, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -396,20 +396,71 @@ export default function AdminSettingsPage() {
                 </Card>
 
                 {/* CRM Webhook */}
-                <Card className="border-2">
+                <Card className="border-2 shadow-sm border-slate-200 dark:border-slate-800">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-sm font-black uppercase italic tracking-tighter">
                             <MessageSquareQuote className="text-primary h-5 w-5" /> Integración CRM
                         </CardTitle>
-                        <CardDescription>URL del Webhook (n8n/Make) para notificar pedidos pagados.</CardDescription>
+                        <CardDescription className="text-[10px] font-bold uppercase italic">URL del Webhook (n8n/Make) para notificar pedidos pagados.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Input
                             placeholder="https://n8n.tuempresa.com/webhook/..."
                             value={settings.crm_webhook_url}
                             onChange={(e) => handleUpdateField('crm_webhook_url', e.target.value)}
-                            className="font-mono text-sm bg-slate-50 dark:bg-slate-900 border-none h-12"
+                            className="font-mono text-sm bg-slate-50 dark:bg-slate-900 border-none h-12 rounded-xl"
                         />
+                    </CardContent>
+                </Card>
+
+                {/* System Backup Section */}
+                <Card className="bg-white/50 dark:bg-slate-900/50 border-border/50 shadow-sm border-2 overflow-hidden">
+                    <CardHeader className="bg-slate-50/50 dark:bg-slate-900/10 border-b">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-amber-500/10 rounded-lg">
+                                <Database className="h-5 w-5 text-amber-500" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-sm font-black uppercase italic tracking-tighter">Respaldo y Seguridad</CardTitle>
+                                <CardDescription className="text-[10px] font-bold uppercase italic">Descarga una copia completa de la base de datos.</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black uppercase italic">Copia de Seguridad Global</p>
+                                <p className="text-[9px] font-bold italic opacity-60">Incluye: Pedidos, Inventario, Finanzas, Clientes y Ajustes.</p>
+                            </div>
+                            <Button
+                                variant="outline"
+                                className="w-full sm:w-auto rounded-xl gap-2 font-black uppercase italic text-[10px] border-amber-500/20 hover:bg-amber-500 hover:text-white transition-all shadow-sm"
+                                onClick={async () => {
+                                    const t = toast.loading("Generando respaldo del sistema...");
+                                    try {
+                                        const res = await fetch('/api/admin/backup');
+                                        if (res.ok) {
+                                            const blob = await res.blob();
+                                            const url = window.URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = `mily_shop_backup_${new Date().toISOString().split('T')[0]}.json`;
+                                            document.body.appendChild(a);
+                                            a.click();
+                                            window.URL.revokeObjectURL(url);
+                                            toast.success("Respaldo descargado correctamente", { id: t });
+                                        } else {
+                                            throw new Error("Error en el servidor");
+                                        }
+                                    } catch (error) {
+                                        toast.error("Error al generar el respaldo", { id: t });
+                                    }
+                                }}
+                            >
+                                <Download className="h-4 w-4" />
+                                Descargar JSON
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

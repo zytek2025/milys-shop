@@ -15,7 +15,16 @@ export async function PATCH(
         const { data: { user: currentUser } } = await supabase.auth.getUser();
 
         const body = await request.json();
-        const { status, finance_data } = body; // finance_data: { account_id, category_id, description? }
+        const {
+            status,
+            finance_data,
+            items,
+            total,
+            customer_name,
+            customer_email,
+            customer_phone,
+            shipping_address
+        } = body;
 
         // Use Admin Client to bypass RLS for administrative updates
         const adminSupabase = await createAdminClient();
@@ -31,16 +40,42 @@ export async function PATCH(
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
 
-        // 2. Update order status
+        // 2. Update order
+        const updatePayload: any = { updated_at: new Date().toISOString() };
+        if (status) updatePayload.status = status;
+        if (total !== undefined) updatePayload.total = total;
+        if (customer_name !== undefined) updatePayload.customer_name = customer_name;
+        if (customer_email !== undefined) updatePayload.customer_email = customer_email;
+        if (customer_phone !== undefined) updatePayload.customer_phone = customer_phone;
+        if (shipping_address !== undefined) updatePayload.shipping_address = shipping_address;
+
         const { data: updatedOrder, error } = await adminSupabase
             .from('orders')
-            .update({
-                status,
-                updated_at: new Date().toISOString()
-            })
+            .update(updatePayload)
             .eq('id', id)
             .select()
             .maybeSingle();
+
+        // 2.1 If items are provided and it's modifying a quote, replace items
+        if (items && Array.isArray(items) && currentOrder.status === 'quote') {
+            // Delete old items
+            await adminSupabase.from('order_items').delete().eq('order_id', id);
+
+            // Insert new items
+            const newOrderItems = items.map((item: any) => ({
+                order_id: id,
+                product_id: item.product_id,
+                variant_id: item.variant_id,
+                product_name: item.product_name,
+                quantity: item.quantity,
+                price: item.price,
+                custom_metadata: item.custom_metadata || [],
+                on_request: item.on_request || false
+            }));
+
+            const { error: itemsError } = await adminSupabase.from('order_items').insert(newOrderItems);
+            if (itemsError) console.error('Error updating quote items:', itemsError);
+        }
 
         if (error) {
             console.error('Update order error:', error);
@@ -99,6 +134,22 @@ export async function PATCH(
                     } else {
                         console.log('Finance transaction recorded successfully for order:', id);
                     }
+                }
+            }
+        }
+
+        // 2.7 Handle transition from 'quote' to 'pending' or 'processing' (Stock deduction)
+        if (currentOrder.status === 'quote' && (status === 'pending' || status === 'processing')) {
+            for (const item of currentOrder.items) {
+                // If it was a quote, most items are typically 'on_request', but we should deduct stock now
+                if (item.variant_id) {
+                    await adminSupabase.from('stock_movements').insert({
+                        variant_id: item.variant_id,
+                        quantity: -item.quantity,
+                        type: 'order',
+                        reason: `Conversión de presupuesto #${id.slice(0, 8)}`,
+                        created_by: currentUser?.id
+                    });
                 }
             }
         }
@@ -198,6 +249,48 @@ export async function PATCH(
 
         return NextResponse.json(updatedOrder);
     } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        if (!(await isAdmin())) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+        }
+
+        const adminSupabase = await createAdminClient();
+
+        // Ensure it's a quote before deleting to prevent accidental order deletion
+        const { data: currentOrder } = await adminSupabase
+            .from('orders')
+            .select('status')
+            .eq('id', id)
+            .single();
+
+        if (!currentOrder) {
+            return NextResponse.json({ error: 'Order/Quote not found' }, { status: 404 });
+        }
+
+        if (currentOrder.status !== 'quote') {
+            return NextResponse.json({ error: 'Solo se pueden eliminar presupuestos (status: quote)' }, { status: 400 });
+        }
+
+        // Delete order items first (though cascade might handle this, it's safer)
+        await adminSupabase.from('order_items').delete().eq('order_id', id);
+
+        // Delete the quote
+        const { error } = await adminSupabase.from('orders').delete().eq('id', id);
+
+        if (error) throw error;
+
+        return NextResponse.json({ success: true, message: 'Presupuesto eliminado correctamente' });
+    } catch (error: any) {
+        console.error('Delete quote error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
