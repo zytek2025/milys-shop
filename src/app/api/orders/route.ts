@@ -166,39 +166,50 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Update Stock & Log Movements
-    // We log to stock_movements, which triggers the automated stock deduction.
-    // This ensures consistency between history and actual stock.
+    // We log to stock_movements (preferred), or fallback to direct update if table/trigger is missing.
     for (const item of orderItems) {
       try {
         if (item.variant_id) {
-          // Record movement (Trigger tr_update_stock_on_movement will deduct stock)
-          await supabase.from('stock_movements').insert({
+          // 1. Try to record movement (Trigger tr_update_stock_on_movement will deduct stock)
+          const { error: moveError } = await supabase.from('stock_movements').insert({
             variant_id: item.variant_id,
             quantity: -item.quantity,
             type: 'order',
             reason: `Pedido #${order.id.slice(0, 8)}`,
             created_by: user?.id || null
           });
-        } else if (item.product_id) {
-          // Simple products also need stock deduction
-          // We'll try to find or create a default variant to log the movement
-          const { data: vars } = await supabase.from('product_variants').select('id').eq('product_id', item.product_id).limit(1);
-          let v_id = vars?.[0]?.id;
 
-          if (!v_id) {
-            // Fallback: If no variant, do a direct product update as before
+          // 2. Fallback: If movement fails (likely missing table), do a direct update on variant
+          if (moveError) {
+            const { data: v } = await supabase.from('product_variants').select('stock').eq('id', item.variant_id).single();
+            if (v) {
+              await supabase.from('product_variants').update({ stock: v.stock - item.quantity }).eq('id', item.variant_id);
+            }
+          }
+        } else if (item.product_id) {
+          // Simple products
+          const { data: vars } = await supabase.from('product_variants').select('id, stock').eq('product_id', item.product_id).limit(1);
+          let variant = vars?.[0];
+
+          if (!variant) {
+            // Direct product update
             const { data: p } = await supabase.from('products').select('stock').eq('id', item.product_id).single();
             if (p) {
               await supabase.from('products').update({ stock: p.stock - item.quantity }).eq('id', item.product_id);
             }
           } else {
-            await supabase.from('stock_movements').insert({
-              variant_id: v_id,
+            // Try movement first
+            const { error: moveError } = await supabase.from('stock_movements').insert({
+              variant_id: variant.id,
               quantity: -item.quantity,
               type: 'order',
               reason: `Pedido #${order.id.slice(0, 8)}`,
               created_by: user?.id || null
             });
+
+            if (moveError) {
+              await supabase.from('product_variants').update({ stock: variant.stock - item.quantity }).eq('id', variant.id);
+            }
           }
         }
       } catch (stockErr) {

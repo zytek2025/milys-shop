@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Check, Info, Plus, X, Search, Palette, Tags, Loader2 } from 'lucide-react';
+import { ShoppingCart, Check, Info, Plus, Minus, X, Search, Palette, Tags, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAddToCart } from '@/hooks/use-cart';
@@ -76,6 +76,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     const [customTextSize, setCustomTextSize] = useState<'small' | 'large'>('small');
     const [customTextLocation, setCustomTextLocation] = useState('Frente Centro');
     const [storeSettings, setStoreSettings] = useState<any>(null);
+    const [quantity, setQuantity] = useState(1);
 
     // State for garment options
     const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -112,12 +113,23 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 setDesigns(dData);
                 setCategories(cData);
                 setStoreSettings(sData);
+
+                // Auto-selection logic for single options
+                const variantsArr = product.variants as Variant[] || [];
+                const colors = Array.from(new Set(variantsArr.map(v => v.color)));
+                if (colors.length === 1) {
+                    setSelectedColor(colors[0]);
+                    const sizes = variantsArr.filter(v => v.color === colors[0]).map(v => v.size);
+                    if (sizes.length === 1) {
+                        setSelectedSize(sizes[0]);
+                    }
+                }
             } catch (error) {
                 console.error('Error fetching initial data:', error);
             }
         };
         loadInitialData();
-    }, []);
+    }, [product.variants]);
 
     const designLocations = [
         'Frente Centro',
@@ -192,7 +204,8 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
         customTextSize === 'small' ? 1.00 : 3.00
     ) : 0;
 
-    const totalPrice = garmentPrice + designsPrice + personalizationPrice;
+    const currentStock = hasVariants ? (activeVariant?.stock || 0) : (product.stock || 0);
+    const totalPrice = (garmentPrice + designsPrice + personalizationPrice) * quantity;
 
     const toggleDesign = (design: Design) => {
         setSelectedDesigns(prev => {
@@ -298,6 +311,12 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     const handleAddToCart = async () => {
         if (hasVariants && !activeVariant) return;
 
+        // Check stock limit only for non-upload (standard) products
+        if (designMode === 'gallery' && currentStock > 0 && quantity > currentStock) {
+            toast.error(`Lo sentimos, solo hay ${currentStock} unidades disponibles.`);
+            return;
+        }
+
         setIsAdding(true);
 
         try {
@@ -336,11 +355,9 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 };
             } else {
                 // Logic for Standard Gallery Designs
-                const isOutOfStock = activeVariant ? activeVariant.stock <= 0 : (product.stock <= 0);
-
                 customMetadata = {
                     ...customMetadata,
-                    on_request: isOutOfStock,
+                    on_request: false,
                     designs: selectedDesigns.map(d => ({
                         id: d.id,
                         name: d.name,
@@ -354,7 +371,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
             // Common Add to Cart
             await addToCart.mutateAsync({
                 productId: product.id,
-                quantity: 1,
+                quantity: quantity,
                 // @ts-ignore
                 variantId: activeVariant?.id || null,
                 // @ts-ignore
@@ -365,12 +382,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 toast.success('Solicitud añadida al carrito');
                 toast.info('Se calculará el presupuesto final en base a tu diseño.');
             } else {
-                const isOutOfStock = activeVariant ? activeVariant.stock <= 0 : (product.stock <= 0);
-                if (isOutOfStock) {
-                    toast.success('Añadido al carrito (Sujeto a disponibilidad)');
-                } else {
-                    toast.success('¡Añadido al carrito!');
-                }
+                toast.success('¡Añadido al carrito!');
             }
 
             // Cleanup
@@ -407,7 +419,6 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                             <PriceDisplay amount={totalPrice} />
                         )}
                     </span>
-                    {designMode === 'gallery' && <span className="text-xs font-sans font-bold uppercase tracking-[0.2em] text-slate-400">USD</span>}
                 </div>
                 {(selectedDesigns.length > 0 || customText) && designMode === 'gallery' && (
                     <p className="text-[10px] font-sans font-medium text-slate-400 uppercase tracking-widest">
@@ -833,14 +844,88 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 </div>
             )}
 
+            {/* Step 5: Quantity */}
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-500 delay-300">
+                <div className="flex items-center justify-between">
+                    <SectionLabel label={isCustomizable ? "Paso final: Cantidad" : (hasVariants ? "Paso final: Cantidad" : "Paso 1: Cantidad")} />
+                    {(currentStock > 0) ? (
+                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            {currentStock} Disponibles
+                        </span>
+                    ) : (
+                        <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                            Bajo Pedido
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center border-2 border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900 overflow-hidden h-14">
+                        <button
+                            type="button"
+                            className="w-14 h-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                            disabled={quantity <= 1}
+                        >
+                            <Minus className="w-4 h-4" />
+                        </button>
+                        <input
+                            type="number"
+                            min="1"
+                            max={designMode === 'upload' ? 99 : Math.max(1, currentStock)}
+                            value={quantity || ''}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '') {
+                                    // @ts-ignore allowing temporary empty state for typing
+                                    setQuantity('');
+                                    return;
+                                }
+                                const num = parseInt(val);
+                                if (!isNaN(num)) {
+                                    setQuantity(num);
+                                }
+                            }}
+                            onBlur={(e) => {
+                                let val = parseInt(e.target.value);
+                                if (isNaN(val) || val < 1) val = 1;
+                                const maxAllowed = designMode === 'upload' ? 99 : Math.max(1, currentStock);
+                                if (val > maxAllowed) val = maxAllowed;
+                                setQuantity(val);
+                            }}
+                            className="w-20 h-full flex items-center justify-center font-black text-center text-lg bg-white dark:bg-slate-950 border-x-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-primary focus:z-10 appearance-none pointer-events-auto [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
+                        <button
+                            type="button"
+                            className="w-14 h-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+                            onClick={() => setQuantity(q => designMode === 'upload' ? Math.min(99, q + 1) : Math.min(Math.max(1, currentStock), q + 1))}
+                            disabled={designMode === 'upload' ? quantity >= 99 : quantity >= currentStock}
+                        >
+                            <Plus className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
 
-
+                {/* Info message about budgets when limits are hit */}
+                {designMode === 'gallery' && currentStock > 0 && quantity >= currentStock && (
+                    <div className="p-3 bg-slate-50 border border-slate-100 dark:bg-slate-900/50 dark:border-slate-800 rounded-xl flex items-start gap-2 animate-in fade-in zoom-in duration-300">
+                        <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase italic leading-tight">
+                                Has alcanzado el límite de stock.
+                            </p>
+                            <p className="text-[10px] text-slate-500 font-medium">
+                                Si deseas adquirir una cantidad mayor a la disponible, por favor <span className="text-primary font-bold cursor-pointer underline underline-offset-2" onClick={() => window.open(`https://wa.me/${storeSettings?.whatsapp_number?.replace(/\D/g, '') || '584241234567'}?text=${encodeURIComponent(`Hola! Quiero solicitar un presupuesto para una cantidad mayor del producto: ${product.name}`)}`, '_blank')}>contáctanos para solicitar una cotización</span>.
+                            </p>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Final Action */}
             <div className="pt-6 border-t border-slate-100 dark:border-slate-900">
                 <Button
                     className="w-full h-16 rounded-2xl text-xl font-black italic shadow-2xl shadow-primary/30 gap-4 uppercase tracking-tighter hover:scale-[1.02] active:scale-95 transition-all"
-                    disabled={isAdding}
+                    disabled={isAdding || (designMode === 'gallery' && currentStock <= 0)}
                     onClick={handleAddToCart}
                 >
                     {isAdding ? (
@@ -848,12 +933,12 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                     ) : (
                         <ShoppingCart className="w-7 h-7" />
                     )}
-                    {!activeVariant
+                    {hasVariants && !activeVariant
                         ? 'Completa los pasos'
                         : designMode === 'upload'
                             ? 'Solicitar Presupuesto'
-                            : activeVariant.stock <= 0
-                                ? 'Reservar Bajo Pedido'
+                            : currentStock <= 0
+                                ? 'Agotado'
                                 : 'Personalizar y Comprar'}
                 </Button>
             </div>

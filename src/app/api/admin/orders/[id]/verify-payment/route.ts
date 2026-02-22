@@ -40,8 +40,8 @@ export async function PATCH(
 
         if (updateError) throw updateError;
 
-        // 3. If verified, create finance transaction
-        if (status === 'verified' && account_id) {
+        // 3. If approved, create finance transaction
+        if (status === 'approved' && account_id) {
             // Fetch order total and current rate
             const { data: order } = await supabase.from('orders').select('total').eq('id', orderId).single();
             const { data: settings } = await supabase.from('store_settings').select('exchange_rate').eq('id', 'global').single();

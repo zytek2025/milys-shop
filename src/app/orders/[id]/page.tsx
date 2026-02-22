@@ -38,6 +38,15 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
         notFound();
     }
 
+    const supabase = await createClient();
+    const { data: settings } = await supabase
+        .from('store_settings')
+        .select('whatsapp_number')
+        .eq('id', 'global')
+        .single();
+
+    const whatsappNumber = settings?.whatsapp_number?.replace(/\D/g, '') || "584241234567";
+
     const statusMap: Record<string, { label: string, color: string }> = {
         'pending': { label: 'Pendiente de Pago', color: 'bg-amber-100 text-amber-700 border-amber-200' },
         'evaluating': { label: 'En Verificación', color: 'bg-blue-100 text-blue-700 border-blue-200' },
@@ -154,7 +163,7 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
                                         </p>
                                     </div>
                                     <Button className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 font-bold uppercase italic text-[10px]" asChild>
-                                        <a href={`https://wa.me/584241234567?text=Hola! Quiero consultar sobre mi presupuesto ${order.id.split('-')[0]}`} target="_blank">
+                                        <a href={`https://wa.me/${whatsappNumber}?text=Hola! Quiero consultar sobre mi presupuesto ${order.id.split('-')[0]}`} target="_blank">
                                             Consultar por WhatsApp
                                         </a>
                                     </Button>
@@ -231,7 +240,7 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
                             </CardHeader>
                             <CardContent>
                                 <Button variant="outline" className="w-full rounded-xl border-2 font-bold uppercase italic text-xs h-12" asChild>
-                                    <a href={`https://wa.me/584241234567?text=Hola! Tengo una duda sobre mi pedido ${order.id.split('-')[0]}`} target="_blank">
+                                    <a href={`https://wa.me/${whatsappNumber}?text=Hola! Tengo una duda sobre mi pedido ${order.id.split('-')[0]}`} target="_blank">
                                         Contactar Soporte
                                     </a>
                                 </Button>

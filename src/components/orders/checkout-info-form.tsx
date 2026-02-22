@@ -114,6 +114,13 @@ export function CheckoutInfoForm({ onSuccess, onCancel }: CheckoutInfoFormProps)
                     )}
                 />
 
+                <div className="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Política de Devolución</p>
+                    <p className="text-[11px] text-muted-foreground leading-tight italic font-medium">
+                        Solo se permiten cambios por otros productos. Si el nuevo artículo es de menor valor, la diferencia se acreditará a tu cuenta como saldo a favor.
+                    </p>
+                </div>
+
                 <div className="flex gap-3 pt-2">
                     <Button
                         type="button"

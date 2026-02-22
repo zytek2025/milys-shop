@@ -114,7 +114,7 @@ export function ProductCard({ product, promotion }: ProductCardProps) {
             <div className="flex items-center justify-between gap-4">
               <div className="flex flex-col">
                 <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${totalStock > 0 ? 'text-emerald-600' : 'text-amber-500'}`}>
-                  {totalStock > 0 ? 'Disponible' : 'Bajo Pedido'}
+                  {totalStock > 0 ? `Disponibles: ${totalStock}` : 'Bajo Pedido'}
                 </span>
               </div>
 

@@ -16,7 +16,8 @@ import {
     Menu,
     RotateCcw,
     Settings as SettingsIcon,
-    DollarSign
+    DollarSign,
+    BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -114,6 +115,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { label: 'Categorías de Logos', icon: Layers, href: '/admin/design-categories', requiredPermission: 'can_manage_designs' },
         { label: 'Categorías de Productos', icon: Layers, href: '/admin/categories', requiredPermission: 'can_manage_prices' },
         { label: 'Pedidos', icon: ShoppingBag, href: '/admin/orders', requiredPermission: 'can_view_metrics' },
+        { label: 'Informes', icon: BarChart3, href: '/admin/reports', requiredPermission: 'can_view_metrics' },
         { label: 'Devoluciones', icon: RotateCcw, href: '/admin/returns', requiredPermission: 'can_view_metrics' },
         { label: 'Clientes', icon: Users, href: '/admin/customers', requiredPermission: 'can_manage_users' },
         { label: 'Gestión de Usuarios', icon: Users, href: '/admin/users', requiredPermission: 'can_manage_users' },

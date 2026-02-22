@@ -38,6 +38,28 @@ export async function GET() {
             personalization_price_large: 3.00
         };
 
+        // Inject currency into payment methods
+        if (settings.payment_methods && Array.isArray(settings.payment_methods)) {
+            try {
+                // Using admin client to read finance_accounts safely
+                const { createAdminClient } = await import('@/lib/supabase/server');
+                const adminClient = await createAdminClient();
+                const { data: accounts } = await adminClient.from('finance_accounts').select('id, currency');
+
+                if (accounts) {
+                    settings.payment_methods = settings.payment_methods.map((pm: any) => {
+                        const account = accounts.find(a => a.id === pm.account_id);
+                        return {
+                            ...pm,
+                            currency: account?.currency || 'USD'
+                        };
+                    });
+                }
+            } catch (err) {
+                console.error('API Settings: Could not inject payment method currencies', err);
+            }
+        }
+
         return NextResponse.json(settings);
     } catch (error: any) {
         console.error('API Settings Critical Error:', error.message);

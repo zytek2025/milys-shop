@@ -138,7 +138,20 @@ export function PaymentConfirmationForm({ orderId, total, onSuccess }: PaymentCo
 
     // Determine currency of selected method
     const selectedMethod = methods.find(m => m.id === selectedMethodId);
-    const selectedCurrency = selectedMethod?.currency || 'USD';
+    let selectedCurrency = selectedMethod?.currency || 'USD';
+
+    // Heuristic: If it says "pago movil", "bs", or "ves" in the name, it's likely Bolívares
+    const nameLower = selectedMethod?.name?.toLowerCase() || '';
+    if (selectedCurrency === 'USD' && (
+        nameLower.includes('pago movil') ||
+        nameLower.includes('bolivar') ||
+        nameLower.includes(' bs') ||
+        nameLower.endsWith(' bs') ||
+        nameLower.includes('ves')
+    )) {
+        selectedCurrency = 'Bs';
+    }
+
     const isLocalCurrency = selectedCurrency !== 'USD';
     const displayTotal = isLocalCurrency ? total * exchangeRate : total;
     const displayRemaining = isLocalCurrency ? (total - totalReported) * exchangeRate : (total - totalReported);

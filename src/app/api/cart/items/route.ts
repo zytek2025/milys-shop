@@ -50,6 +50,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Variant not found' }, { status: 404 });
       }
       activeVariant = variant;
+      if (vError || !variant) {
+        return NextResponse.json({ error: 'Variant not found' }, { status: 404 });
+      }
+      activeVariant = variant;
       const isOnRequest = customMetadata?.on_request === true;
       if (variant.stock < quantity && !isOnRequest) {
         return NextResponse.json({ error: 'Insufficient variant stock' }, { status: 400 });
