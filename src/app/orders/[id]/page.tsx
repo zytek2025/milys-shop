@@ -108,9 +108,9 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
                                 <div className="bg-slate-50 dark:bg-slate-900/50 p-6 space-y-2">
                                     <div className="flex justify-between text-xs font-bold uppercase italic text-muted-foreground">
                                         <span>Subtotal</span>
-                                        <PriceDisplay amount={order.total + (order.payment_discount_amount || 0)} />
+                                        <PriceDisplay amount={(order.total || 0) + (order.payment_discount_amount || 0)} />
                                     </div>
-                                    {order.payment_discount_amount > 0 && (
+                                    {(order.payment_discount_amount || 0) > 0 && (
                                         <div className="flex justify-between text-xs font-black uppercase italic text-primary">
                                             <span>Descuento por método de pago</span>
                                             <span>-${order.payment_discount_amount.toFixed(2)}</span>
@@ -185,10 +185,6 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
                                     <Button
                                         variant="outline"
                                         className="w-full rounded-xl border-2 font-bold uppercase italic text-xs h-10 gap-2 mb-2"
-                                        onClick={() => {
-                                            const element = document.getElementById('payment-info-section');
-                                            if (element) element.scrollIntoView({ behavior: 'smooth' });
-                                        }}
                                         asChild
                                     >
                                         <Link href={`/orders/${order.id}#payment-info`}>
