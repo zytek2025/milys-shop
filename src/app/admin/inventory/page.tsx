@@ -231,13 +231,13 @@ export default function InventoryPage() {
                 const cost = field === 'cost' ? parseFloat(val) : parseFloat(item.cost);
                 const util = field === 'utility' ? parseFloat(val) : parseFloat(item.utility);
                 if (!isNaN(cost) && !isNaN(util)) {
-                    updated.price = cost * (1 + util / 100);
+                    updated.price = parseFloat((cost * (1 + util / 100)).toFixed(2));
                 }
             } else if (field === 'price') {
                 const price = parseFloat(val);
                 const cost = parseFloat(item.cost);
                 if (!isNaN(price) && !isNaN(cost) && cost > 0) {
-                    updated.utility = ((price / cost) - 1) * 100;
+                    updated.utility = parseFloat((((price / cost) - 1) * 100).toFixed(2));
                 }
             }
             return updated;
@@ -463,7 +463,8 @@ export default function InventoryPage() {
                                                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">$</span>
                                                                     <Input
                                                                         type="number"
-                                                                        value={item.price.toFixed(2)}
+                                                                        step="0.01"
+                                                                        value={item.price}
                                                                         onChange={(e) => updateItemField(item.id, 'price', e.target.value)}
                                                                         className="h-10 pl-7 font-black border-primary/20 rounded-xl focus:ring-0 bg-primary/5 text-primary"
                                                                     />
