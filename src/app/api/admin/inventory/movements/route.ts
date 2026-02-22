@@ -111,25 +111,41 @@ export async function POST(request: NextRequest) {
 
         if (insertError) throw insertError;
 
-        // 3. Update Product/Variant Price & Cost if requested (usually for Entries)
+        // 3. Update Product & ALL Variants Price & Cost if requested (usually for Entries)
         if (update_price && unit_price > 0) {
-            const updatePayload: any = {
-                price_override: unit_price,
-                last_unit_cost: unit_cost,
-                last_utility_percentage: utility_percentage
-            };
+            // Determine the product_id if we only have variant_id
+            let targetProductId = product_id;
+            if (!targetProductId && variant_id) {
+                const { data: vData } = await supabase
+                    .from('product_variants')
+                    .select('product_id')
+                    .eq('id', variant_id)
+                    .single();
+                targetProductId = vData?.product_id;
+            }
 
-            if (variant_id) {
-                // Update variant override
-                await supabase.from('product_variants').update(updatePayload).eq('id', variant_id);
-            } else if (product_id) {
-                // Update base product price and cost
+            if (targetProductId) {
+                const updatePayload = {
+                    price_override: unit_price,
+                    last_unit_cost: unit_cost,
+                    last_utility_percentage: utility_percentage
+                };
+
                 const productPayload = {
                     price: unit_price,
                     last_unit_cost: unit_cost,
                     last_utility_percentage: utility_percentage
                 };
-                await supabase.from('products').update(productPayload).eq('id', product_id);
+
+                // Perform updates in parallel
+                await Promise.all([
+                    // 1. Update the base product
+                    supabase.from('products').update(productPayload).eq('id', targetProductId),
+                    // 2. Update ALL variants of this product to match the new global price/cost
+                    supabase.from('product_variants').update(updatePayload).eq('product_id', targetProductId)
+                ]);
+
+                console.log(`Unified Pricing: Updated product ${targetProductId} and all its variants to price ${unit_price}`);
             }
         }
 
