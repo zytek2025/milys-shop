@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Save, Loader2, Landmark, Smartphone, MessageSquareQuote, Type, Palette, Plus, Trash2, Globe, CreditCard, DollarSign, Wallet, Bitcoin, Zap, Info } from 'lucide-react';
+import { Save, Loader2, Landmark, Smartphone, MessageSquareQuote, Type, Palette, Plus, Trash2, Globe, CreditCard, DollarSign, Wallet, Bitcoin, Zap, Info, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -31,6 +31,7 @@ interface StoreSettings {
     store_country?: string;
     currency_symbol?: string;
     exchange_rate?: number;
+    bcv_last_sync_at?: string;
 }
 
 interface PaymentMethod {
@@ -57,6 +58,7 @@ export default function AdminSettingsPage() {
     const queryClient = useQueryClient();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
     const [settings, setSettings] = useState<StoreSettings>({
         personalization_price_small: 1.00,
         personalization_price_large: 3.00,
@@ -105,7 +107,8 @@ export default function AdminSettingsPage() {
                     payment_methods: data.payment_methods || [],
                     store_country: data.store_country || 'VE',
                     currency_symbol: data.currency_symbol || '$',
-                    exchange_rate: Number(data.exchange_rate ?? 60.0)
+                    exchange_rate: Number(data.exchange_rate ?? 60.0),
+                    bcv_last_sync_at: data.bcv_last_sync_at || undefined
                 });
             } else {
                 toast.error(data.error || 'Error al cargar ajustes');
@@ -156,6 +159,30 @@ export default function AdminSettingsPage() {
             toast.error('Error de conexión');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleBcvSync = async () => {
+        setIsSyncing(true);
+        try {
+            const res = await fetch('/api/admin/settings/bcv/sync', {
+                method: 'POST'
+            });
+            const data = await res.json();
+            if (res.ok) {
+                toast.success(`Tipo de cambio actualizado a Bs ${data.rate}`);
+                setSettings(prev => ({
+                    ...prev,
+                    exchange_rate: data.rate,
+                    bcv_last_sync_at: new Date().toISOString()
+                }));
+            } else {
+                toast.error(data.error || 'Error al sincronizar con BCV');
+            }
+        } catch (error) {
+            toast.error('Error de conexión');
+        } finally {
+            setIsSyncing(false);
         }
     };
 
@@ -238,16 +265,36 @@ export default function AdminSettingsPage() {
 
                         <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase text-emerald-700 font-mono">Factor de Cambio</Label>
-                            <Input
-                                type="number"
-                                step="0.01"
-                                value={settings.exchange_rate}
-                                onChange={(e) => handleUpdateField('exchange_rate', Number(e.target.value))}
-                                className="bg-white dark:bg-slate-900 h-11 font-mono font-bold border-emerald-100"
-                            />
-                            <p className="text-[10px] text-muted-foreground italic">
-                                * Multiplicador para moneda local.
-                            </p>
+                            <div className="flex gap-2">
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={settings.exchange_rate}
+                                    onChange={(e) => handleUpdateField('exchange_rate', Number(e.target.value))}
+                                    className="bg-white dark:bg-slate-900 h-11 font-mono font-bold border-emerald-100 flex-1"
+                                />
+                                <Button
+                                    onClick={handleBcvSync}
+                                    disabled={isSyncing}
+                                    variant="outline"
+                                    className="h-11 px-4 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 flex-shrink-0"
+                                    title="Sincronizar con BCV"
+                                >
+                                    {isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                            {settings.bcv_last_sync_at ? (
+                                <p className="text-[10px] text-muted-foreground italic flex items-center justify-between">
+                                    <span>* Multiplicador para moneda local.</span>
+                                    <span className="text-emerald-600/70">
+                                        Última sync: {new Intl.DateTimeFormat('es-VE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(settings.bcv_last_sync_at))}
+                                    </span>
+                                </p>
+                            ) : (
+                                <p className="text-[10px] text-muted-foreground italic">
+                                    * Multiplicador para moneda local.
+                                </p>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
