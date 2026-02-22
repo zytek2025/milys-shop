@@ -8,7 +8,12 @@ export async function GET(request: Request) {
     const next = requestUrl.searchParams.get('next') ?? '/';
 
     // Use environment variable for site URL in production to avoid localhost issues
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || requestUrl.origin;
+    let siteUrl = process.env.NEXT_PUBLIC_SITE_URL || requestUrl.origin;
+
+    // Defensive: Force www if root domain is used (DNS issue with root)
+    if (siteUrl.includes('milys.shop') && !siteUrl.includes('www.')) {
+        siteUrl = siteUrl.replace('://', '://www.');
+    }
 
     if (code) {
         const supabase = await createClient();

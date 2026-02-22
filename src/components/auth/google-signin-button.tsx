@@ -18,7 +18,12 @@ export function GoogleSignInButton({ text = 'Continuar con Google' }: GoogleSign
         setIsLoading(true);
         try {
             const supabase = createClient();
-            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+            let siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
+            // Defensive: Force www if root domain is used (DNS issue with root)
+            if (siteUrl.includes('milys.shop') && !siteUrl.includes('www.')) {
+                siteUrl = siteUrl.replace('://', '://www.');
+            }
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
