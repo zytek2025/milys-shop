@@ -31,10 +31,11 @@ import { PriceDisplay } from '@/components/store-settings-provider';
 interface CartDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onLoginRequired?: (config?: { view: 'login' | 'register' | 'summary'; message: string }) => void;
+  onLoginRequired?: (config?: { view: 'login' | 'register' | 'summary' | 'guest'; message: string }) => void;
+  guestData?: { fullName: string; email: string; whatsapp: string } | null;
 }
 
-export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerProps) {
+export function CartDrawer({ open, onOpenChange, onLoginRequired, guestData }: CartDrawerProps) {
   const { data: cart, isLoading } = useCart();
   const { total, itemCount, hasOnRequestItems } = useCartTotals();
   const { isAuthenticated } = useAuth();
@@ -196,6 +197,7 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired }: CartDrawerPr
                 <CheckoutButton
                   onLoginRequired={onLoginRequired}
                   onOrderComplete={handleOrderComplete}
+                  guestData={guestData}
                 />
                 <Button
                   variant="outline"

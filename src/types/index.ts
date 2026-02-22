@@ -126,6 +126,9 @@ export interface UserProfile {
   store_credit?: number;
   balance?: number;
   shipping_address?: string;
+  marketing_consent?: boolean;
+  is_active?: boolean;
+  deletion_requested_at?: string;
   permissions?: Permissions;
   created_at: string;
   updated_at: string;
@@ -163,8 +166,11 @@ export interface Order {
   id: string;
   user_id: string;
   total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled';
+  status: 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled' | 'quote' | 'evaluating';
   shipping_address?: string;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
   created_at: string;
 }
 
@@ -187,9 +193,13 @@ export interface OrderWithItems extends Order {
 }
 
 export interface OrderInsert {
-  user_id: string;
+  user_id?: string | null;
   total: number;
   shipping_address?: string;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  status?: string;
 }
 
 export interface OrderItemInsert {

@@ -91,6 +91,31 @@ export async function middleware(request: NextRequest) {
         }
     }
 
+    // Security Headers
+    response.headers.set('X-DNS-Prefetch-Control', 'on')
+    response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload')
+    response.headers.set('X-XSS-Protection', '1; mode=block')
+    response.headers.set('X-Frame-Options', 'SAMEORIGIN')
+    response.headers.set('X-Content-Type-Options', 'nosniff')
+    response.headers.set('Referrer-Policy', 'origin-when-cross-origin')
+
+    // Content Security Policy
+    // Note: This is an initial strict-ish policy. We may need to adjust if external assets are blocked.
+    const cspHeader = `
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com data:;
+        img-src 'self' blob: data: https://*.supabase.co https://images.unsplash.com;
+        connect-src 'self' https://*.supabase.co https://*.n8n.cloud;
+        frame-ancestors 'none';
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
+    `.replace(/\s{2,}/g, ' ').trim();
+
+    response.headers.set('Content-Security-Policy', cspHeader)
+
     return response
 }
 

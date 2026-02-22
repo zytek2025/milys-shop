@@ -264,3 +264,53 @@ export function useResetPassword() {
     },
   });
 }
+
+// Update profile mutation
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  const { setUser } = useCartStore();
+
+  return useMutation<UserProfile, Error, Partial<UserProfile>>({
+    mutationFn: async (profileUpdates) => {
+      const response = await fetch(`${API_BASE}/auth/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileUpdates),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Error al actualizar el perfil');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setUser(data);
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    },
+  });
+}
+
+// Request account deletion mutation
+export function useRequestAccountDeletion() {
+  const queryClient = useQueryClient();
+
+  return useMutation<ApiResponse<void>, Error, void>({
+    mutationFn: async () => {
+      const response = await fetch(`${API_BASE}/auth/delete-account`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Error al solicitar la baja');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    },
+  });
+}

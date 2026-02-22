@@ -83,7 +83,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { full_name, avatar_url, whatsapp, shipping_address } = body;
+    const { full_name, avatar_url, whatsapp, shipping_address, marketing_consent, is_active } = body;
 
     const { data, error } = await supabase
       .from('profiles')
@@ -92,6 +92,8 @@ export async function PUT(request: Request) {
         avatar_url,
         whatsapp,
         shipping_address,
+        marketing_consent,
+        is_active,
         updated_at: new Date().toISOString(),
       })
       .eq('id', user.id)

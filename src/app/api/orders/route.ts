@@ -54,12 +54,22 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (authError || !user) {
+    const body = await request.json();
+    const {
+      items,
+      total,
+      shipping_address,
+      credit_applied,
+      payment_method_id,
+      payment_discount_amount,
+      customer_name,
+      customer_email,
+      customer_phone
+    } = body;
+
+    if (!user && !items?.some((i: any) => i.on_request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const body = await request.json();
-    const { items, total, shipping_address, credit_applied, payment_method_id, payment_discount_amount } = body;
 
     const usedCredit = Number(credit_applied || 0);
     const paymentDiscount = Number(payment_discount_amount || 0);
@@ -69,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. Validate and subtract store credit if used
-    if (usedCredit > 0) {
+    if (user && usedCredit > 0) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('store_credit')
@@ -99,24 +109,29 @@ export async function POST(request: NextRequest) {
 
     // 2. Create order
     const finalTotal = total - usedCredit - paymentDiscount;
+    const hasOnRequestItems = items.some((i: any) => i.on_request);
+    const orderStatus = hasOnRequestItems ? 'quote' : 'pending';
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
-        user_id: user.id,
+        user_id: user?.id || null,
         total: finalTotal, // Total que el usuario PAGARÁ externamente
         credit_applied: usedCredit,
         payment_method_id,
         payment_discount_amount: paymentDiscount,
-        status: 'pending',
+        status: orderStatus,
         shipping_address,
+        customer_name,
+        customer_email,
+        customer_phone
       })
       .select()
       .single();
 
     if (orderError) {
       // Revert credit if order fails
-      if (usedCredit > 0) {
+      if (user && usedCredit > 0) {
         const { data: currentP } = await supabase.from('profiles').select('store_credit').eq('id', user.id).single();
         await supabase.from('profiles').update({ store_credit: (currentP?.store_credit || 0) + usedCredit }).eq('id', user.id);
         // Note: History ideally should be deleted or marked as reverted.
@@ -162,7 +177,7 @@ export async function POST(request: NextRequest) {
             quantity: -item.quantity,
             type: 'order',
             reason: `Pedido #${order.id.slice(0, 8)}`,
-            created_by: user.id
+            created_by: user?.id || null
           });
         } else if (item.product_id) {
           // Simple products also need stock deduction
@@ -182,7 +197,7 @@ export async function POST(request: NextRequest) {
               quantity: -item.quantity,
               type: 'order',
               reason: `Pedido #${order.id.slice(0, 8)}`,
-              created_by: user.id
+              created_by: user?.id || null
             });
           }
         }
@@ -197,7 +212,9 @@ export async function POST(request: NextRequest) {
 
     // 5. Trigger Webhook (Fire and forget)
     // Fetch user profile to get complete Whatsapp and Name data
-    const { data: profile } = await supabase.from('profiles').select('full_name, whatsapp').eq('id', user.id).single();
+    const { data: profile } = user
+      ? await supabase.from('profiles').select('full_name, whatsapp').eq('id', user.id).single()
+      : { data: null };
 
     const { sendWebhook } = await import('@/lib/webhook-dispatcher');
     sendWebhook('order_created', {
@@ -208,7 +225,13 @@ export async function POST(request: NextRequest) {
       payment_method_id,
       payment_method_name: pm?.name || 'Desconocido',
       payment_instructions: pm?.instructions || '',
-      has_backorder: orderItems.some((i: any) => i.on_request),
+      has_backorder: hasOnRequestItems,
+      order_status: orderStatus,
+      customer_info: {
+        name: customer_name || profile?.full_name || '',
+        email: customer_email || user?.email || '',
+        phone: customer_phone || profile?.whatsapp || ''
+      },
       items: orderItems.map((i: any) => ({
         name: i.product_name,
         quantity: i.quantity,
@@ -217,9 +240,9 @@ export async function POST(request: NextRequest) {
       })),
       shipping_address
     }, {
-      name: profile?.full_name || user.email?.split('@')[0],
-      email: user.email,
-      phone: profile?.whatsapp || ''
+      name: customer_name || profile?.full_name || user?.email?.split('@')[0],
+      email: customer_email || user?.email,
+      phone: customer_phone || profile?.whatsapp || ''
     });
 
     return NextResponse.json({

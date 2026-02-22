@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Calendar, Package, CreditCard, ChevronLeft, RotateCcw } from 'lucide-react';
+import { ShoppingBag, Calendar, Package, CreditCard, ChevronLeft, RotateCcw, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { PaymentInstructions } from '@/components/orders/payment-instructions';
 import { PaymentConfirmationForm } from '@/components/orders/payment-confirmation-form';
@@ -45,6 +45,7 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
         'shipped': { label: 'Enviado', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
         'delivered': { label: 'Entregado', color: 'bg-slate-100 text-slate-700 border-slate-200' },
         'cancelled': { label: 'Cancelado', color: 'bg-rose-100 text-rose-700 border-rose-200' },
+        'quote': { label: 'Solicitud de Cotización', color: 'bg-blue-100 text-blue-700 border-blue-200' },
     };
 
     const status = statusMap[order.status] || { label: order.status, color: 'bg-slate-100 text-slate-600' };
@@ -142,6 +143,23 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
                                 orderId={order.id}
                                 total={order.total}
                             />
+                        ) : order.status === 'quote' ? (
+                            <Card className="border-2 shadow-sm border-blue-100 bg-blue-50/20 dark:bg-blue-950/5">
+                                <CardContent className="pt-6 text-center space-y-4">
+                                    <MessageCircle size={40} className="mx-auto text-primary" />
+                                    <div className="space-y-1">
+                                        <p className="font-black uppercase italic tracking-tighter">{status.label}</p>
+                                        <p className="text-[10px] font-bold uppercase italic text-muted-foreground">
+                                            Hemos recibido tu solicitud. Nos pondremos en contacto pronto con tu cotización por WhatsApp.
+                                        </p>
+                                    </div>
+                                    <Button className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 font-bold uppercase italic text-[10px]" asChild>
+                                        <a href={`https://wa.me/584241234567?text=Hola! Quiero consultar sobre mi presupuesto ${order.id.split('-')[0]}`} target="_blank">
+                                            Consultar por WhatsApp
+                                        </a>
+                                    </Button>
+                                </CardContent>
+                            </Card>
                         ) : (
                             <Card className="border-2 shadow-sm border-emerald-100 bg-emerald-50/20 dark:bg-emerald-950/5">
                                 <CardContent className="pt-6 text-center space-y-4">
@@ -189,6 +207,24 @@ export default async function OrderPage({ params }: { params: { id: string } }) 
                                             </Link>
                                         </Button>
                                     )}
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {!order.user_id && (
+                            <Card className="border-2 shadow-sm border-emerald-100 bg-emerald-50/20">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-xs font-black uppercase italic tracking-tighter">¿Quieres rastrear tu pedido?</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <p className="text-[10px] text-muted-foreground font-medium leading-tight italic">
+                                        Crea una cuenta con el mismo correo <strong>({order.customer_email})</strong> para ver este pedido en tu historial.
+                                    </p>
+                                    <Button variant="default" className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold uppercase italic text-[10px] h-10" asChild>
+                                        <Link href="/auth/register">
+                                            Crear mi cuenta
+                                        </Link>
+                                    </Button>
                                 </CardContent>
                             </Card>
                         )}

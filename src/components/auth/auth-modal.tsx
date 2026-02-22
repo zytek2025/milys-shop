@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import type { UserProfile } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -12,25 +15,53 @@ import {
 import { LoginForm } from './login-form';
 import { RegisterForm } from './register-form';
 import { OrderSummary } from './order-summary';
+import { GuestQuoteForm } from './guest-quote-form';
 
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultView?: 'login' | 'register' | 'summary';
+  defaultView?: 'login' | 'register' | 'summary' | 'guest';
   message?: string | React.ReactNode;
+  onGuestSuccess?: (data: any) => void;
 }
 
-export function AuthModal({ open, onOpenChange, defaultView = 'login', message }: AuthModalProps) {
-  const [view, setView] = useState<'login' | 'register' | 'summary'>(defaultView);
+export function AuthModal({ open, onOpenChange, defaultView = 'login', message, onGuestSuccess }: AuthModalProps) {
+  const [view, setView] = useState<'login' | 'register' | 'summary' | 'guest'>(defaultView);
+  const router = useRouter();
 
   // Update view when defaultView prop changes
   if (defaultView !== view && !open) {
     setView(defaultView);
   }
 
-  const handleSuccess = () => {
+  const handleSuccess = async (user?: UserProfile) => {
+    try {
+      if (user) {
+        const supabase = createClient();
+        const { data: staff } = await supabase
+          .from('staff_users')
+          .select('id')
+          .eq('id', user.id)
+          .single();
+
+        const isAdmin = !!staff || user.role === 'admin';
+
+        if (isAdmin) {
+          window.location.href = '/admin';
+          return;
+        }
+      }
+    } catch (error) {
+      // If error (e.g. 406 Not Acceptable from .single()), assume not staff and check profile role
+      if (user?.role === 'admin') {
+        window.location.href = '/admin';
+        return;
+      }
+    }
+
     onOpenChange(false);
     setView('login');
+    router.refresh();
   };
 
   const getTitle = () => {
@@ -38,6 +69,7 @@ export function AuthModal({ open, onOpenChange, defaultView = 'login', message }
       case 'login': return 'Bienvenido de nuevo';
       case 'register': return 'Crear Cuenta';
       case 'summary': return 'Resumen del Pedido';
+      case 'guest': return 'Solicitud de Presupuesto';
       default: return '';
     }
   }
@@ -53,6 +85,7 @@ export function AuthModal({ open, onOpenChange, defaultView = 'login', message }
             {view === 'login' && 'Inicia sesión para acceder a tu carrito y pedidos'}
             {view === 'register' && 'Por favor indica tus datos a continuación'}
             {view === 'summary' && 'Revisa los detalles antes de finalizar'}
+            {view === 'guest' && 'Completa tus datos para enviarte la cotización'}
           </DialogDescription>
         </DialogHeader>
 
@@ -87,11 +120,11 @@ export function AuthModal({ open, onOpenChange, defaultView = 'login', message }
               transition={{ duration: 0.2 }}
             >
               <RegisterForm
-                onSuccess={handleSuccess}
+                onSuccess={() => handleSuccess()}
                 onSwitchToLogin={() => setView('login')}
               />
             </motion.div>
-          ) : (
+          ) : view === 'summary' ? (
             <motion.div
               key="summary"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -100,7 +133,23 @@ export function AuthModal({ open, onOpenChange, defaultView = 'login', message }
               transition={{ duration: 0.2 }}
             >
               <OrderSummary
-                onConfirm={() => setView('register')}
+                onConfirm={() => setView(message?.toString().includes('presupuesto') ? 'guest' : 'register')}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="guest"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <GuestQuoteForm
+                onSuccess={(data) => {
+                  onGuestSuccess?.(data);
+                  onOpenChange(false);
+                }}
+                onSwitchToLogin={() => setView('login')}
               />
             </motion.div>
           )}

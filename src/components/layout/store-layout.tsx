@@ -18,12 +18,14 @@ const queryClient = new QueryClient();
 
 import { SessionTimeout } from '@/components/auth/session-timeout';
 import { StoreSettingsProvider } from '@/components/store-settings-provider';
+import { CookieBanner } from '@/components/legal/cookie-banner';
 
 export function StoreLayout({ children }: { children: React.ReactNode }) {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
-    const [authConfig, setAuthConfig] = useState<{ view: 'login' | 'register' | 'summary'; message: string | null }>({ view: 'login', message: null });
+    const [authConfig, setAuthConfig] = useState<{ view: 'login' | 'register' | 'summary' | 'guest'; message: string | null }>({ view: 'login', message: null });
+    const [guestData, setGuestData] = useState<any>(null);
     const [settings, setSettings] = useState<any>(null);
 
     // Initialize auth state
@@ -51,7 +53,7 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
     }, [isAdmin]);
 
     const handleOpenCart = () => setIsCartOpen(true);
-    const handleOpenAuth = (config?: { view: 'login' | 'register' | 'summary'; message: string }) => {
+    const handleOpenAuth = (config?: { view: 'login' | 'register' | 'summary' | 'guest'; message: string }) => {
         if (config) {
             setAuthConfig(config);
         } else {
@@ -97,10 +99,13 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                         {children}
                     </main>
 
+                    <CookieBanner />
+
                     <CartDrawer
                         open={isCartOpen}
                         onOpenChange={setIsCartOpen}
                         onLoginRequired={handleOpenAuth}
+                        guestData={guestData}
                     />
 
                     <AuthModal
@@ -108,6 +113,7 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                         onOpenChange={setIsAuthModalOpen}
                         defaultView={authConfig.view}
                         message={authConfig.message}
+                        onGuestSuccess={setGuestData}
                     />
 
                     <OrderHistory
@@ -141,6 +147,12 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
                                             Mis Pedidos
                                         </button>
                                         <Link href="#contact-section" className="hover:text-primary transition-colors">Contacto</Link>
+                                        <div className="pt-2 flex flex-col gap-2">
+                                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/40">Legal</p>
+                                            <Link href="/legal/terms" className="hover:text-primary transition-colors text-xs opacity-70">Términos</Link>
+                                            <Link href="/legal/privacy" className="hover:text-primary transition-colors text-xs opacity-70">Privacidad</Link>
+                                            <Link href="/legal/returns" className="hover:text-primary transition-colors text-xs opacity-70">Devoluciones</Link>
+                                        </div>
                                         <Link href="/admin" className="hover:text-primary transition-colors">Administración</Link>
                                     </div>
                                 </div>
