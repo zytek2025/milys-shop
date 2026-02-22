@@ -112,6 +112,11 @@ export default function FinancesDashboard() {
 
     const [newTx, setNewTx] = useState({ account_id: '', category_id: '', amount: '', description: '', transaction_date: '' });
 
+    // Receipt upload state
+    const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+
     // Category management
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -409,20 +414,40 @@ export default function FinancesDashboard() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
+            let receipt_url = undefined;
+
+            // Upload receipt if provided
+            if (receiptFile && transactionType === 'expense') {
+                setIsUploading(true);
+                const formData = new FormData();
+                formData.append('file', receiptFile);
+                const uploadRes = await fetch('/api/admin/finances/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const uploadData = await uploadRes.json();
+                if (!uploadRes.ok) throw new Error(uploadData.error || 'Error al subir foto');
+                receipt_url = uploadData.url;
+                setIsUploading(false);
+            }
+
             const res = await fetch('/api/admin/finances/transactions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...newTx, type: transactionType })
+                body: JSON.stringify({ ...newTx, type: transactionType, receipt_url })
             });
             if (!res.ok) throw new Error('Error al registrar movimiento');
             toast.success('Movimiento registrado correctamente');
             setIsTransactionModalOpen(false);
             setNewTx({ account_id: '', category_id: '', amount: '', description: '', transaction_date: new Date().toISOString().split('T')[0] });
+            setReceiptFile(null);
+            setReceiptPreview(null);
             fetchData();
         } catch (error: any) {
             toast.error(error.message);
         } finally {
             setIsSubmitting(false);
+            setIsUploading(false);
         }
     };
 
@@ -677,9 +702,63 @@ export default function FinancesDashboard() {
                                             onChange={e => setNewTx({ ...newTx, description: e.target.value })}
                                         />
                                     </div>
+
+                                    {/* Receipt Upload - only for expenses */}
+                                    {transactionType === 'expense' && (
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">📷 Foto de Factura (Opcional)</Label>
+                                            <div className="relative">
+                                                {receiptPreview ? (
+                                                    <div className="relative rounded-xl overflow-hidden border-2 border-primary/30">
+                                                        <img src={receiptPreview} alt="Preview" className="w-full h-32 object-cover" />
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="absolute top-2 right-2 h-6 w-6 bg-black/50 text-white rounded-full hover:bg-black/70"
+                                                            onClick={() => { setReceiptFile(null); setReceiptPreview(null); }}
+                                                        >
+                                                            <X size={12} />
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <label className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all">
+                                                        <PlusCircle size={20} className="text-slate-300 mb-1" />
+                                                        <span className="text-[9px] font-bold text-slate-400 uppercase">Subir foto o PDF</span>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*,.pdf"
+                                                            className="hidden"
+                                                            onChange={(e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) {
+                                                                    setReceiptFile(file);
+                                                                    if (file.type.startsWith('image/')) {
+                                                                        setReceiptPreview(URL.createObjectURL(file));
+                                                                    } else {
+                                                                        setReceiptPreview(null);
+                                                                    }
+                                                                }
+                                                            }}
+                                                        />
+                                                    </label>
+                                                )}
+                                                {receiptFile && !receiptPreview && (
+                                                    <div className="flex items-center gap-2 mt-2 p-2 bg-slate-50 dark:bg-slate-950 rounded-lg">
+                                                        <FileText size={14} className="text-primary" />
+                                                        <span className="text-[10px] font-bold truncate">{receiptFile.name}</span>
+                                                        <Button type="button" variant="ghost" size="icon" className="h-5 w-5 ml-auto" onClick={() => { setReceiptFile(null); setReceiptPreview(null); }}>
+                                                            <X size={10} />
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <DialogFooter className="pt-4">
-                                        <Button type="submit" disabled={isSubmitting} className="w-full rounded-xl h-12 font-black uppercase tracking-widest italic">
-                                            {isSubmitting ? <Loader2 className="animate-spin" /> : 'Confirmar Registro'}
+                                        <Button type="submit" disabled={isSubmitting || isUploading} className="w-full rounded-xl h-12 font-black uppercase tracking-widest italic">
+                                            {isSubmitting ? <Loader2 className="animate-spin" /> : isUploading ? 'Subiendo foto...' : 'Confirmar Registro'}
                                         </Button>
                                     </DialogFooter>
                                 </form>

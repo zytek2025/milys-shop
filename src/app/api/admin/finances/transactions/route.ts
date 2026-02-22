@@ -48,7 +48,8 @@ export async function POST(request: NextRequest) {
             amount,
             description,
             transaction_date,
-            exchange_rate // Optional: uses current if not provided
+            exchange_rate, // Optional: uses current if not provided
+            receipt_url // Optional: URL of uploaded receipt photo
         } = body;
 
         if (!account_id || !type || !amount) {
@@ -94,6 +95,7 @@ export async function POST(request: NextRequest) {
                 exchange_rate: Number(rate),
                 amount_usd_equivalent: Number(amountUsd),
                 description,
+                receipt_url,
                 transaction_date: transaction_date || new Date().toISOString(),
                 created_by: user?.id
             })
