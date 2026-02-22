@@ -66,6 +66,7 @@ export default function FinancesDashboard() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isMounted, setIsMounted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Filter states
@@ -75,9 +76,11 @@ export default function FinancesDashboard() {
 
     // Form States
     const [newAccount, setNewAccount] = useState({ name: '', type: 'bank', currency: 'USD', balance: '' });
-    const [newTx, setNewTx] = useState({ account_id: '', category_id: '', amount: '', description: '', transaction_date: new Date().toISOString().split('T')[0] });
+    const [newTx, setNewTx] = useState({ account_id: '', category_id: '', amount: '', description: '', transaction_date: '' });
 
     useEffect(() => {
+        setIsMounted(true);
+        setNewTx(prev => ({ ...prev, transaction_date: new Date().toISOString().split('T')[0] }));
         fetchData();
     }, []);
 
@@ -91,16 +94,19 @@ export default function FinancesDashboard() {
             ]);
 
             const [accData, catData, txData] = await Promise.all([
-                accRes.json(),
-                catRes.json(),
-                txRes.json()
+                accRes.ok ? accRes.json() : [],
+                catRes.ok ? catRes.json() : [],
+                txRes.ok ? txRes.json() : []
             ]);
 
-            setAccounts(accData);
-            setCategories(catData);
-            setTransactions(txData);
+            setAccounts(Array.isArray(accData) ? accData : []);
+            setCategories(Array.isArray(catData) ? catData : []);
+            setTransactions(Array.isArray(txData) ? txData : []);
         } catch (error) {
             toast.error('Error al cargar datos financieros');
+            setAccounts([]);
+            setCategories([]);
+            setTransactions([]);
         } finally {
             setLoading(false);
         }
@@ -179,11 +185,11 @@ export default function FinancesDashboard() {
     };
 
     const totalBalanceUSD = accounts.reduce((sum, acc) => {
-        if (acc.currency === 'VES') return sum + (acc.balance / settings.exchange_rate);
+        if (acc.currency === 'VES') return sum + (acc.balance / (settings.exchange_rate || 60));
         return sum + Number(acc.balance);
     }, 0);
 
-    if (loading) {
+    if (!isMounted || loading) {
         return (
             <div className="flex h-[400px] items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -400,9 +406,9 @@ export default function FinancesDashboard() {
                             <CardContent className="h-[350px] p-6 flex items-center justify-center">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
-                                        <Pie data={getCategoryData()} innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
+                                        <Pie data={getCategoryData()} innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value" cornerRadius={8}>
                                             {getCategoryData().map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} cornerRadius={8} />
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
                                         <Tooltip contentStyle={{ borderRadius: '16px', border: 'none' }} />
