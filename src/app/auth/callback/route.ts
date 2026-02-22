@@ -18,7 +18,7 @@ export async function GET(request: Request) {
             // Manual Profile Sync Fallback
             // Even if the trigger fails, this ensures a profile exists upon login
             try {
-                const { createAdminClient } = await import('@lib/supabase/server');
+                const { createAdminClient } = await import('@/lib/supabase/server');
                 const adminClient = await createAdminClient();
 
                 // Check if profile exists
