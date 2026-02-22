@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Loader2, TrendingDown, TrendingUp, Trash2, PlusCircle, AlertCircle,
     Wallet, Landmark, Bitcoin, ArrowRightLeft, DollarSign,
     PieChart as PieChartIcon, BarChart2, History, Settings2, Plus,
-    X, Check, Banknote, CreditCard as CardIcon
+    X, Check, Banknote, CreditCard as CardIcon,
+    Smartphone, Globe, CreditCard, Zap, Info, Save
 } from 'lucide-react';
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger
@@ -25,6 +27,7 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useStoreSettings } from '@/components/store-settings-provider';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Types
 interface Account {
@@ -60,8 +63,30 @@ interface Transaction {
 
 const COLORS = ['#10b981', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
 
+interface PaymentMethod {
+    id: string;
+    name: string;
+    instructions: string;
+    icon: string;
+    discount_percentage: number;
+    is_discount_active: boolean;
+    account_id?: string;
+}
+
+const AVAILABLE_ICONS = [
+    { value: 'Landmark', label: 'Banco/Transferencia', icon: Landmark },
+    { value: 'Smartphone', label: 'Pago Móvil/App', icon: Smartphone },
+    { value: 'CreditCard', label: 'Tarjeta/POS', icon: CreditCard },
+    { value: 'DollarSign', label: 'Divisas/Efectivo', icon: DollarSign },
+    { value: 'Wallet', label: 'Billetera Digital', icon: Wallet },
+    { value: 'Bitcoin', label: 'Cripto', icon: Bitcoin },
+    { value: 'Zap', label: 'Rápido/Flash', icon: Zap },
+    { value: 'Globe', label: 'Internacional', icon: Globe },
+];
+
 export default function FinancesDashboard() {
     const settings = useStoreSettings();
+    const queryClient = useQueryClient();
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -85,6 +110,10 @@ export default function FinancesDashboard() {
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [newCategory, setNewCategory] = useState({ name: '', type: 'income', icon: '' });
+
+    // Payment methods state
+    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+    const [isSavingMethods, setIsSavingMethods] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
@@ -117,6 +146,71 @@ export default function FinancesDashboard() {
             setTransactions([]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Fetch payment methods from settings
+    useEffect(() => {
+        fetchPaymentMethods();
+    }, []);
+
+    const fetchPaymentMethods = async () => {
+        try {
+            const res = await fetch('/api/admin/settings');
+            const data = await res.json();
+            if (res.ok) {
+                setPaymentMethods(data.payment_methods || []);
+            }
+        } catch (error) {
+            console.error('Error fetching payment methods:', error);
+        }
+    };
+
+    const addPaymentMethod = () => {
+        const newMethod: PaymentMethod = {
+            id: Math.random().toString(36).substring(2, 9),
+            name: 'Nuevo Método',
+            instructions: '',
+            icon: 'Landmark',
+            discount_percentage: 0,
+            is_discount_active: false
+        };
+        setPaymentMethods(prev => [...prev, newMethod]);
+    };
+
+    const removePaymentMethod = (id: string) => {
+        setPaymentMethods(prev => prev.filter(m => m.id !== id));
+    };
+
+    const updatePaymentMethod = (id: string, updates: Partial<PaymentMethod>) => {
+        setPaymentMethods(prev => prev.map(m =>
+            m.id === id ? { ...m, ...updates } : m
+        ));
+    };
+
+    const savePaymentMethods = async () => {
+        setIsSavingMethods(true);
+        try {
+            // First fetch current settings to avoid overwriting other fields
+            const getRes = await fetch('/api/admin/settings');
+            const currentSettings = await getRes.json();
+
+            const res = await fetch('/api/admin/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...currentSettings, payment_methods: paymentMethods })
+            });
+            if (res.ok) {
+                toast.success('Métodos de pago guardados');
+                queryClient.invalidateQueries({ queryKey: ['store-settings'] });
+            } else {
+                const data = await res.json();
+                toast.error(data.error || 'Error al guardar');
+            }
+        } catch (error) {
+            toast.error('Error de conexión');
+        } finally {
+            setIsSavingMethods(false);
         }
     };
 
@@ -705,6 +799,147 @@ export default function FinancesDashboard() {
                 </TabsContent>
 
                 <TabsContent value="settings" className="space-y-6">
+                    {/* Payment Methods Section */}
+                    <Card className="shadow-xl border-2 border-primary/20 bg-white dark:bg-slate-900 rounded-3xl">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="text-xl font-black uppercase italic tracking-tight flex items-center gap-2">
+                                    <CreditCard className="text-primary h-5 w-5" /> Métodos de Pago
+                                </CardTitle>
+                                <CardDescription>Configura las formas de pago que verán tus clientes.</CardDescription>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    onClick={addPaymentMethod}
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-full border-primary text-primary hover:bg-primary/10 gap-2 font-bold uppercase italic text-[10px]"
+                                >
+                                    <Plus size={14} /> Añadir Método
+                                </Button>
+                                <Button
+                                    onClick={savePaymentMethods}
+                                    disabled={isSavingMethods}
+                                    size="sm"
+                                    className="rounded-full gap-2 font-bold uppercase italic text-[10px] bg-emerald-500 hover:bg-emerald-600"
+                                >
+                                    {isSavingMethods ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Guardar
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {paymentMethods.length === 0 ? (
+                                <div className="text-center py-10 bg-slate-50 dark:bg-slate-950 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+                                    <Info className="mx-auto h-8 w-8 text-slate-300 mb-2" />
+                                    <p className="text-xs font-bold uppercase italic text-muted-foreground">No hay métodos de pago configurados</p>
+                                    <Button variant="link" onClick={addPaymentMethod} className="text-primary text-xs font-black uppercase">¡Crea el primero!</Button>
+                                </div>
+                            ) : (
+                                <div className="grid gap-4">
+                                    {paymentMethods.map((method) => (
+                                        <div key={method.id} className="relative group p-6 bg-slate-50 dark:bg-slate-950 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/30 transition-all">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="absolute top-4 right-4 h-8 w-8 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={() => removePaymentMethod(method.id)}
+                                            >
+                                                <Trash2 size={16} />
+                                            </Button>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-4">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        <div className="space-y-2">
+                                                            <Label className="text-[10px] font-black uppercase italic text-primary">Nombre del Método</Label>
+                                                            <Input
+                                                                value={method.name}
+                                                                onChange={(e) => updatePaymentMethod(method.id, { name: e.target.value })}
+                                                                placeholder="Ej: Binance (USDT), Pago Móvil..."
+                                                                className="h-11 bg-white border-none dark:bg-slate-900 font-bold"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-[10px] font-black uppercase italic text-primary">Cuenta Destino (Libro Mayor)</Label>
+                                                            <Select
+                                                                value={method.account_id}
+                                                                onValueChange={(val) => updatePaymentMethod(method.id, { account_id: val })}
+                                                            >
+                                                                <SelectTrigger className="h-11 bg-white border-none dark:bg-slate-900 font-bold">
+                                                                    <SelectValue placeholder="Seleccionar Cuenta" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {accounts.map(acc => (
+                                                                        <SelectItem key={acc.id} value={acc.id}>
+                                                                            {acc.name} ({acc.currency})
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="space-y-2">
+                                                            <Label className="text-[10px] font-black uppercase italic text-primary">Icono</Label>
+                                                            <div className="grid grid-cols-4 gap-1">
+                                                                {AVAILABLE_ICONS.map((i) => (
+                                                                    <Button
+                                                                        key={i.value}
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className={cn(
+                                                                            "h-9 w-9 rounded-lg border",
+                                                                            method.icon === i.value ? "border-primary bg-primary/10 text-primary" : "border-transparent"
+                                                                        )}
+                                                                        onClick={() => updatePaymentMethod(method.id, { icon: i.value })}
+                                                                        title={i.label}
+                                                                    >
+                                                                        <i.icon size={16} />
+                                                                    </Button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-[10px] font-black uppercase italic text-emerald-600">% Descuento</Label>
+                                                            <div className="flex items-center gap-2">
+                                                                <Input
+                                                                    type="number"
+                                                                    value={method.discount_percentage}
+                                                                    onChange={(e) => updatePaymentMethod(method.id, { discount_percentage: Number(e.target.value) })}
+                                                                    className="h-11 bg-emerald-50/50 border-emerald-100 dark:bg-emerald-950/20 font-bold text-center"
+                                                                />
+                                                                <div className="flex items-center gap-1">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={method.is_discount_active}
+                                                                        onChange={(e) => updatePaymentMethod(method.id, { is_discount_active: e.target.checked })}
+                                                                        className="h-4 w-4 rounded border-slate-300 text-primary"
+                                                                    />
+                                                                    <span className="text-[9px] font-black uppercase italic text-slate-400">Activo</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-black uppercase italic text-primary">Instrucciones de Pago (Lo que verá el cliente)</Label>
+                                                    <Textarea
+                                                        value={method.instructions}
+                                                        onChange={(e) => updatePaymentMethod(method.id, { instructions: e.target.value })}
+                                                        placeholder="Ej: Envía a: correo@ejemplo.com, Beneficiario: ..."
+                                                        className="min-h-[120px] bg-white border-none dark:bg-slate-900 font-mono text-xs"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Category Creation/Edit */}
                         <Card className="shadow-xl border-none bg-white dark:bg-slate-900 rounded-3xl h-fit">

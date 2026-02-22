@@ -27,40 +27,19 @@ interface StoreSettings {
     contact_email?: string;
     tiktok_handle?: string;
     pinterest_handle?: string;
-    payment_methods?: PaymentMethod[];
+    payment_methods?: any[];
     store_country?: string;
     currency_symbol?: string;
     exchange_rate?: number;
     bcv_last_sync_at?: string;
 }
 
-interface PaymentMethod {
-    id: string;
-    name: string;
-    instructions: string;
-    icon: string;
-    discount_percentage: number;
-    is_discount_active: boolean;
-    account_id?: string;
-}
-
-const AVAILABLE_ICONS = [
-    { value: 'Landmark', label: 'Banco/Transferencia', icon: Landmark },
-    { value: 'Smartphone', label: 'Pago Móvil/App', icon: Smartphone },
-    { value: 'CreditCard', label: 'Tarjeta/POS', icon: CreditCard },
-    { value: 'DollarSign', label: 'Divisas/Efectivo', icon: DollarSign },
-    { value: 'Wallet', label: 'Billetera Digital', icon: Wallet },
-    { value: 'Bitcoin', label: 'Cripto', icon: Bitcoin },
-    { value: 'Zap', label: 'Rápido/Flash', icon: Zap },
-    { value: 'Globe', label: 'Internacional', icon: Globe },
-];
 
 export default function AdminSettingsPage() {
     const queryClient = useQueryClient();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
-    const [accounts, setAccounts] = useState<any[]>([]);
     const [settings, setSettings] = useState<StoreSettings>({
         personalization_price_small: 1.00,
         personalization_price_large: 3.00,
@@ -84,18 +63,7 @@ export default function AdminSettingsPage() {
 
     useEffect(() => {
         fetchSettings();
-        fetchAccounts();
     }, []);
-
-    const fetchAccounts = async () => {
-        try {
-            const res = await fetch('/api/admin/finances/accounts');
-            const data = await res.json();
-            if (res.ok) setAccounts(data);
-        } catch (error) {
-            console.error('Error fetching accounts:', error);
-        }
-    };
 
     const fetchSettings = async () => {
         try {
@@ -199,27 +167,7 @@ export default function AdminSettingsPage() {
         }
     };
 
-    const addPaymentMethod = () => {
-        const newMethod: PaymentMethod = {
-            id: Math.random().toString(36).substring(2, 9),
-            name: 'Nuevo Método',
-            instructions: '',
-            icon: 'Landmark',
-            discount_percentage: 0,
-            is_discount_active: false
-        };
-        handleUpdateField('payment_methods', [...(settings.payment_methods || []), newMethod]);
-    };
 
-    const removePaymentMethod = (id: string) => {
-        handleUpdateField('payment_methods', (settings.payment_methods || []).filter(m => m.id !== id));
-    };
-
-    const updatePaymentMethod = (id: string, updates: Partial<PaymentMethod>) => {
-        handleUpdateField('payment_methods', (settings.payment_methods || []).map(m =>
-            m.id === id ? { ...m, ...updates } : m
-        ));
-    };
 
     if (isLoading) {
         return (
@@ -312,136 +260,6 @@ export default function AdminSettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Métodos de Pago Dinámicos */}
-                <Card className="border-2 border-primary/20 bg-slate-50/50 dark:bg-slate-900/20">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle className="flex items-center gap-2 uppercase italic font-black tracking-tighter">
-                                <CreditCard className="text-primary h-5 w-5" /> Métodos de Pago
-                            </CardTitle>
-                            <CardDescription>Configura las formas de pago que verán tus clientes.</CardDescription>
-                        </div>
-                        <Button
-                            onClick={addPaymentMethod}
-                            variant="outline"
-                            size="sm"
-                            className="rounded-full border-primary text-primary hover:bg-primary/10 gap-2 font-bold uppercase italic text-[10px]"
-                        >
-                            <Plus size={14} /> Añadir Método
-                        </Button>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {(settings.payment_methods || []).length === 0 ? (
-                            <div className="text-center py-10 bg-white dark:bg-slate-950 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800">
-                                <Info className="mx-auto h-8 w-8 text-slate-300 mb-2" />
-                                <p className="text-xs font-bold uppercase italic text-muted-foreground">No hay métodos de pago configurados</p>
-                                <Button variant="link" onClick={addPaymentMethod} className="text-primary text-xs font-black uppercase">¡Crea el primero!</Button>
-                            </div>
-                        ) : (
-                            <div className="grid gap-4">
-                                {(settings.payment_methods || []).map((method, index) => (
-                                    <div key={method.id} className="relative group p-6 bg-white dark:bg-slate-950 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm hover:border-primary/30 transition-all">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="absolute top-4 right-4 h-8 w-8 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={() => removePaymentMethod(method.id)}
-                                        >
-                                            <Trash2 size={16} />
-                                        </Button>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-4">
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label className="text-[10px] font-black uppercase italic text-primary">Nombre del Método</Label>
-                                                        <Input
-                                                            value={method.name}
-                                                            onChange={(e) => updatePaymentMethod(method.id, { name: e.target.value })}
-                                                            placeholder="Ej: Binance (USDT), Pago Móvil..."
-                                                            className="h-11 bg-slate-50 border-none dark:bg-slate-900 font-bold"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label className="text-[10px] font-black uppercase italic text-primary">Cuenta Destino (Libro Mayor)</Label>
-                                                        <Select
-                                                            value={method.account_id}
-                                                            onValueChange={(val) => updatePaymentMethod(method.id, { account_id: val })}
-                                                        >
-                                                            <SelectTrigger className="h-11 bg-slate-50 border-none dark:bg-slate-900 font-bold">
-                                                                <SelectValue placeholder="Seleccionar Cuenta" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {accounts.map(acc => (
-                                                                    <SelectItem key={acc.id} value={acc.id}>
-                                                                        {acc.name} ({acc.currency})
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label className="text-[10px] font-black uppercase italic text-primary">Icono</Label>
-                                                        <div className="grid grid-cols-4 gap-1">
-                                                            {AVAILABLE_ICONS.map((i) => (
-                                                                <Button
-                                                                    key={i.value}
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className={cn(
-                                                                        "h-9 w-9 rounded-lg border",
-                                                                        method.icon === i.value ? "border-primary bg-primary/10 text-primary" : "border-transparent"
-                                                                    )}
-                                                                    onClick={() => updatePaymentMethod(method.id, { icon: i.value })}
-                                                                    title={i.label}
-                                                                >
-                                                                    <i.icon size={16} />
-                                                                </Button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label className="text-[10px] font-black uppercase italic text-emerald-600">% Descuento</Label>
-                                                        <div className="flex items-center gap-2">
-                                                            <Input
-                                                                type="number"
-                                                                value={method.discount_percentage}
-                                                                onChange={(e) => updatePaymentMethod(method.id, { discount_percentage: Number(e.target.value) })}
-                                                                className="h-11 bg-emerald-50/50 border-emerald-100 dark:bg-emerald-950/20 font-bold text-center"
-                                                            />
-                                                            <div className="flex items-center gap-1">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={method.is_discount_active}
-                                                                    onChange={(e) => updatePaymentMethod(method.id, { is_discount_active: e.target.checked })}
-                                                                    className="h-4 w-4 rounded border-slate-300 text-primary"
-                                                                />
-                                                                <span className="text-[9px] font-black uppercase italic text-slate-400">Activo</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-black uppercase italic text-primary">Instrucciones de Pago (Lo que verá el cliente)</Label>
-                                                <Textarea
-                                                    value={method.instructions}
-                                                    onChange={(e) => updatePaymentMethod(method.id, { instructions: e.target.value })}
-                                                    placeholder="Ej: Envía a: correo@ejemplo.com, Beneficiario: ..."
-                                                    className="min-h-[120px] bg-slate-50 border-none dark:bg-slate-900 font-mono text-xs"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
 
 
                 {/* Canva Integration */}
