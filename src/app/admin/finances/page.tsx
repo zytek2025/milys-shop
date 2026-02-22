@@ -13,7 +13,7 @@ import {
     PieChart as PieChartIcon, BarChart2, History, Settings2, Plus,
     X, Check, Banknote, CreditCard as CardIcon,
     Smartphone, Globe, CreditCard, Zap, Info, Save, Calendar, Filter,
-    Lock, Clock, AlertTriangle, FileText, CheckCircle
+    Lock, Clock, AlertTriangle, FileText, CheckCircle, RefreshCcw
 } from 'lucide-react';
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger
@@ -116,6 +116,8 @@ export default function FinancesDashboard() {
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isSyncingBcv, setIsSyncingBcv] = useState(false);
+    const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
 
     // Category management
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -296,6 +298,38 @@ export default function FinancesDashboard() {
             orderCount,
             todayIsClosed
         };
+    };
+
+    const handleSyncBcv = async () => {
+        setIsSyncingBcv(true);
+        try {
+            const res = await fetch('/api/admin/finances/automation/sync-bcv');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al sincronizar BCV');
+            toast.success(`Tasa BCV actualizada: ${data.new_rate}`);
+            // Force refresh settings if needed, or just let the provider handle it eventually
+            queryClient.invalidateQueries({ queryKey: ['store-settings'] });
+        } catch (error: any) {
+            toast.error(error.message);
+        } finally {
+            setIsSyncingBcv(false);
+        }
+    };
+
+    const handleCopyDailySummary = async () => {
+        setIsGeneratingSummary(true);
+        try {
+            const res = await fetch('/api/admin/finances/automation/daily-summary');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al generar resumen');
+
+            await navigator.clipboard.writeText(data.formatted_text);
+            toast.success('Resumen copiado al portapapeles');
+        } catch (error: any) {
+            toast.error(error.message);
+        } finally {
+            setIsGeneratingSummary(false);
+        }
     };
 
     const handleCreateAccount = async (e: React.FormEvent) => {
@@ -607,10 +641,32 @@ export default function FinancesDashboard() {
                     </h1>
                     <p className="text-muted-foreground font-medium italic">Control ERP de ingresos, egresos y flujo de caja.</p>
                 </div>
-                <div className="flex flex-col items-end">
-                    <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Patrimonio Total Estimado</span>
-                    <div className="text-3xl font-black text-emerald-600 tracking-tight">
+                <div className="flex flex-col items-end gap-2">
+                    <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest text-right">Patrimonio Total Estimado</span>
+                    <div className="text-3xl font-black text-emerald-600 tracking-tight text-right">
                         ${totalBalanceUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div className="flex gap-2 mt-1">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={isSyncingBcv}
+                            onClick={handleSyncBcv}
+                            className="h-8 rounded-xl text-[9px] font-black uppercase italic tracking-widest border-slate-200 dark:border-slate-800 gap-2"
+                        >
+                            {isSyncingBcv ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCcw size={12} />}
+                            Sync BCV
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={isGeneratingSummary}
+                            onClick={handleCopyDailySummary}
+                            className="h-8 rounded-xl text-[9px] font-black uppercase italic tracking-widest border-slate-200 dark:border-slate-800 gap-2 text-primary"
+                        >
+                            {isGeneratingSummary ? <Loader2 className="h-3 w-3 animate-spin" /> : <TrendingUp size={12} />}
+                            Resumen Diario
+                        </Button>
                     </div>
                 </div>
             </div>

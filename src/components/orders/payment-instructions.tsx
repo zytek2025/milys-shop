@@ -85,6 +85,23 @@ export function PaymentInstructions({ paymentMethodId, orderTotal = 0 }: { payme
                                         <PriceDisplay amount={finalForThisMethod} className="font-black text-primary tracking-tighter text-sm" />
                                     </div>
                                 )}
+
+                                {method.name.toLowerCase().includes('pago móvil') && (
+                                    <div className="mt-3 flex flex-col items-center gap-2 p-2 bg-white dark:bg-slate-900 rounded-xl border-2 border-primary/20">
+                                        <p className="text-[8px] font-black uppercase italic text-primary tracking-widest">Escanea para pagar</p>
+                                        <div className="bg-white p-1 rounded-lg">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(method.instructions + "\nMonto: " + finalForThisMethod.toFixed(2))}`}
+                                                alt="QR Pago Móvil"
+                                                className="w-24 h-24"
+                                            />
+                                        </div>
+                                        <p className="text-[7px] text-muted-foreground font-bold uppercase text-center leading-tight">
+                                            Usa tu app bancaria para escanear y pagar el monto exacto.
+                                        </p>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     );

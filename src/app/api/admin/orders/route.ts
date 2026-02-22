@@ -13,7 +13,8 @@ export async function GET() {
                 *,
                 control_id,
                 profiles (email, full_name, whatsapp),
-                order_items (*, products(name), product_variants(size, color, color_hex))
+                order_items (*, products(name), product_variants(size, color, color_hex)),
+                payment_confirmations (*)
             `)
             .order('created_at', { ascending: false });
 

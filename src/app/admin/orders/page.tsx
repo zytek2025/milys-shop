@@ -65,6 +65,8 @@ export default function AdminOrdersPage() {
     const [paymentTargetOrderId, setPaymentTargetOrderId] = useState<string | null>(null);
     const [selectedAccountId, setSelectedAccountId] = useState<string>('');
     const [verifyingPaymentId, setVerifyingPaymentId] = useState<string | null>(null);
+    const [isQuickApproveOpen, setIsQuickApproveOpen] = useState(false);
+    const [quickApproveData, setQuickApproveData] = useState<{ orderId: string, confirmationId: string } | null>(null);
 
     useEffect(() => {
         fetchOrders();
@@ -163,8 +165,9 @@ export default function AdminOrdersPage() {
 
             if (res.ok) {
                 toast.success(status === 'approved' ? 'Pago verificado y registrado' : 'Pago rechazado');
-                fetchPaymentProofs(orderId);
-                refreshOrder();
+                if (isDetailsOpen) fetchPaymentProofs(orderId);
+                setIsQuickApproveOpen(false);
+                fetchOrders();
             } else {
                 const data = await res.json();
                 toast.error(data.error || 'Error al procesar verificación');
@@ -507,6 +510,30 @@ export default function AdminOrdersPage() {
                                                             >
                                                                 <Eye size={16} />
                                                             </Button>
+                                                            {(() => {
+                                                                const pendingPayment = order.payment_confirmations?.find((p: any) => p.status === 'pending');
+                                                                if (pendingPayment) {
+                                                                    return (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-lg animate-pulse"
+                                                                            title="Aprobación Rápida de Pago"
+                                                                            onClick={() => {
+                                                                                setQuickApproveData({ orderId: order.id, confirmationId: pendingPayment.id });
+                                                                                setIsQuickApproveOpen(true);
+                                                                                if (financeAccounts.length > 0) {
+                                                                                    // Pre-select first account if none selected
+                                                                                    if (!selectedAccountId) setSelectedAccountId(financeAccounts[0].id);
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            <Banknote size={16} />
+                                                                        </Button>
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            })()}
                                                             {order.status === 'completed' && (
                                                                 <Button
                                                                     variant="ghost"
@@ -1165,6 +1192,61 @@ export default function AdminOrdersPage() {
                             }}
                         >
                             Procesar Pago
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+            {/* QUICK APPROVE DIALOG */}
+            <Dialog open={isQuickApproveOpen} onOpenChange={setIsQuickApproveOpen}>
+                <DialogContent className="sm:max-w-[400px] rounded-3xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Banknote className="text-primary" />
+                            Aprobar Pago Rápidamente
+                        </DialogTitle>
+                        <DialogDescription>
+                            Selecciona la cuenta donde recibiste el dinero para confirmar este pago.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Cuenta de Destino</Label>
+                            <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                                <SelectTrigger className="rounded-xl h-12">
+                                    <SelectValue placeholder="Seleccionar cuenta" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                    {financeAccounts.map(acc => (
+                                        <SelectItem key={acc.id} value={acc.id} className="text-xs">
+                                            {acc.name} ({acc.currency})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="destructive"
+                            className="flex-1 rounded-xl h-12 font-bold uppercase text-xs italic"
+                            onClick={() => {
+                                if (quickApproveData) {
+                                    handleVerifyPayment(quickApproveData.orderId, quickApproveData.confirmationId, 'rejected');
+                                }
+                            }}
+                        >
+                            Rechazar
+                        </Button>
+                        <Button
+                            className="flex-[2] rounded-xl h-12 font-black uppercase text-xs italic tracking-widest"
+                            disabled={!selectedAccountId || !!verifyingPaymentId}
+                            onClick={() => {
+                                if (quickApproveData) {
+                                    handleVerifyPayment(quickApproveData.orderId, quickApproveData.confirmationId, 'approved', selectedAccountId);
+                                }
+                            }}
+                        >
+                            {verifyingPaymentId ? <Loader2 size={16} className="animate-spin" /> : 'Aprobar Pago'}
                         </Button>
                     </div>
                 </DialogContent>
