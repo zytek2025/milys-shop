@@ -213,8 +213,19 @@ export async function POST(request: NextRequest) {
     // 5. Trigger Webhook (Fire and forget)
     // Fetch user profile to get complete Whatsapp and Name data
     const { data: profile } = user
-      ? await supabase.from('profiles').select('full_name, whatsapp').eq('id', user.id).single()
+      ? await supabase.from('profiles').select('full_name, whatsapp, shipping_address').eq('id', user.id).single()
       : { data: null };
+
+    // Use explicit body address, or if missing, use the one from profile
+    const finalShippingAddress = shipping_address || profile?.shipping_address || null;
+
+    // Optional: Safety check to guarantee profile is updated with body info if it wasn't already
+    if (user && (!profile?.shipping_address || !profile?.whatsapp) && (shipping_address || customer_phone)) {
+      await supabase.from('profiles').update({
+        whatsapp: customer_phone || profile?.whatsapp,
+        shipping_address: finalShippingAddress
+      }).eq('id', user.id);
+    }
 
     const { sendWebhook } = await import('@/lib/webhook-dispatcher');
     sendWebhook('order_created', {
@@ -238,7 +249,7 @@ export async function POST(request: NextRequest) {
         price: i.price,
         on_request: i.on_request
       })),
-      shipping_address
+      shipping_address: finalShippingAddress
     }, {
       name: customer_name || profile?.full_name || user?.email?.split('@')[0],
       email: customer_email || user?.email,

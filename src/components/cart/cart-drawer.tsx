@@ -17,6 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { CartItemRow } from './cart-item';
 import { CheckoutButton } from '@/components/orders/checkout-button';
+import { CheckoutInfoForm } from '@/components/orders/checkout-info-form';
 import {
   useCart,
   useCartTotals,
@@ -31,7 +32,7 @@ import { PriceDisplay } from '@/components/store-settings-provider';
 interface CartDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onLoginRequired?: (config?: { view: 'login' | 'register' | 'summary' | 'guest'; message: string }) => void;
+  onLoginRequired?: (config?: { view: 'login' | 'register' | 'summary' | 'guest' | 'checkout-info'; message: string }) => void;
   guestData?: { fullName: string; email: string; whatsapp: string } | null;
 }
 
@@ -47,6 +48,25 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired, guestData }: C
 
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
   const [removingItemId, setRemovingItemId] = useState<string | null>(null);
+  const [showCheckoutInfo, setShowCheckoutInfo] = useState(false);
+
+  const handleLoginRequired = (config?: { view: 'login' | 'register' | 'summary' | 'guest' | 'checkout-info'; message: string }) => {
+    if (config?.view === 'checkout-info') {
+      setShowCheckoutInfo(true);
+      if (config.message) {
+        toast.info(config.message);
+      }
+    } else {
+      onLoginRequired?.(config);
+    }
+  };
+
+  const handleCheckoutInfoSuccess = () => {
+    setShowCheckoutInfo(false);
+    // Proceed to trigger checkout button logic again now that info is saved
+    // Easiest is to simulate clicking it, but we can instruct user to click again or manually re-fire.
+    toast.success('¡Listo! Por favor, haz clic nuevamente en Confirmar Pedido para continuar.');
+  };
 
   const handleUpdateQuantity = async (itemId: string, quantity: number) => {
     if (quantity < 1) return;
@@ -143,7 +163,7 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired, guestData }: C
                 <Separator className="my-4" />
 
                 {/* Auth message for non-logged in users */}
-                {!isAuthenticated && (
+                {!isAuthenticated && !showCheckoutInfo && (
                   <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
                     <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
                       <LogIn className="h-4 w-4" />
@@ -154,65 +174,78 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired, guestData }: C
                   </div>
                 )}
 
-                {/* Cart Summary */}
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <PriceDisplay amount={total} />
+                {showCheckoutInfo ? (
+                  <div className="px-1 mt-2">
+                    <CheckoutInfoForm
+                      onSuccess={handleCheckoutInfoSuccess}
+                      onCancel={() => setShowCheckoutInfo(false)}
+                    />
                   </div>
-                  <Separator />
-                  <div className="flex justify-between font-semibold text-lg">
-                    <span>Total</span>
-                    <div className="flex flex-col items-end">
-                      <PriceDisplay amount={total} className="flex flex-col items-end leading-none" />
-                      {hasOnRequestItems && (
-                        <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tight">
-                          + Presupuesto de diseño
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                ) : (
+                  <>
+                    {/* Cart Summary */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <PriceDisplay amount={total} />
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between font-semibold text-lg">
+                        <span>Total</span>
+                        <div className="flex flex-col items-end">
+                          <PriceDisplay amount={total} className="flex flex-col items-end leading-none" />
+                          {hasOnRequestItems && (
+                            <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tight">
+                              + Presupuesto de diseño
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
-                  {hasOnRequestItems && (
-                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 animate-in fade-in slide-in-from-top-2">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-1">Nota de Presupuesto</p>
-                      <p className="text-[11px] text-amber-800 dark:text-amber-200 leading-tight italic font-medium">
-                        Tu carrito incluye diseños personalizados. El total mostrado es un estimado base; nos contactaremos contigo para darte la cotización final después de realizar el pedido.
-                      </p>
+                      {hasOnRequestItems && (
+                        <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 animate-in fade-in slide-in-from-top-2">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-1">Nota de Presupuesto</p>
+                          <p className="text-[11px] text-amber-800 dark:text-amber-200 leading-tight italic font-medium">
+                            Tu carrito incluye diseños personalizados. El total mostrado es un estimado base; nos contactaremos contigo para darte la cotización final después de realizar el pedido.
+                          </p>
+                        </div>
+                      )}
+                      <div className="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Política de Devolución</p>
+                        <p className="text-[11px] text-muted-foreground leading-tight italic font-medium">
+                          Solo se permiten cambios por otros productos. Si el nuevo artículo es de menor valor, la diferencia se acreditará a tu cuenta como saldo a favor.
+                        </p>
+                      </div>
                     </div>
-                  )}
-                  <div className="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Política de Devolución</p>
-                    <p className="text-[11px] text-muted-foreground leading-tight italic font-medium">
-                      Solo se permiten cambios por otros productos. Si el nuevo artículo es de menor valor, la diferencia se acreditará a tu cuenta como saldo a favor.
-                    </p>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
             </ScrollArea>
 
             <div className="mt-4">
               {/* Action Buttons */}
-              <SheetFooter className="flex-col gap-2 sm:flex-col">
-                <CheckoutButton
-                  onLoginRequired={onLoginRequired}
-                  onOrderComplete={handleOrderComplete}
-                  guestData={guestData}
-                />
-                <Button
-                  variant="outline"
-                  className="w-full text-destructive hover:text-destructive"
-                  onClick={handleClearCart}
-                  disabled={clearCart.isPending}
-                >
-                  {clearCart.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4 mr-2" />
-                  )}
-                  Vaciar Carrito
-                </Button>
-              </SheetFooter>
+              {!showCheckoutInfo && (
+                <SheetFooter className="flex-col gap-2 sm:flex-col">
+                  <CheckoutButton
+                    onLoginRequired={handleLoginRequired}
+                    onOrderComplete={handleOrderComplete}
+                    guestData={guestData}
+                  />
+                  <Button
+                    variant="outline"
+                    className="w-full text-destructive hover:text-destructive"
+                    onClick={handleClearCart}
+                    disabled={clearCart.isPending}
+                  >
+                    {clearCart.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4 mr-2" />
+                    )}
+                    Vaciar Carrito
+                  </Button>
+                </SheetFooter>
+              )}
             </div>
           </>
         )}

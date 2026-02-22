@@ -45,6 +45,23 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete, guestData }: 
         });
         return;
       }
+    } else {
+      // Flow for Authenticated users: Check missing data (likely via Google OAuth)
+      const userStr = localStorage.getItem('cart-storage');
+      if (userStr) {
+        try {
+          const parsed = JSON.parse(userStr);
+          const userObj = parsed?.state?.user;
+          if (userObj && (!userObj.whatsapp || !userObj.shipping_address)) {
+            // Trigger new event to collect info
+            onLoginRequired?.({
+              view: 'checkout-info' as any,
+              message: '¡Casi listo! Solo faltan unos datos de envío.'
+            });
+            return; // Stop checkout process until info is provided
+          }
+        } catch (e) { }
+      }
     }
 
     if (cart.items.length === 0) {

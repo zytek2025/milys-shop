@@ -265,7 +265,10 @@ export default function InventoryPage() {
                         update_price: updatePublicPrice
                     }),
                 });
-                if (!res.ok) throw new Error(`Error en item ${item.name}`);
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => null);
+                    throw new Error(errData?.error || `Error en item ${item.name}`);
+                }
             }
             toast.success('Inventario actualizado correctamente');
             setSelectedItems([]);
