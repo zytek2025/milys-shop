@@ -14,7 +14,7 @@ export async function POST(
 
     try {
         const body = await request.json();
-        const { reference, amount, screenshot_url, account_id } = body;
+        const { reference, amount, screenshot_url, account_id, currency } = body;
 
         if (!reference || !amount || !screenshot_url) {
             return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
@@ -29,6 +29,23 @@ export async function POST(
 
         if (orderError || !order) {
             return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 });
+        }
+
+        // Resolve currency: use provided value, or look up from account, or default to USD
+        let resolvedCurrency = currency || 'USD';
+        if (!currency && account_id) {
+            try {
+                const { data: account } = await supabase
+                    .from('finance_accounts')
+                    .select('currency')
+                    .eq('id', account_id)
+                    .single();
+                if (account?.currency) {
+                    resolvedCurrency = account.currency;
+                }
+            } catch (e) {
+                // Keep default
+            }
         }
 
         // 2. Crear el registro de confirmación
@@ -59,6 +76,7 @@ export async function POST(
                 order_id: orderId,
                 reference_number: reference,
                 amount_paid: amount,
+                currency: resolvedCurrency,
                 screenshot_url
             }, {
                 name: profile?.full_name || user?.email?.split('@')[0] || 'Cliente',

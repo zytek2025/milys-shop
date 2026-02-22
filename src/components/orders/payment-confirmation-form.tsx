@@ -108,7 +108,8 @@ export function PaymentConfirmationForm({ orderId, total, onSuccess }: PaymentCo
                     reference,
                     amount: parseFloat(amount),
                     screenshot_url: publicUrl,
-                    account_id: selectedMethod?.account_id
+                    account_id: selectedMethod?.account_id,
+                    currency: selectedCurrency
                 }),
             });
 
@@ -133,8 +134,17 @@ export function PaymentConfirmationForm({ orderId, total, onSuccess }: PaymentCo
         }
     };
 
-    const totalReported = existingConfirmations.reduce((sum, c) => sum + (c.amount_paid || 0), 0);
-    const isFullyReported = totalReported >= total && total > 0;
+    // Convert each payment to USD equivalent before summing
+    const totalReportedUsd = existingConfirmations.reduce((sum, c) => {
+        const confCurrency = c.finance_accounts?.currency || 'USD';
+        const amountPaid = c.amount_paid || 0;
+        // If the payment was in local currency (non-USD), convert to USD
+        if (confCurrency !== 'USD' && exchangeRate > 0) {
+            return sum + (amountPaid / exchangeRate);
+        }
+        return sum + amountPaid;
+    }, 0);
+    const isFullyReported = totalReportedUsd >= total && total > 0;
 
     // Determine currency of selected method
     const selectedMethod = methods.find(m => m.id === selectedMethodId);
@@ -154,7 +164,7 @@ export function PaymentConfirmationForm({ orderId, total, onSuccess }: PaymentCo
 
     const isLocalCurrency = selectedCurrency !== 'USD';
     const displayTotal = isLocalCurrency ? total * exchangeRate : total;
-    const displayRemaining = isLocalCurrency ? (total - totalReported) * exchangeRate : (total - totalReported);
+    const displayRemaining = isLocalCurrency ? (total - totalReportedUsd) * exchangeRate : (total - totalReportedUsd);
     const currencyLabel = isLocalCurrency ? selectedCurrency : '$';
 
     if (isLoading) {
@@ -198,7 +208,12 @@ export function PaymentConfirmationForm({ orderId, total, onSuccess }: PaymentCo
                                 </div>
                                 <div className="text-right flex items-center gap-4">
                                     <div className="space-y-0.5">
-                                        <p className="text-xs font-black text-primary italic leading-none">${conf.amount_paid.toFixed(2)}</p>
+                                        <p className="text-xs font-black text-primary italic leading-none">
+                                            {(conf.finance_accounts?.currency && conf.finance_accounts.currency !== 'USD')
+                                                ? `${conf.finance_accounts.currency} ${conf.amount_paid.toFixed(2)}`
+                                                : `$${conf.amount_paid.toFixed(2)}`
+                                            }
+                                        </p>
                                         <Badge className={`text-[7px] h-3 px-1 font-black uppercase ${conf.status === 'approved' ? 'bg-emerald-500' : 'bg-amber-500'
                                             }`}>
                                             {conf.status === 'approved' ? 'Aprobado' : 'Pendiente'}
@@ -214,7 +229,7 @@ export function PaymentConfirmationForm({ orderId, total, onSuccess }: PaymentCo
                                 "text-sm font-black italic",
                                 isFullyReported ? "text-emerald-600" : "text-primary"
                             )}>
-                                ${totalReported.toFixed(2)} / ${total.toFixed(2)}
+                                ${totalReportedUsd.toFixed(2)} / ${total.toFixed(2)}
                             </span>
                         </div>
                     </CardContent>

@@ -1025,7 +1025,12 @@ export default function AdminOrdersPage() {
                                                     <div className="grid grid-cols-3 gap-4 bg-white dark:bg-slate-900/50 p-4 rounded-2xl border">
                                                         <div>
                                                             <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Monto Informado</p>
-                                                            <p className="font-black text-lg text-primary">${proof.amount_paid.toFixed(2)}</p>
+                                                            <p className="font-black text-lg text-primary">
+                                                                {(proof.finance_accounts?.currency && proof.finance_accounts.currency !== 'USD')
+                                                                    ? `${proof.finance_accounts.currency} ${proof.amount_paid.toFixed(2)}`
+                                                                    : `$${proof.amount_paid.toFixed(2)}`
+                                                                }
+                                                            </p>
                                                         </div>
                                                         <div>
                                                             <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Cuenta Destino</p>

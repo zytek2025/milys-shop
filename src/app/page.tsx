@@ -13,7 +13,7 @@ async function getProducts() {
   // 1. Fetch products
   const { data: products, error: pError } = await supabase
     .from('products')
-    .select('*')
+    .select('*, product_variants(*)')
     .order('created_at', { ascending: false });
 
   if (pError) {
