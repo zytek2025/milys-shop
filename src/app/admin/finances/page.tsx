@@ -12,7 +12,7 @@ import {
     Wallet, Landmark, Bitcoin, ArrowRightLeft, DollarSign,
     PieChart as PieChartIcon, BarChart2, History, Settings2, Plus,
     X, Check, Banknote, CreditCard as CardIcon,
-    Smartphone, Globe, CreditCard, Zap, Info, Save
+    Smartphone, Globe, CreditCard, Zap, Info, Save, Calendar, Filter
 } from 'lucide-react';
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger
@@ -99,6 +99,10 @@ export default function FinancesDashboard() {
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
     const [transactionType, setTransactionType] = useState<'income' | 'expense'>('income');
 
+    // Dashboard filters
+    const [currencyFilter, setCurrencyFilter] = useState<'all' | 'USD' | 'VES'>('all');
+    const [timePeriod, setTimePeriod] = useState<'day' | 'week' | 'month' | 'year'>('week');
+
     // Form States
     const [newAccount, setNewAccount] = useState({ name: '', type: 'bank', currency: 'USD', balance: '' });
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -127,7 +131,7 @@ export default function FinancesDashboard() {
             const [accRes, catRes, txRes] = await Promise.all([
                 fetch('/api/admin/finances/accounts'),
                 fetch('/api/admin/finances/categories'),
-                fetch('/api/admin/finances/transactions?limit=100')
+                fetch('/api/admin/finances/transactions?limit=500')
             ]);
 
             const [accData, catData, txData] = await Promise.all([
@@ -347,20 +351,113 @@ export default function FinancesDashboard() {
         }
     };
 
+    // === FILTERED DATA HELPERS ===
+    const getDateRange = () => {
+        const now = new Date();
+        const start = new Date();
+        switch (timePeriod) {
+            case 'day': start.setHours(0, 0, 0, 0); break;
+            case 'week': start.setDate(now.getDate() - 7); break;
+            case 'month': start.setMonth(now.getMonth() - 1); break;
+            case 'year': start.setFullYear(now.getFullYear() - 1); break;
+        }
+        return { start, end: now };
+    };
+
+    const filteredTransactions = (() => {
+        const { start } = getDateRange();
+        return transactions.filter(t => {
+            const txDate = new Date(t.transaction_date);
+            const inDateRange = txDate >= start;
+            const inCurrency = currencyFilter === 'all' || t.currency === currencyFilter;
+            return inDateRange && inCurrency;
+        });
+    })();
+
+    const filteredAccounts = currencyFilter === 'all'
+        ? accounts
+        : accounts.filter(a => a.currency === currencyFilter);
+
     // Derived Data for Charts
     const getChartData = () => {
-        const last7Days = Array.from({ length: 7 }, (_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            return d.toISOString().split('T')[0];
-        }).reverse();
+        const { start } = getDateRange();
+        let daysCount: number;
+        let dateFormat: Intl.DateTimeFormatOptions;
 
-        return last7Days.map(date => {
-            const dayTxs = transactions.filter(t => t.transaction_date.startsWith(date));
-            const income = dayTxs.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount_usd_equivalent), 0);
-            const expense = dayTxs.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount_usd_equivalent), 0);
+        switch (timePeriod) {
+            case 'day': daysCount = 1; dateFormat = { hour: '2-digit' }; break;
+            case 'week': daysCount = 7; dateFormat = { day: 'numeric', month: 'short' }; break;
+            case 'month': daysCount = 30; dateFormat = { day: 'numeric', month: 'short' }; break;
+            case 'year': daysCount = 12; dateFormat = { month: 'short', year: '2-digit' }; break;
+            default: daysCount = 7; dateFormat = { day: 'numeric', month: 'short' };
+        }
+
+        if (timePeriod === 'year') {
+            // Group by month for yearly view
+            const months = Array.from({ length: 12 }, (_, i) => {
+                const d = new Date();
+                d.setMonth(d.getMonth() - (11 - i));
+                return d;
+            });
+
+            return months.map(month => {
+                const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
+                const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+                const monthTxs = filteredTransactions.filter(t => {
+                    const d = new Date(t.transaction_date);
+                    return d >= monthStart && d <= monthEnd;
+                });
+                const income = monthTxs.filter(t => t.type === 'income').reduce((sum, t) =>
+                    sum + (currencyFilter === 'VES' ? Number(t.amount) : Number(t.amount_usd_equivalent)), 0);
+                const expense = monthTxs.filter(t => t.type === 'expense').reduce((sum, t) =>
+                    sum + (currencyFilter === 'VES' ? Number(t.amount) : Number(t.amount_usd_equivalent)), 0);
+                return {
+                    date: month.toLocaleDateString('es-VE', dateFormat),
+                    Ingresos: income,
+                    Egresos: expense
+                };
+            });
+        }
+
+        if (timePeriod === 'day') {
+            // Group by hour for daily view
+            const hours = Array.from({ length: 24 }, (_, i) => i);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            return hours.map(hour => {
+                const hourTxs = filteredTransactions.filter(t => {
+                    const d = new Date(t.transaction_date);
+                    return d >= today && d.getHours() === hour;
+                });
+                const income = hourTxs.filter(t => t.type === 'income').reduce((sum, t) =>
+                    sum + (currencyFilter === 'VES' ? Number(t.amount) : Number(t.amount_usd_equivalent)), 0);
+                const expense = hourTxs.filter(t => t.type === 'expense').reduce((sum, t) =>
+                    sum + (currencyFilter === 'VES' ? Number(t.amount) : Number(t.amount_usd_equivalent)), 0);
+                return {
+                    date: `${hour}:00`,
+                    Ingresos: income,
+                    Egresos: expense
+                };
+            });
+        }
+
+        // Week/Month: group by day
+        const days = Array.from({ length: daysCount }, (_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - (daysCount - 1 - i));
+            return d;
+        });
+
+        return days.map(day => {
+            const dayStr = day.toISOString().split('T')[0];
+            const dayTxs = filteredTransactions.filter(t => t.transaction_date.startsWith(dayStr));
+            const income = dayTxs.filter(t => t.type === 'income').reduce((sum, t) =>
+                sum + (currencyFilter === 'VES' ? Number(t.amount) : Number(t.amount_usd_equivalent)), 0);
+            const expense = dayTxs.filter(t => t.type === 'expense').reduce((sum, t) =>
+                sum + (currencyFilter === 'VES' ? Number(t.amount) : Number(t.amount_usd_equivalent)), 0);
             return {
-                date: new Date(date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }),
+                date: day.toLocaleDateString('es-VE', dateFormat),
                 Ingresos: income,
                 Egresos: expense
             };
@@ -368,15 +465,23 @@ export default function FinancesDashboard() {
     };
 
     const getCategoryData = () => {
-        const expenseTxs = transactions.filter(t => t.type === 'expense');
+        const expenseTxs = filteredTransactions.filter(t => t.type === 'expense');
         const grouped = expenseTxs.reduce((acc: any, tx) => {
             const catName = tx.category?.name || 'Otros';
-            acc[catName] = (acc[catName] || 0) + Number(tx.amount_usd_equivalent);
+            acc[catName] = (acc[catName] || 0) + (currencyFilter === 'VES' ? Number(tx.amount) : Number(tx.amount_usd_equivalent));
             return acc;
         }, {});
 
         return Object.entries(grouped).map(([name, value]) => ({ name, value }));
     };
+
+    const totalIncome = filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) =>
+        sum + (currencyFilter === 'VES' ? Number(t.amount) : Number(t.amount_usd_equivalent)), 0);
+    const totalExpense = filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) =>
+        sum + (currencyFilter === 'VES' ? Number(t.amount) : Number(t.amount_usd_equivalent)), 0);
+    const netBalance = totalIncome - totalExpense;
+
+    const currencyPrefix = currencyFilter === 'VES' ? 'Bs ' : '$';
 
     const totalBalanceUSD = accounts.reduce((sum, acc) => {
         if (acc.currency === 'VES') return sum + (acc.balance / (settings.exchange_rate || 60));
@@ -518,9 +623,108 @@ export default function FinancesDashboard() {
                 </div>
 
                 <TabsContent value="dashboard" className="space-y-6">
-                    {/* Top Cards: Account Quick View */}
+                    {/* Currency Toggle + Time Period Filters */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-2xl border p-1">
+                            {[
+                                { value: 'all' as const, label: 'Consolidado', icon: '📊' },
+                                { value: 'USD' as const, label: 'USD ($)', icon: '💵' },
+                                { value: 'VES' as const, label: 'Bs', icon: '🇻🇪' },
+                            ].map(opt => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => setCurrencyFilter(opt.value)}
+                                    className={cn(
+                                        "px-4 py-2.5 rounded-xl text-[10px] font-black uppercase italic tracking-widest transition-all flex items-center gap-2",
+                                        currencyFilter === opt.value
+                                            ? "bg-primary text-white shadow-lg shadow-primary/20"
+                                            : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                    )}
+                                >
+                                    <span>{opt.icon}</span> {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex items-center gap-1 bg-white dark:bg-slate-900 rounded-2xl border p-1">
+                            {[
+                                { value: 'day' as const, label: 'Hoy' },
+                                { value: 'week' as const, label: 'Semana' },
+                                { value: 'month' as const, label: 'Mes' },
+                                { value: 'year' as const, label: 'Año' },
+                            ].map(opt => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => setTimePeriod(opt.value)}
+                                    className={cn(
+                                        "px-4 py-2.5 rounded-xl text-[10px] font-black uppercase italic tracking-widest transition-all",
+                                        timePeriod === opt.value
+                                            ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-lg"
+                                            : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                    )}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* KPI Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-3xl overflow-hidden">
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Ingresos</p>
+                                        <p className="text-3xl font-black tracking-tight mt-1">
+                                            {currencyPrefix}{totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 bg-white/20 rounded-2xl">
+                                        <TrendingUp size={24} />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-none shadow-lg bg-gradient-to-br from-rose-500 to-rose-600 text-white rounded-3xl overflow-hidden">
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Egresos</p>
+                                        <p className="text-3xl font-black tracking-tight mt-1">
+                                            {currencyPrefix}{totalExpense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 bg-white/20 rounded-2xl">
+                                        <TrendingDown size={24} />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className={cn(
+                            "border-none shadow-lg text-white rounded-3xl overflow-hidden",
+                            netBalance >= 0
+                                ? "bg-gradient-to-br from-blue-500 to-blue-600"
+                                : "bg-gradient-to-br from-amber-500 to-amber-600"
+                        )}>
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Balance Neto</p>
+                                        <p className="text-3xl font-black tracking-tight mt-1">
+                                            {netBalance >= 0 ? '+' : ''}{currencyPrefix}{netBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 bg-white/20 rounded-2xl">
+                                        <Banknote size={24} />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Account Quick View */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {accounts.map(account => (
+                        {filteredAccounts.map(account => (
                             <Card key={account.id} className="relative overflow-hidden group border-none shadow-md bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950">
                                 <CardContent className="p-6">
                                     <div className="flex justify-between items-start mb-4">
@@ -558,10 +762,14 @@ export default function FinancesDashboard() {
                         <Card className="lg:col-span-2 shadow-xl border-none bg-white dark:bg-slate-900 rounded-3xl overflow-hidden">
                             <CardHeader>
                                 <CardTitle className="text-xl font-black uppercase italic tracking-tight flex items-center justify-between">
-                                    <span>Flujo de Caja (USD Equiv)</span>
+                                    <span>Flujo de Caja {currencyFilter === 'VES' ? '(Bs)' : currencyFilter === 'USD' ? '(USD)' : '(Consolidado USD)'}</span>
                                     <TrendingUp className="text-emerald-500 opacity-30" />
                                 </CardTitle>
-                                <CardDescription>Consolidado de ingresos y egresos de los últimos 7 días.</CardDescription>
+                                <CardDescription>
+                                    {timePeriod === 'day' ? 'Desglose por hora del día de hoy' :
+                                        timePeriod === 'week' ? 'Últimos 7 días' :
+                                            timePeriod === 'month' ? 'Últimos 30 días' : 'Últimos 12 meses'}
+                                </CardDescription>
                             </CardHeader>
                             <CardContent className="h-[350px] p-6">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -578,10 +786,11 @@ export default function FinancesDashboard() {
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
                                         <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} tickFormatter={v => `$${v}`} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} tickFormatter={v => `${currencyPrefix}${v}`} />
                                         <Tooltip
                                             contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
                                             labelStyle={{ fontWeight: 800, color: '#64748b', textTransform: 'uppercase', fontSize: '10px' }}
+                                            formatter={(value: any) => [`${currencyPrefix}${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, undefined]}
                                         />
                                         <Area type="monotone" dataKey="Ingresos" stroke="#10b981" fillOpacity={1} fill="url(#colorIngresos)" strokeWidth={3} />
                                         <Area type="monotone" dataKey="Egresos" stroke="#ef4444" fillOpacity={1} fill="url(#colorEgresos)" strokeWidth={3} />
@@ -605,7 +814,10 @@ export default function FinancesDashboard() {
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
-                                        <Tooltip contentStyle={{ borderRadius: '16px', border: 'none' }} />
+                                        <Tooltip
+                                            contentStyle={{ borderRadius: '16px', border: 'none' }}
+                                            formatter={(value: any) => [`${currencyPrefix}${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, undefined]}
+                                        />
                                         <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: '10px', fontWeight: 800 }} />
                                     </PieChart>
                                 </ResponsiveContainer>
