@@ -12,7 +12,8 @@ import {
     Wallet, Landmark, Bitcoin, ArrowRightLeft, DollarSign,
     PieChart as PieChartIcon, BarChart2, History, Settings2, Plus,
     X, Check, Banknote, CreditCard as CardIcon,
-    Smartphone, Globe, CreditCard, Zap, Info, Save, Calendar, Filter
+    Smartphone, Globe, CreditCard, Zap, Info, Save, Calendar, Filter,
+    Lock, Clock, AlertTriangle, FileText, CheckCircle
 } from 'lucide-react';
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger
@@ -57,6 +58,7 @@ interface Transaction {
     amount_usd_equivalent: number;
     description: string;
     transaction_date: string;
+    order_id?: string;
     account?: { name: string; currency: string };
     category?: { name: string; type: string };
 }
@@ -119,10 +121,16 @@ export default function FinancesDashboard() {
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
     const [isSavingMethods, setIsSavingMethods] = useState(false);
 
+    // Cash closing state
+    const [cashClosings, setCashClosings] = useState<any[]>([]);
+    const [isClosingDay, setIsClosingDay] = useState(false);
+    const [closingNotes, setClosingNotes] = useState('');
+
     useEffect(() => {
         setIsMounted(true);
         setNewTx(prev => ({ ...prev, transaction_date: new Date().toISOString().split('T')[0] }));
         fetchData();
+        fetchCashClosings();
     }, []);
 
     const fetchData = async () => {
@@ -216,6 +224,73 @@ export default function FinancesDashboard() {
         } finally {
             setIsSavingMethods(false);
         }
+    };
+
+    // Cash Closing functions
+    const fetchCashClosings = async () => {
+        try {
+            const res = await fetch('/api/admin/finances/cash-close?limit=30');
+            const data = await res.json();
+            if (res.ok) setCashClosings(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error('Error fetching cash closings:', error);
+        }
+    };
+
+    const handleCloseDay = async () => {
+        const today = new Date().toISOString().split('T')[0];
+        if (!confirm(`¿Estás seguro de cerrar el día ${today}? Esta acción registra el cierre y no se puede deshacer.`)) return;
+        setIsClosingDay(true);
+        try {
+            const res = await fetch('/api/admin/finances/cash-close', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ close_date: today, notes: closingNotes })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            toast.success('Cierre de caja registrado correctamente');
+            setClosingNotes('');
+            fetchCashClosings();
+        } catch (error: any) {
+            toast.error(error.message || 'Error al registrar cierre');
+        } finally {
+            setIsClosingDay(false);
+        }
+    };
+
+    // Helper: Today's transactions summary
+    const getTodaySummary = () => {
+        const today = new Date().toISOString().split('T')[0];
+        const todayTxs = transactions.filter(t => t.transaction_date.startsWith(today));
+
+        const byAccount: Record<string, { name: string; currency: string; income: number; expense: number }> = {};
+        todayTxs.forEach(tx => {
+            const accName = tx.account?.name || 'Desconocida';
+            const accCurrency = tx.account?.currency || 'USD';
+            const key = `${accName}-${accCurrency}`;
+            if (!byAccount[key]) {
+                byAccount[key] = { name: accName, currency: accCurrency, income: 0, expense: 0 };
+            }
+            if (tx.type === 'income') byAccount[key].income += Number(tx.amount);
+            else byAccount[key].expense += Number(tx.amount);
+        });
+
+        const incomeUSD = todayTxs.filter(t => t.type === 'income' && t.currency === 'USD').reduce((s, t) => s + Number(t.amount), 0);
+        const incomeVES = todayTxs.filter(t => t.type === 'income' && t.currency === 'VES').reduce((s, t) => s + Number(t.amount), 0);
+        const expenseUSD = todayTxs.filter(t => t.type === 'expense' && t.currency === 'USD').reduce((s, t) => s + Number(t.amount), 0);
+        const expenseVES = todayTxs.filter(t => t.type === 'expense' && t.currency === 'VES').reduce((s, t) => s + Number(t.amount), 0);
+        const orderCount = new Set(todayTxs.filter(t => t.order_id).map(t => t.order_id)).size;
+
+        const todayIsClosed = cashClosings.some(c => c.close_date === today);
+
+        return {
+            byAccount: Object.values(byAccount),
+            incomeUSD, incomeVES, expenseUSD, expenseVES,
+            txCount: todayTxs.length,
+            orderCount,
+            todayIsClosed
+        };
     };
 
     const handleCreateAccount = async (e: React.FormEvent) => {
@@ -529,6 +604,9 @@ export default function FinancesDashboard() {
                         </TabsTrigger>
                         <TabsTrigger value="settings" className="rounded-xl h-10 px-6 font-bold uppercase italic text-[10px] tracking-widest gap-2">
                             <Settings2 size={14} /> Ajustes
+                        </TabsTrigger>
+                        <TabsTrigger value="cash-close" className="rounded-xl h-10 px-6 font-bold uppercase italic text-[10px] tracking-widest gap-2">
+                            <Lock size={14} /> Cierre de Caja
                         </TabsTrigger>
                     </TabsList>
 
@@ -1268,6 +1346,202 @@ export default function FinancesDashboard() {
                         </Card>
                     </div>
                 </TabsContent>
+
+                {/* === CIERRE DE CAJA TAB === */}
+                <TabsContent value="cash-close" className="space-y-6">
+                    {(() => {
+                        const summary = getTodaySummary();
+                        const today = new Date().toISOString().split('T')[0];
+                        const todayFormatted = new Date().toLocaleDateString('es-VE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                        return (
+                            <>
+                                {/* Today's Header */}
+                                <Card className="shadow-xl border-none bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-3xl overflow-hidden">
+                                    <CardContent className="p-8">
+                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cierre de Caja</p>
+                                                <h2 className="text-2xl font-black tracking-tight capitalize mt-1">{todayFormatted}</h2>
+                                                <div className="flex items-center gap-4 mt-2">
+                                                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                                                        <FileText size={12} /> {summary.txCount} transacciones
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                                                        <Banknote size={12} /> {summary.orderCount} pedidos
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {summary.todayIsClosed ? (
+                                                <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-6 py-3 rounded-2xl">
+                                                    <CheckCircle size={20} />
+                                                    <span className="text-xs font-black uppercase">Día Cerrado</span>
+                                                </div>
+                                            ) : (
+                                                <Button
+                                                    onClick={handleCloseDay}
+                                                    disabled={isClosingDay}
+                                                    className="bg-amber-500 hover:bg-amber-600 text-black font-black uppercase italic text-xs px-8 py-6 rounded-2xl gap-2 shadow-xl shadow-amber-500/30"
+                                                >
+                                                    {isClosingDay ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
+                                                    Cerrar Día
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Cash Reminder */}
+                                <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950/20 border-2 border-amber-200 dark:border-amber-800/30 rounded-2xl">
+                                    <AlertTriangle className="text-amber-500 mt-0.5 flex-shrink-0" size={20} />
+                                    <div>
+                                        <p className="text-sm font-black uppercase italic text-amber-700 dark:text-amber-400">¿Registraste el efectivo?</p>
+                                        <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+                                            Recuerda registrar los pagos en efectivo que hayas recibido hoy antes de cerrar. Los pagos en efectivo no se registran automáticamente.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Today's Summary by Account */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Income/Expense Dual Card */}
+                                    <Card className="shadow-xl border-none bg-white dark:bg-slate-900 rounded-3xl">
+                                        <CardHeader>
+                                            <CardTitle className="text-lg font-black uppercase italic tracking-tight">Resumen del Día</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl">
+                                                    <p className="text-[9px] font-black uppercase text-emerald-500">Ingresos USD</p>
+                                                    <p className="text-xl font-black text-emerald-600">${summary.incomeUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                                </div>
+                                                <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-2xl">
+                                                    <p className="text-[9px] font-black uppercase text-amber-500">Ingresos Bs</p>
+                                                    <p className="text-xl font-black text-amber-600">Bs {summary.incomeVES.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                                </div>
+                                                <div className="p-4 bg-rose-50 dark:bg-rose-950/20 rounded-2xl">
+                                                    <p className="text-[9px] font-black uppercase text-rose-500">Egresos USD</p>
+                                                    <p className="text-xl font-black text-rose-600">${summary.expenseUSD.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                                </div>
+                                                <div className="p-4 bg-rose-50 dark:bg-rose-950/20 rounded-2xl">
+                                                    <p className="text-[9px] font-black uppercase text-rose-500">Egresos Bs</p>
+                                                    <p className="text-xl font-black text-rose-600">Bs {summary.expenseVES.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* By Account */}
+                                    <Card className="shadow-xl border-none bg-white dark:bg-slate-900 rounded-3xl">
+                                        <CardHeader>
+                                            <CardTitle className="text-lg font-black uppercase italic tracking-tight">Por Cuenta</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-3">
+                                            {summary.byAccount.length === 0 ? (
+                                                <div className="text-center py-8">
+                                                    <Clock className="mx-auto h-8 w-8 text-slate-300 mb-2" />
+                                                    <p className="text-xs font-bold text-slate-400 italic">Sin movimientos hoy</p>
+                                                </div>
+                                            ) : (
+                                                summary.byAccount.map((acc, i) => (
+                                                    <div key={i} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-950 rounded-xl">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={cn(
+                                                                "p-2 rounded-lg",
+                                                                acc.currency === 'VES' ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600"
+                                                            )}>
+                                                                <Landmark size={14} />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs font-black">{acc.name}</p>
+                                                                <p className="text-[9px] text-muted-foreground">{acc.currency}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-xs font-bold text-emerald-600">+{acc.currency === 'VES' ? 'Bs ' : '$'}{acc.income.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                                            {acc.expense > 0 && <p className="text-[10px] font-bold text-rose-500">-{acc.currency === 'VES' ? 'Bs ' : '$'}{acc.expense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
+                                {/* Closing Notes */}
+                                {!summary.todayIsClosed && (
+                                    <Card className="shadow-xl border-none bg-white dark:bg-slate-900 rounded-3xl">
+                                        <CardContent className="p-6">
+                                            <Label className="text-[10px] font-black uppercase italic text-primary">Notas del Cierre (Opcional)</Label>
+                                            <Textarea
+                                                value={closingNotes}
+                                                onChange={(e) => setClosingNotes(e.target.value)}
+                                                placeholder="Ej: Faltó registrar pago en efectivo de $20 del cliente Juan..."
+                                                className="mt-2 min-h-[80px] bg-slate-50 border-none dark:bg-slate-950 font-mono text-xs"
+                                            />
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {/* History */}
+                                <Card className="shadow-xl border-none bg-white dark:bg-slate-900 rounded-3xl">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg font-black uppercase italic tracking-tight flex items-center gap-2">
+                                            <History className="text-primary" size={18} /> Historial de Cierres
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {cashClosings.length === 0 ? (
+                                            <div className="text-center py-10">
+                                                <Lock className="mx-auto h-8 w-8 text-slate-300 mb-2" />
+                                                <p className="text-xs font-bold text-slate-400 italic">No hay cierres registrados aún</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {cashClosings.map((closing) => (
+                                                    <div key={closing.id} className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                                        <div className="flex items-center justify-between mb-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <CheckCircle size={16} className="text-emerald-500" />
+                                                                <span className="text-sm font-black">
+                                                                    {new Date(closing.close_date + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-[9px] font-bold text-slate-400">
+                                                                {closing.total_orders || 0} pedidos · {closing.summary_json?.transaction_count || 0} mov.
+                                                            </span>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+                                                            <div className="p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl">
+                                                                <p className="text-[8px] font-black uppercase text-emerald-500">Ing USD</p>
+                                                                <p className="text-sm font-black text-emerald-600">${Number(closing.total_income_usd).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                                            </div>
+                                                            <div className="p-2 bg-amber-50 dark:bg-amber-950/30 rounded-xl">
+                                                                <p className="text-[8px] font-black uppercase text-amber-500">Ing Bs</p>
+                                                                <p className="text-sm font-black text-amber-600">Bs {Number(closing.total_income_ves).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                                            </div>
+                                                            <div className="p-2 bg-rose-50 dark:bg-rose-950/30 rounded-xl">
+                                                                <p className="text-[8px] font-black uppercase text-rose-500">Eg USD</p>
+                                                                <p className="text-sm font-black text-rose-600">${Number(closing.total_expense_usd).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                                            </div>
+                                                            <div className="p-2 bg-rose-50 dark:bg-rose-950/30 rounded-xl">
+                                                                <p className="text-[8px] font-black uppercase text-rose-500">Eg Bs</p>
+                                                                <p className="text-sm font-black text-rose-600">Bs {Number(closing.total_expense_ves).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                                            </div>
+                                                        </div>
+                                                        {closing.notes && (
+                                                            <p className="text-[10px] text-muted-foreground mt-2 italic">📝 {closing.notes}</p>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </>
+                        );
+                    })()}
+                </TabsContent>
+
             </Tabs>
         </div>
     );
