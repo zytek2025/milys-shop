@@ -24,28 +24,27 @@ export async function GET(request: NextRequest) {
             .select('*', { count: 'exact', head: true })
             .lt('stock', 5);
 
-        // 3. Stock Value (Sum of price * stock)
-        // Note: This is an estimation. For precise calculation we might need a stored procedure
-        // or fetch all data (careful with large datasets).
-        // For efficiency in large catalogs, we'll fetch just stock and price columns.
+        // 3. Stock Value & Cost (Sum of price/cost * stock)
         const { data: stockData, error: stockError } = await supabase
             .from('product_variants')
-            .select('stock, price_override, product:products(price)');
+            .select('stock, price_override, last_unit_cost, product:products(price, last_unit_cost)');
 
         if (stockError) throw stockError;
 
         let totalValue = 0;
+        let totalCostValue = 0;
         let totalItems = 0;
 
         stockData?.forEach((v: any) => {
             const price = v.price_override || v.product?.price || 0;
+            const cost = v.last_unit_cost || v.product?.last_unit_cost || 0;
             const stock = v.stock || 0;
             totalValue += price * stock;
+            totalCostValue += cost * stock;
             totalItems += stock;
         });
 
         // 4. Stock by Category
-        // We need to join products -> categories
         const { data: categoryData, error: catError } = await supabase
             .from('products')
             .select(`
@@ -59,7 +58,6 @@ export async function GET(request: NextRequest) {
         categoryData?.forEach((p: any) => {
             const catName = p.category || 'Sin Categoría';
             const pStock = p.product_variants.reduce((acc: number, v: any) => acc + (v.stock || 0), 0);
-
             categoryStats[catName] = (categoryStats[catName] || 0) + pStock;
         });
 
@@ -68,6 +66,8 @@ export async function GET(request: NextRequest) {
             variantCount,
             lowStockCount,
             totalValue,
+            totalCostValue,
+            expectedProfit: totalValue - totalCostValue,
             totalItems,
             categoryStats
         });

@@ -5,6 +5,8 @@ import { Loader2, Search, Package } from 'lucide-react';
 import type { Product } from '@/types';
 import { cn } from '@/lib/utils';
 
+import { PriceDisplay } from '@/components/store-settings-provider';
+
 interface SearchResultsProps {
   results: Product[];
   query: string;
@@ -116,9 +118,9 @@ export function SearchResults({
 
             {/* Price */}
             <div className="text-right flex-shrink-0">
-              <p className="font-semibold text-emerald-600">
-                ${product.price.toFixed(2)}
-              </p>
+              <div className="font-semibold text-emerald-600">
+                <PriceDisplay amount={product.price} />
+              </div>
               {product.category && (
                 <p className="text-xs text-muted-foreground capitalize">
                   {product.category}

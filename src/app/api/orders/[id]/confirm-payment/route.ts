@@ -47,6 +47,27 @@ export async function POST(
 
         if (confError) throw confError;
 
+        // 3. Trigger Webhook for Payment Proof Received
+        try {
+            const { sendWebhook } = await import('@/lib/webhook-dispatcher');
+            const { data: profile } = user
+                ? await supabase.from('profiles').select('full_name, whatsapp').eq('id', user.id).single()
+                : { data: null };
+
+            await sendWebhook('payment_proof_received', {
+                order_id: orderId,
+                reference_number: reference,
+                amount_paid: amount,
+                screenshot_url
+            }, {
+                name: profile?.full_name || user?.email?.split('@')[0] || 'Cliente',
+                email: user?.email || '',
+                phone: profile?.whatsapp || ''
+            });
+        } catch (webhookErr) {
+            console.error('Failed to dispatch payment proof webhook:', webhookErr);
+        }
+
         return NextResponse.json({ success: true, data: confirmation });
     } catch (error: any) {
         console.error('Error confirming payment:', error);

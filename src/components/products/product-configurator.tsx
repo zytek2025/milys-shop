@@ -74,6 +74,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     const [designSearch, setDesignSearch] = useState('');
     const [customText, setCustomText] = useState('');
     const [customTextSize, setCustomTextSize] = useState<'small' | 'large'>('small');
+    const [customTextLocation, setCustomTextLocation] = useState('Frente Centro');
     const [storeSettings, setStoreSettings] = useState<any>(null);
 
     // State for garment options
@@ -83,9 +84,15 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
     // Budget Request State
+    interface CustomDesign {
+        instanceId: string;
+        file: File;
+        preview: string;
+        selectedSize: 'small' | 'medium' | 'large';
+        selectedLocation: string;
+    }
     const [designMode, setDesignMode] = useState<'gallery' | 'upload'>('gallery');
-    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-    const [uploadPreviews, setUploadPreviews] = useState<string[]>([]);
+    const [customDesigns, setCustomDesigns] = useState<CustomDesign[]>([]);
     const [uploadInstructions, setUploadInstructions] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -189,8 +196,8 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
 
     const toggleDesign = (design: Design) => {
         setSelectedDesigns(prev => {
-            if (prev.length >= 3) {
-                toast.error('Puedes seleccionar un máximo de 3 diseños');
+            if (prev.length >= 5) {
+                toast.error('Puedes seleccionar un máximo de 5 diseños');
                 return prev;
             }
             return [...prev, {
@@ -212,42 +219,51 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
 
-        if (uploadedFiles.length + files.length > 5) {
+        if (customDesigns.length + files.length > 5) {
             toast.error('Puedes subir un máximo de 5 diseños');
             return;
         }
 
-        const validFiles: File[] = [];
-        const validPreviews: string[] = [];
+        const newCustomDesigns: CustomDesign[] = [];
 
         files.forEach(file => {
             if (file.size > 5 * 1024 * 1024) {
                 toast.error(`El archivo ${file.name} es muy pesado. Máximo 5MB.`);
             } else {
-                validFiles.push(file);
-                validPreviews.push(URL.createObjectURL(file));
+                newCustomDesigns.push({
+                    instanceId: Math.random().toString(36).substr(2, 9),
+                    file,
+                    preview: URL.createObjectURL(file),
+                    selectedSize: 'small',
+                    selectedLocation: 'Frente Centro'
+                });
             }
         });
 
-        if (validFiles.length > 0) {
-            setUploadedFiles(prev => [...prev, ...validFiles]);
-            setUploadPreviews(prev => [...prev, ...validPreviews]);
+        if (newCustomDesigns.length > 0) {
+            setCustomDesigns(prev => [...prev, ...newCustomDesigns]);
         }
     };
 
-    const removeUploadedFile = (index: number) => {
-        setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-        setUploadPreviews(prev => {
-            const newPreviews = [...prev];
-            URL.revokeObjectURL(newPreviews[index]);
-            return newPreviews.filter((_, i) => i !== index);
+    const removeCustomDesign = (instanceId: string) => {
+        setCustomDesigns(prev => {
+            const toRemove = prev.find(d => d.instanceId === instanceId);
+            if (toRemove) URL.revokeObjectURL(toRemove.preview);
+            return prev.filter(d => d.instanceId !== instanceId);
         });
     };
 
-    const uploadCustomDesigns = async (): Promise<string[]> => {
-        if (uploadedFiles.length === 0) return [];
+    const updateCustomDesignOption = (instanceId: string, field: 'selectedSize' | 'selectedLocation', value: string) => {
+        setCustomDesigns(prev => prev.map(d =>
+            d.instanceId === instanceId ? { ...d, [field]: value } : d
+        ));
+    };
 
-        const uploadPromises = uploadedFiles.map(async (file) => {
+    const uploadCustomDesigns = async (): Promise<{ url: string, size: string, location: string }[]> => {
+        if (customDesigns.length === 0) return [];
+
+        const uploadPromises = customDesigns.map(async (design) => {
+            const file = design.file;
             const fileExt = file.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
             const filePath = `${fileName}`;
@@ -262,10 +278,15 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 .from('custom-designs')
                 .getPublicUrl(filePath);
 
-            return data.publicUrl;
+            return {
+                image_url: data.publicUrl,
+                size: design.selectedSize,
+                location: design.selectedLocation
+            };
         });
 
         try {
+            // @ts-ignore
             return await Promise.all(uploadPromises);
         } catch (error) {
             console.error('Error uploading:', error);
@@ -284,20 +305,21 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 personalization: customText ? {
                     text: customText,
                     size: customTextSize,
+                    location: customTextLocation,
                     price: personalizationPrice
                 } : null
             };
 
             // Logic for Budget Request vs Standard Gallery
             if (designMode === 'upload') {
-                if (uploadedFiles.length === 0) {
+                if (customDesigns.length === 0) {
                     toast.error('Por favor sube al menos una imagen de referencia');
                     setIsAdding(false);
                     return;
                 }
 
-                const publicUrls = await uploadCustomDesigns();
-                if (publicUrls.length === 0) {
+                const designData = await uploadCustomDesigns();
+                if (designData.length === 0) {
                     setIsAdding(false);
                     return;
                 }
@@ -306,13 +328,12 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                     ...customMetadata,
                     on_request: true, // Mark as Budget Request
                     budget_request: {
-                        designs: publicUrls.map(url => ({ image_url: url })),
+                        designs: designData,
                         notes: uploadInstructions,
                         original_base_price: garmentPrice
                     },
                     designs: [] // No standard designs
                 };
-
             } else {
                 // Logic for Standard Gallery Designs
                 const isOutOfStock = activeVariant ? activeVariant.stock <= 0 : (product.stock <= 0);
@@ -354,8 +375,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
 
             // Cleanup
             if (designMode === 'upload') {
-                setUploadedFiles([]);
-                setUploadPreviews([]);
+                setCustomDesigns([]);
                 setUploadInstructions('');
             } else {
                 setSelectedDesigns([]);
@@ -391,16 +411,16 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 </div>
                 {(selectedDesigns.length > 0 || customText) && designMode === 'gallery' && (
                     <p className="text-[10px] font-sans font-medium text-slate-400 uppercase tracking-widest">
-                        Base: ${garmentPrice.toFixed(2)}
+                        Base: <PriceDisplay amount={garmentPrice} className="inline-flex" />
                         {selectedDesigns.length > 0 && <span className="text-lavanda mx-1">|</span>}
-                        {selectedDesigns.length > 0 && `Logos: $${designsPrice.toFixed(2)}`}
+                        {selectedDesigns.length > 0 && <span>Logos: <PriceDisplay amount={designsPrice} className="inline-flex" /></span>}
                         {customText && <span className="text-lavanda mx-1">|</span>}
-                        {customText && `Personalización: $${personalizationPrice.toFixed(2)}`}
+                        {customText && <span>Personalización: <PriceDisplay amount={personalizationPrice} className="inline-flex" /></span>}
                     </p>
                 )}
                 {designMode === 'upload' && (
                     <p className="text-[10px] font-sans font-medium text-slate-400 uppercase tracking-widest">
-                        Base estimada: ${garmentPrice.toFixed(2)} + Personalización
+                        Base estimada: <PriceDisplay amount={garmentPrice} className="inline-flex" /> + Personalización
                     </p>
                 )}
             </div>
@@ -523,9 +543,10 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                                                 <img src={design.image_url} alt={design.name} className="w-full h-full object-contain p-2" />
                                                 <button
                                                     onClick={() => setSelectedDesigns(prev => prev.filter(d => d.instanceId !== design.instanceId))}
-                                                    className="absolute -top-1 -right-1 bg-destructive text-white p-1 rounded-full shadow-md hover:scale-110 transition-transform"
+                                                    className="absolute -top-2 -right-2 bg-destructive text-white p-1.5 rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all z-10"
+                                                    title="Eliminar diseño"
                                                 >
-                                                    <X size={10} strokeWidth={4} />
+                                                    <X size={14} strokeWidth={4} />
                                                 </button>
                                             </div>
 
@@ -533,7 +554,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                                                 <div className="flex justify-between items-start">
                                                     <div className="font-bold text-sm uppercase truncate max-w-[150px]">{design.name}</div>
                                                     <div className="text-primary font-black text-xs">
-                                                        ${getDesignPrice(design, design.selectedSize).toFixed(2)}
+                                                        <PriceDisplay amount={getDesignPrice(design, design.selectedSize)} />
                                                     </div>
                                                 </div>
 
@@ -663,31 +684,77 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                         </TabsContent>
 
                         <TabsContent value="upload" className="space-y-4 mt-0 animate-in fade-in slide-in-from-right-4 duration-300">
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                {uploadPreviews.map((preview, index) => (
-                                    <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 group">
-                                        <img src={preview} alt={`Upload ${index + 1}`} className="w-full h-full object-contain p-2" />
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                removeUploadedFile(index);
-                                            }}
-                                            className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white p-1 rounded-full backdrop-blur-sm transition-colors opacity-0 group-hover:opacity-100"
-                                        >
-                                            <XIcon size={12} />
-                                        </button>
+                            <div className="flex flex-col gap-4">
+                                {customDesigns.map(design => (
+                                    <div key={design.instanceId} className="group relative rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 shadow-sm animate-in fade-in slide-in-from-left duration-300">
+                                        <div className="flex gap-4">
+                                            <div className="relative aspect-square w-20 rounded-xl bg-white dark:bg-slate-900 overflow-hidden border">
+                                                <img src={design.preview} alt="Custom upload" className="w-full h-full object-contain p-2" />
+                                                <button
+                                                    onClick={() => removeCustomDesign(design.instanceId)}
+                                                    className="absolute -top-2 -right-2 bg-destructive text-white p-1.5 rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all z-10"
+                                                    title="Eliminar diseño"
+                                                >
+                                                    <XIcon size={14} strokeWidth={4} />
+                                                </button>
+                                            </div>
+
+                                            <div className="flex-1 space-y-3">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="font-bold text-sm uppercase truncate max-w-[150px]">Tu Diseño</div>
+                                                    <div className="text-amber-600 font-bold text-[10px] uppercase tracking-tighter italic">
+                                                        A Cotizar
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[9px] uppercase font-bold text-muted-foreground">Tamaño</Label>
+                                                        <select
+                                                            value={design.selectedSize}
+                                                            onChange={(e) => updateCustomDesignOption(design.instanceId, 'selectedSize', e.target.value)}
+                                                            className="w-full h-8 rounded-lg bg-white dark:bg-slate-800 border text-[10px] font-bold px-2 focus:ring-1 focus:ring-primary outline-none"
+                                                        >
+                                                            <option value="small">Pequeño</option>
+                                                            <option value="medium">Mediano</option>
+                                                            <option value="large">Grande</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[9px] uppercase font-bold text-muted-foreground">Ubicación</Label>
+                                                        <select
+                                                            value={design.selectedLocation}
+                                                            onChange={(e) => updateCustomDesignOption(design.instanceId, 'selectedLocation', e.target.value)}
+                                                            className="w-full h-8 rounded-lg bg-white dark:bg-slate-800 border text-[10px] font-bold px-2 focus:ring-1 focus:ring-primary outline-none"
+                                                        >
+                                                            {designLocations.map(loc => (
+                                                                <option key={loc} value={loc}>{loc}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
 
-                                {uploadPreviews.length < 5 && (
+                                {customDesigns.length < 5 && (
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="aspect-square rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-primary hover:bg-slate-50 transition-all flex flex-col items-center justify-center gap-2 group"
+                                        className="w-full h-24 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-primary hover:bg-slate-50 transition-all flex flex-col items-center justify-center gap-2 group mt-2"
                                     >
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            className="hidden"
+                                            accept="image/*"
+                                            multiple
+                                            onChange={handleFileUpload}
+                                        />
                                         <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-primary group-hover:text-white transition-colors flex items-center justify-center">
                                             <Upload size={18} />
                                         </div>
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Subir Logo</span>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Subir Logo ({customDesigns.length}/5)</span>
                                     </button>
                                 )}
                             </div>
@@ -745,6 +812,18 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                             >
                                 <option value="small">Pequeño (+${storeSettings?.personalization_price_small ?? '1.00'})</option>
                                 <option value="large">Grande (+${storeSettings?.personalization_price_large ?? '3.00'})</option>
+                            </select>
+                        </div>
+                        <div className="w-full sm:w-48 space-y-1">
+                            <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Ubicación</Label>
+                            <select
+                                value={customTextLocation}
+                                onChange={(e) => setCustomTextLocation(e.target.value)}
+                                className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
+                            >
+                                {designLocations.map(loc => (
+                                    <option key={loc} value={loc}>{loc}</option>
+                                ))}
                             </select>
                         </div>
                     </div>

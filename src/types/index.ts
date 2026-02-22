@@ -171,6 +171,7 @@ export interface Order {
   customer_name?: string;
   customer_email?: string;
   customer_phone?: string;
+  notion_synced?: boolean;
   created_at: string;
 }
 

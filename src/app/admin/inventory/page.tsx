@@ -15,7 +15,14 @@ import {
     DollarSign,
     RefreshCw,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Sparkles,
+    TrendingUp,
+    AlertTriangle,
+    CheckCircle2,
+    Info,
+    LayoutGrid,
+    Target
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,29 +65,46 @@ export default function InventoryPage() {
     const [variants, setVariants] = useState<any[]>([]);
     const [movements, setMovements] = useState<any[]>([]);
     const [stats, setStats] = useState<any>(null);
-    const [customers, setCustomers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [categories, setCategories] = useState<any[]>([]);
-    const [selectedCategory, setSelectedCategory] = useState<string>('all');
-    const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
-    const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
-    const [modalType, setModalType] = useState<'in' | 'out' | 'return'>('in');
-    const [movementType, setMovementType] = useState<string>('manual');
-    const [qty, setQty] = useState(1);
-    const [reason, setReason] = useState('');
-    const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
-    const [creditAmount, setCreditAmount] = useState<string>('0');
+    const [isAdjustmentMode, setIsAdjustmentMode] = useState(false);
+
+    // Adjustment State
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [searching, setSearching] = useState(false);
+    const [selectedItems, setSelectedItems] = useState<any[]>([]); // Current items being adjusted
+    const [adjustmentType, setAdjustmentType] = useState<'in' | 'out'>('in');
+    const [adjustmentReason, setAdjustmentReason] = useState('purchase');
+    const [commonCost, setCommonCost] = useState<string>('');
+    const [commonUtility, setCommonUtility] = useState<string>('30');
+    const [commonPrice, setCommonPrice] = useState<string>('');
+    const [updatePublicPrice, setUpdatePublicPrice] = useState(true);
+    const [exchangeRate, setExchangeRate] = useState(1);
+
+    const [aiRecommendations, setAiRecommendations] = useState<any>(null);
+    const [aiLoading, setAiLoading] = useState(false);
+
     const [submitting, setSubmitting] = useState(false);
-    const [activeTab, setActiveTab] = useState('quick');
+    const [activeTab, setActiveTab] = useState('adjust');
     const [currentPage, setCurrentPage] = useState(1);
-    const [updatingInline, setUpdatingInline] = useState<string | null>(null);
     const ITEMS_PER_PAGE = 20;
 
     useEffect(() => {
         fetchData();
-        fetchCustomers();
+        fetchSettings();
     }, []);
+
+    const fetchSettings = async () => {
+        try {
+            const res = await fetch('/api/admin/settings');
+            if (res.ok) {
+                const data = await res.json();
+                setExchangeRate(data.exchange_rate || 1);
+            }
+        } catch (error) {
+            console.error('Error fetching settings:', error);
+        }
+    };
 
     // Refresh stats when tab changes to reports
     useEffect(() => {
@@ -91,23 +115,19 @@ export default function InventoryPage() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, selectedCategory]);
+    }, [searchTerm]);
 
     const fetchData = async () => {
         setLoading(true);
         try {
             const headers = { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' };
-            const [vRes, mRes, cRes] = await Promise.all([
+            const [vRes, mRes] = await Promise.all([
                 fetch('/api/admin/products', { headers }),
-                fetch('/api/admin/inventory/movements', { headers }),
-                fetch('/api/admin/categories', { headers })
+                fetch('/api/admin/inventory/movements', { headers })
             ]);
 
             const products = await vRes.json();
             const moves = await mRes.json();
-            const cats = await cRes.json();
-
-            // ... (rest of logic)
 
             if (!vRes.ok) throw new Error(products.error || 'Failed to load products');
             if (!mRes.ok) throw new Error(moves.error || 'Failed to load movements');
@@ -130,7 +150,7 @@ export default function InventoryPage() {
                         product_id: p.id,
                         product_name: p.name || 'Producto sin nombre',
                         control_id: p.control_id,
-                        category_id: p.category_id || p.category, // Capture category
+                        category_id: p.category_id || p.category,
                         size: 'N/A',
                         color: 'N/A',
                         stock: p.stock || 0,
@@ -142,14 +162,12 @@ export default function InventoryPage() {
                     ...v,
                     product_name: p.name || 'Producto sin nombre',
                     control_id: p.control_id,
-                    category_id: p.category_id || p.category, // Capture category
+                    category_id: p.category_id || p.category,
                     price: v.price_override || p.price || 0
                 }));
             });
 
-            if (Array.isArray(cats)) setCategories(cats);
             setVariants(allVariants);
-            // No longer overwriting processed movements
         } catch (error: any) {
             toast.error(error.message || 'Error loading inventory data');
         } finally {
@@ -169,191 +187,465 @@ export default function InventoryPage() {
         }
     };
 
-    const fetchCustomers = async () => {
+    const handleSearch = async (val: string) => {
+        setSearchTerm(val);
+        if (val.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+        setSearching(true);
         try {
-            const res = await fetch('/api/admin/crm');
-            if (res.ok) setCustomers(await res.json());
+            const res = await fetch(`/api/admin/products/search?q=${encodeURIComponent(val)}`);
+            if (res.ok) setSearchResults(await res.json());
         } catch (error) {
-            console.error('Error fetching customers:', error);
+            console.error(error);
+        } finally {
+            setSearching(false);
         }
     };
 
-    const handleMovement = async () => {
-        if (qty <= 0) return toast.error('Quantity must be > 0');
+    const addItemToAdjustment = (item: any) => {
+        if (selectedItems.find(i => i.id === item.id)) return;
+        setSelectedItems([...selectedItems, {
+            ...item,
+            qty: 1,
+            cost: commonCost || item.cost || 0,
+            utility: commonUtility || 30,
+            price: item.price || 0
+        }]);
+        setSearchTerm('');
+        setSearchResults([]);
+    };
+
+    const removeItem = (id: string) => {
+        setSelectedItems(selectedItems.filter(i => i.id !== id));
+    };
+
+    const updateItemField = (id: string, field: string, val: any) => {
+        setSelectedItems(selectedItems.map(item => {
+            if (item.id !== id) return item;
+            const updated = { ...item, [field]: val };
+
+            // Auto-calculate logic
+            if (field === 'cost' || field === 'utility') {
+                const cost = field === 'cost' ? parseFloat(val) : parseFloat(item.cost);
+                const util = field === 'utility' ? parseFloat(val) : parseFloat(item.utility);
+                if (!isNaN(cost) && !isNaN(util)) {
+                    updated.price = cost * (1 + util / 100);
+                }
+            } else if (field === 'price') {
+                const price = parseFloat(val);
+                const cost = parseFloat(item.cost);
+                if (!isNaN(price) && !isNaN(cost) && cost > 0) {
+                    updated.utility = ((price / cost) - 1) * 100;
+                }
+            }
+            return updated;
+        }));
+    };
+
+    const processAdjustment = async () => {
+        if (selectedItems.length === 0) return toast.error('No hay productos seleccionados');
         setSubmitting(true);
         try {
-            // ... (keep existing logic from previous file)
-            // Re-implementing simplified for brevity, assume similar logic
-            // Copied from previous view_file content to ensure correctness
-            if (modalType === 'return') {
-                if (!selectedCustomerId) {
-                    toast.error('Seleccione un cliente');
-                    setSubmitting(false);
-                    return;
-                }
-                const res = await fetch('/api/admin/inventory/returns', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        profile_id: selectedCustomerId,
-                        variant_id: selectedVariant.is_legacy ? selectedVariant.product_id : selectedVariant.id,
-                        quantity: qty,
-                        amount_to_credit: Number(creditAmount),
-                        reason: reason || 'Devolución'
-                    }),
-                });
-                if (res.ok) {
-                    toast.success('Devolución procesada');
-                    setIsMovementModalOpen(false);
-                    resetModal();
-                    fetchData();
-                } else {
-                    const data = await res.json();
-                    toast.error(data.error);
-                }
-            } else {
-                const finalQty = modalType === 'in' ? qty : -qty;
-                const payload: any = {
-                    quantity: finalQty,
-                    type: movementType,
-                    reason: reason || (modalType === 'in' ? 'Ingreso manual' : 'Egreso manual')
-                };
-                if (selectedVariant.is_legacy) payload.product_id = selectedVariant.product_id;
-                else payload.variant_id = selectedVariant.id;
-
+            for (const item of selectedItems) {
                 const res = await fetch('/api/admin/inventory/movements', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify({
+                        variant_id: item.type === 'variant' ? item.id : undefined,
+                        product_id: item.type === 'product' ? item.id : undefined,
+                        quantity: adjustmentType === 'in' ? item.qty : -item.qty,
+                        type: adjustmentReason,
+                        reason: `Ajuste Panel: ${adjustmentReason}`,
+                        unit_cost: item.cost,
+                        utility_percentage: item.utility,
+                        unit_price: item.price,
+                        exchange_rate: exchangeRate,
+                        update_price: updatePublicPrice
+                    }),
                 });
-                if (res.ok) {
-                    toast.success('Movimiento registrado');
-                    setIsMovementModalOpen(false);
-                    resetModal();
-                    fetchData();
-                } else {
-                    const data = await res.json();
-                    toast.error(data.error);
-                }
+                if (!res.ok) throw new Error(`Error en item ${item.name}`);
             }
-        } catch (error) {
-            toast.error('Error de conexión');
+            toast.success('Inventario actualizado correctamente');
+            setSelectedItems([]);
+            fetchData();
+        } catch (error: any) {
+            toast.error(error.message);
         } finally {
             setSubmitting(false);
         }
     };
 
-    const resetModal = () => {
-        setQty(1);
-        setReason('');
-        setSelectedCustomerId('');
-        setCreditAmount('0');
-        setMovementType('manual');
-    };
-
-    const filteredVariants = variants.filter(v => {
-        const term = searchTerm.toLowerCase();
-        const match = (v.product_name || '').toLowerCase().includes(term) ||
-            (v.control_id || '').toLowerCase().includes(term) ||
-            (v.size || '').toLowerCase().includes(term) ||
-            (v.color || '').toLowerCase().includes(term);
-        const catMatch = selectedCategory === 'all' || v.category === selectedCategory || v.category_id === selectedCategory;
-        return match && catMatch;
-    });
-
-    const totalPages = Math.ceil(filteredVariants.length / ITEMS_PER_PAGE);
-    const paginatedVariants = filteredVariants.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
-
-    const handleInlineUpdate = async (variant: any, valStr: string) => {
-        if (!valStr) return;
-        const isSub = valStr.startsWith('-');
-        const num = parseInt(valStr.replace(/[+-]/g, ''));
-        if (isNaN(num) || num <= 0) return;
-
-        const type = isSub ? 'remove' : 'add';
-        const targetId = variant.is_legacy ? variant.product_id : variant.id;
-
-        setUpdatingInline(variant.id);
+    const getAiAdvice = async () => {
+        if (selectedItems.length === 0) return;
+        setAiLoading(true);
         try {
-            const res = await fetch('/api/admin/inventory/quick-update', {
+            const res = await fetch('/api/admin/inventory/advisor', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    variant_id: targetId,
-                    type,
-                    adjustment: num,
-                    reason: 'Ajuste Inline Tabla'
+                    items: selectedItems,
+                    exchange_rate: exchangeRate
                 })
             });
             if (res.ok) {
-                toast.success('Stock actualizado');
-                fetchData();
+                setAiRecommendations(await res.json());
             } else {
-                toast.error('Error al actualizar');
+                toast.error('No se pudo obtener el análisis de la IA');
             }
-        } catch (e) {
-            toast.error('Error de red');
+        } catch (error) {
+            console.error('AI Advisor error:', error);
         } finally {
-            setUpdatingInline(null);
+            setAiLoading(false);
         }
     };
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-end">
+            <div className="flex justify-between items-start">
                 <div>
                     <h1 className="text-4xl font-black bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent dark:from-white dark:to-slate-400 tracking-tighter italic uppercase">
-                        Inventario Avanzado
+                        Control de <span className="text-primary">Inventario</span>
                     </h1>
-                    <p className="text-slate-500 font-medium italic">Gestión de stock en tiempo real.</p>
+                    <p className="text-slate-500 font-medium italic">Gestión inteligente de stock y precios ERP.</p>
                 </div>
-                <Button onClick={fetchData} variant="outline" size="sm" className="gap-2">
-                    <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-                    Actualizar
-                </Button>
+                <div className="flex gap-2">
+                    <Card className="bg-primary/5 border-primary/10 px-4 py-2 flex items-center gap-3 rounded-2xl">
+                        <DollarSign className="text-primary w-5 h-5" />
+                        <div>
+                            <p className="text-[10px] font-black uppercase text-slate-400">Tasa del Día</p>
+                            <p className="text-sm font-black text-primary">Bs. {exchangeRate.toFixed(2)}</p>
+                        </div>
+                    </Card>
+                    <Button onClick={fetchData} variant="outline" size="icon" className="h-12 w-12 rounded-2xl">
+                        <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
+                    </Button>
+                </div>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
-                    <TabsTrigger value="quick" className="rounded-lg font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm">⚡ Acciones Rápidas</TabsTrigger>
-                    <TabsTrigger value="list" className="rounded-lg font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm">📋 Lista Maestra</TabsTrigger>
-                    <TabsTrigger value="reports" className="rounded-lg font-bold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm">📊 Reportes</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 p-1.5 shadow-inner">
+                    <TabsTrigger value="adjust" className="rounded-xl font-black uppercase text-[10px] tracking-widest gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-xl transition-all">
+                        <LayoutGrid size={16} /> Ajuste Maestro
+                    </TabsTrigger>
+                    <TabsTrigger value="ledger" className="rounded-xl font-black uppercase text-[10px] tracking-widest gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-xl transition-all">
+                        <History size={16} /> Historial de Movimientos
+                    </TabsTrigger>
+                    <TabsTrigger value="stats" className="rounded-xl font-black uppercase text-[10px] tracking-widest gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-xl transition-all">
+                        <TrendingUp size={16} /> Analítica
+                    </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="quick" className="space-y-6 mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    {/* Quick Search & Update Component */}
-                    <InventoryQuickAction onUpdate={fetchData} />
+                <TabsContent value="adjust" className="mt-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                        {/* Selector & Settings */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <Card className="border-none shadow-2xl rounded-[2.5rem] bg-white dark:bg-slate-900 overflow-hidden">
+                                <CardHeader className="bg-slate-50/50 dark:bg-slate-800/50 border-b p-8">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <CardTitle className="text-lg font-black uppercase italic tracking-tighter flex items-center gap-2">
+                                            <Package className="text-primary" /> Selección de Productos
+                                        </CardTitle>
+                                        <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl">
+                                            <Button
+                                                variant={adjustmentType === 'in' ? 'default' : 'ghost'}
+                                                size="sm"
+                                                onClick={() => setAdjustmentType('in')}
+                                                className="rounded-lg h-8 text-[10px] font-black uppercase"
+                                            >Entrada</Button>
+                                            <Button
+                                                variant={adjustmentType === 'out' ? 'default' : 'ghost'}
+                                                size="sm"
+                                                onClick={() => setAdjustmentType('out')}
+                                                className="rounded-lg h-8 text-[10px] font-black uppercase"
+                                            >Salida</Button>
+                                        </div>
+                                    </div>
 
-                    {/* Recent Movements (Simplified view) */}
-                    <Card className="border-none shadow-lg bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl">
-                        <CardHeader>
-                            <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
-                                <History size={16} /> Últimos Movimientos
+                                    <div className="relative">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                        <Input
+                                            placeholder="Buscar por nombre o Control ID..."
+                                            className="h-14 pl-12 rounded-2xl text-lg font-medium border-slate-200 shadow-lg focus:ring-4 focus:ring-primary/10 transition-all"
+                                            value={searchTerm}
+                                            onChange={(e) => handleSearch(e.target.value)}
+                                        />
+
+                                        {searchResults.length > 0 && (
+                                            <Card className="absolute top-full left-0 right-0 mt-2 z-50 shadow-2xl rounded-2xl border-none max-h-80 overflow-y-auto ring-1 ring-black/5">
+                                                <div className="p-2 space-y-1">
+                                                    {searchResults.map(result => (
+                                                        <div
+                                                            key={result.id}
+                                                            className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl cursor-pointer group transition-colors"
+                                                            onClick={() => addItemToAdjustment(result)}
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center text-slate-400">
+                                                                    <Package size={20} />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-bold leading-none mb-1">{result.name}</p>
+                                                                    <p className="text-[10px] font-mono text-slate-400">{result.control_id} • {result.details}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="text-xs font-black text-slate-900 dark:text-white">${result.price.toFixed(2)}</p>
+                                                                <p className="text-[10px] font-bold text-slate-400 uppercase">Stock: {result.stock}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </Card>
+                                        )}
+                                    </div>
+                                </CardHeader>
+
+                                <CardContent className="p-0">
+                                    <div className="min-h-[300px]">
+                                        {selectedItems.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center py-20 text-slate-300">
+                                                <LayoutGrid size={64} className="mb-4 opacity-20" />
+                                                <p className="font-bold uppercase tracking-widest text-xs">Busca y agrega productos para ajustar</p>
+                                            </div>
+                                        ) : (
+                                            <Table>
+                                                <TableHeader className="bg-slate-50/50 dark:bg-slate-800/30">
+                                                    <TableRow className="hover:bg-transparent border-none">
+                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest pl-8">Producto / Variante</TableHead>
+                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-24">Cantidad</TableHead>
+                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-32">Costo (USD)</TableHead>
+                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-32">Utilidad %</TableHead>
+                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-32">Venta (USD)</TableHead>
+                                                        <TableHead className="w-12 pr-8"></TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {selectedItems.map((item) => (
+                                                        <TableRow key={item.id} className="border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                                                            <TableCell className="py-6 pl-8">
+                                                                <p className="font-black text-sm">{item.name}</p>
+                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{item.details}</p>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={item.qty}
+                                                                    onChange={(e) => updateItemField(item.id, 'qty', parseInt(e.target.value))}
+                                                                    className="h-10 text-center font-black border-slate-200 rounded-xl focus:ring-0"
+                                                                />
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <div className="relative">
+                                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">$</span>
+                                                                    <Input
+                                                                        type="number"
+                                                                        value={item.cost}
+                                                                        onChange={(e) => updateItemField(item.id, 'cost', e.target.value)}
+                                                                        className="h-10 pl-7 font-bold border-slate-200 rounded-xl focus:ring-0"
+                                                                    />
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <div className="relative">
+                                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">%</span>
+                                                                    <Input
+                                                                        type="number"
+                                                                        value={item.utility}
+                                                                        onChange={(e) => updateItemField(item.id, 'utility', e.target.value)}
+                                                                        className="h-10 pr-7 font-bold border-slate-200 rounded-xl focus:ring-0 border-emerald-100 bg-emerald-50/30 text-emerald-600"
+                                                                    />
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <div className="relative">
+                                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">$</span>
+                                                                    <Input
+                                                                        type="number"
+                                                                        value={item.price.toFixed(2)}
+                                                                        onChange={(e) => updateItemField(item.id, 'price', e.target.value)}
+                                                                        className="h-10 pl-7 font-black border-primary/20 rounded-xl focus:ring-0 bg-primary/5 text-primary"
+                                                                    />
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="pr-8">
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg" onClick={() => removeItem(item.id)}>
+                                                                    <Minus size={16} />
+                                                                </Button>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        )}
+                                    </div>
+                                </CardContent>
+
+                                {selectedItems.length > 0 && (
+                                    <div className="p-8 bg-slate-50 dark:bg-slate-800/80 border-t flex items-center justify-between gap-6">
+                                        <div className="flex flex-wrap gap-4 items-center">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 block ml-1">Motivo del Ajuste</label>
+                                                <Select value={adjustmentReason} onValueChange={setAdjustmentReason}>
+                                                    <SelectTrigger className="w-48 h-12 rounded-xl bg-white dark:bg-slate-900 border-slate-200">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-xl">
+                                                        <SelectItem value="purchase">Compra de Inventario</SelectItem>
+                                                        <SelectItem value="adjustment">Ajuste de Auditoría</SelectItem>
+                                                        <SelectItem value="loss">Perdida / Daño</SelectItem>
+                                                        <SelectItem value="transfer">Traspaso</SelectItem>
+                                                        <SelectItem value="production">Producción Propia</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-3 px-5 rounded-xl border border-slate-200 h-12">
+                                                <input
+                                                    type="checkbox"
+                                                    id="update-price"
+                                                    checked={updatePublicPrice}
+                                                    onChange={e => setUpdatePublicPrice(e.target.checked)}
+                                                    className="w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary h-4 w-4"
+                                                />
+                                                <label htmlFor="update-price" className="text-xs font-bold uppercase cursor-pointer">Actualizar precio en Home</label>
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            className="h-14 px-10 rounded-2xl font-black uppercase italic tracking-wider text-sm shadow-xl shadow-primary/20 flex gap-3"
+                                            onClick={processAdjustment}
+                                            disabled={submitting}
+                                        >
+                                            {submitting ? <Loader2 size={18} className="animate-spin" /> : <Target size={18} />}
+                                            Ejecutar Movimiento
+                                        </Button>
+                                    </div>
+                                )}
+                            </Card>
+                        </div>
+
+                        {/* AI Advisor Panel */}
+                        <div className="space-y-6">
+                            <Card className="border-none shadow-2xl rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-violet-700 text-white overflow-hidden sticky top-6">
+                                <CardHeader className="pb-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
+                                            <Sparkles className="text-yellow-300" size={20} />
+                                        </div>
+                                        <div>
+                                            <CardTitle className="text-sm font-black uppercase tracking-widest">AI Advisor</CardTitle>
+                                            <p className="text-[10px] text-white/60 font-medium">Asistente de Precios y Stock</p>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <div className="space-y-4">
+                                        {aiRecommendations ? (
+                                            <div className="space-y-4 animate-in fade-in duration-700">
+                                                <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10">
+                                                    <p className="text-[9px] font-black uppercase text-white/40 mb-2 flex items-center gap-1.5"><TrendingUp size={10} /> Sugerencia de Margen</p>
+                                                    <p className="text-xs leading-relaxed font-medium">{aiRecommendations.margin}</p>
+                                                </div>
+                                                <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10">
+                                                    <p className="text-[9px] font-black uppercase text-white/40 mb-2 flex items-center gap-1.5"><AlertTriangle size={10} /> Análisis de Rotación</p>
+                                                    <p className="text-xs leading-relaxed font-medium">{aiRecommendations.stock}</p>
+                                                </div>
+                                                <div className="bg-emerald-500/30 backdrop-blur-md p-4 rounded-2xl border border-emerald-400/30">
+                                                    <p className="text-[9px] font-black uppercase text-emerald-200 mb-2 flex items-center gap-1.5"><CheckCircle2 size={10} /> Precio Sugerido (USD)</p>
+                                                    <p className="text-xs leading-relaxed font-bold">{aiRecommendations.price}</p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center py-10 text-center">
+                                                <Info className="mb-3 opacity-40" size={32} />
+                                                <p className="text-xs font-bold text-white/60 leading-relaxed">
+                                                    Agrega productos para obtener consejos inteligentes sobre márgenes y rotación.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        <Button
+                                            variant="secondary"
+                                            className="w-full h-12 rounded-xl font-black uppercase italic tracking-tighter shadow-lg shadow-black/10 transition-all hover:scale-[1.02] active:scale-95"
+                                            onClick={getAiAdvice}
+                                            disabled={aiLoading || selectedItems.length === 0}
+                                        >
+                                            {aiLoading ? <Loader2 size={18} className="animate-spin" /> : "Solicitar Análisis IA"}
+                                        </Button>
+                                    </div>
+
+                                    <div className="pt-4 border-t border-white/10">
+                                        <p className="text-[9px] font-black uppercase text-white/40 mb-3 tracking-widest">Preguntas Frecuentes</p>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            {["¿Cómo proteger márgenes ante BCV?", "¿Qué variantes se venden más?", "Optimizar precios por volumen"].map((q, i) => (
+                                                <button key={i} className="text-left py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] font-bold transition-colors border border-white/5">
+                                                    {q}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="ledger" className="mt-8">
+                    <Card className="border-none shadow-xl overflow-hidden rounded-[2rem] bg-white dark:bg-slate-900">
+                        <CardHeader className="border-b border-slate-100 dark:border-slate-800 p-8 flex flex-row items-center justify-between">
+                            <CardTitle className="text-sm font-black uppercase italic tracking-widest flex items-center gap-2">
+                                <History className="text-primary" /> Libro Mayor de Inventario
                             </CardTitle>
+                            <div className="flex gap-2">
+                                <Input placeholder="Filtro rápido..." className="h-10 w-64 rounded-xl" />
+                            </div>
                         </CardHeader>
                         <CardContent className="p-0">
                             <Table>
-                                <TableHeader>
-                                    <TableRow><TableHead>Producto</TableHead><TableHead>Tipo</TableHead><TableHead className="text-right">Cant.</TableHead></TableRow>
+                                <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
+                                    <TableRow className="border-none">
+                                        <TableHead className="font-black uppercase text-[9px] tracking-widest pl-8">Fecha / Admin</TableHead>
+                                        <TableHead className="font-black uppercase text-[9px] tracking-widest">Producto</TableHead>
+                                        <TableHead className="font-black uppercase text-[9px] tracking-widest">Tipo / Motivo</TableHead>
+                                        <TableHead className="font-black uppercase text-[9px] tracking-widest text-right">Cantidad</TableHead>
+                                        <TableHead className="font-black uppercase text-[9px] tracking-widest text-right">Costo (USD)</TableHead>
+                                        <TableHead className="font-black uppercase text-[9px] tracking-widest text-right pr-8">Val. Total</TableHead>
+                                    </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {(movements || []).slice(0, 5).map(m => (
-                                        <TableRow key={m.id}>
+                                    {movements.map((m) => (
+                                        <TableRow key={m.id} className="border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                                            <TableCell className="pl-8 py-5">
+                                                <p className="font-bold text-xs">{new Date(m.created_at).toLocaleDateString()}</p>
+                                                <p className="text-[9px] text-slate-400 font-medium">{new Date(m.created_at).toLocaleTimeString()}</p>
+                                            </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-xs">{m.product_name}</span>
-                                                    <span className="text-[9px] text-muted-foreground">{m.control_id}</span>
-                                                    <span className="text-[9px] text-muted-foreground">{m.product_details}</span>
+                                                    <span className="font-black text-xs">{m.product_name}</span>
+                                                    <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-tighter">{m.product_details}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant="secondary" className="text-[9px] h-5">{m.type}</Badge>
+                                                <div className="flex flex-col gap-1">
+                                                    <Badge variant="secondary" className="text-[9px] font-black uppercase h-5 px-2 w-fit">{m.type}</Badge>
+                                                    <span className="text-[9px] italic text-slate-400 font-medium">{m.reason}</span>
+                                                </div>
                                             </TableCell>
-                                            <TableCell className={cn("text-right font-black", m.quantity > 0 ? "text-emerald-500" : "text-rose-500")}>
+                                            <TableCell className={cn("text-right font-black text-sm", m.quantity > 0 ? "text-emerald-500" : "text-rose-500")}>
                                                 {m.quantity > 0 ? '+' : ''}{m.quantity}
+                                            </TableCell>
+                                            <TableCell className="text-right font-bold text-xs space-y-1">
+                                                <div className="flex flex-col items-end">
+                                                    <span>${(m.unit_cost || 0).toFixed(2)}</span>
+                                                    <span className="text-[9px] text-emerald-500 font-black">{m.utility_percentage}% Util.</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right font-black pr-8 text-sm">
+                                                <div className="flex flex-col items-end">
+                                                    <span>${(m.total_value || (m.quantity * (m.unit_cost || 0))).toFixed(2)}</span>
+                                                    <span className="text-[9px] text-slate-400 font-medium">Tasa: {m.exchange_rate}</span>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -363,175 +655,10 @@ export default function InventoryPage() {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="list" className="space-y-6 mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    {/* Master List (Existing Table Implementation) */}
-                    <Card className="border-none shadow-xl overflow-hidden rounded-[2rem] bg-white dark:bg-slate-900">
-                        <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
-                            <div className="flex justify-between items-center">
-                                <CardTitle className="text-sm font-black uppercase italic">Lista Completa</CardTitle>
-                                <div className="flex gap-2">
-                                    <Input
-                                        placeholder="Buscar..."
-                                        value={searchTerm}
-                                        onChange={e => setSearchTerm(e.target.value)}
-                                        className="h-9 w-64 rounded-lg"
-                                    />
-                                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                                        <SelectTrigger className="h-9 w-40 rounded-lg"><SelectValue placeholder="Categoría" /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Todas</SelectItem>
-                                            {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Control ID</TableHead>
-                                        <TableHead>Producto</TableHead>
-                                        <TableHead>Variante</TableHead>
-                                        <TableHead>Stock</TableHead>
-                                        <TableHead className="text-right">Acciones</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {loading ? <TableRow><TableCell colSpan={5} className="text-center py-10"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow> :
-                                        paginatedVariants.map((v, i) => (
-                                            <TableRow key={v.id || i}>
-                                                <TableCell className="font-mono text-xs text-muted-foreground">{v.control_id || '---'}</TableCell>
-                                                <TableCell className="font-bold text-sm">{v.product_name}</TableCell>
-                                                <TableCell><Badge variant="outline">{v.size} / {v.color}</Badge></TableCell>
-                                                <TableCell>
-                                                    <span className={cn("font-black text-lg", v.stock < 5 ? "text-rose-500" : "text-emerald-500")}>
-                                                        {v.stock}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex justify-end items-center gap-2">
-                                                        <Input
-                                                            placeholder="+5 / -2"
-                                                            className="w-20 h-8 font-mono text-center text-xs"
-                                                            disabled={updatingInline === v.id}
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === 'Enter') {
-                                                                    handleInlineUpdate(v, e.currentTarget.value);
-                                                                    e.currentTarget.value = '';
-                                                                }
-                                                            }}
-                                                        />
-                                                        {updatingInline === v.id && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
-                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600" title="Devolución" onClick={() => { setSelectedVariant(v); setModalType('return'); setIsMovementModalOpen(true); }}><RotateCcw size={16} /></Button>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                </TableBody>
-                            </Table>
-                            {/* Pagination Controls */}
-                            {totalPages > 1 && (
-                                <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-slate-800">
-                                    <span className="text-xs font-bold text-muted-foreground">
-                                        Página {currentPage} de {totalPages} ({filteredVariants.length} items)
-                                    </span>
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={currentPage === 1}
-                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                        >
-                                            <ChevronLeft size={16} /> Anterior
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={currentPage === totalPages}
-                                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                        >
-                                            Siguiente <ChevronRight size={16} />
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="reports" className="mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <TabsContent value="stats" className="mt-8">
                     <InventoryStats data={stats} isLoading={!stats} />
                 </TabsContent>
             </Tabs>
-
-            {/* Modal Logic (Ideally moved to separate component, kept here for speed) */}
-            <Dialog open={isMovementModalOpen} onOpenChange={(v) => { setIsMovementModalOpen(v); if (!v) resetModal(); }}>
-                <DialogContent className="sm:max-w-[400px] rounded-3xl border-2 shadow-2xl">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 italic font-black uppercase tracking-tighter text-2xl">
-                            {modalType === 'in' ? <Plus className="text-emerald-500" /> : modalType === 'out' ? <Minus className="text-rose-500" /> : <RotateCcw className="text-blue-500" />}
-                            {modalType === 'in' ? 'Entrada Manual' : modalType === 'out' ? 'Salida Manual' : 'Devolución'}
-                        </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl">
-                            <p className="font-bold">{selectedVariant?.product_name}</p>
-                            <p className="text-xs text-muted-foreground">{selectedVariant?.size} / {selectedVariant?.color}</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase">Cantidad</label>
-                                <Input type="number" min="1" value={qty} onChange={e => setQty(Number(e.target.value))} className="h-12 text-lg font-black" />
-                            </div>
-                            {modalType !== 'return' ? (
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase">Tipo</label>
-                                    <Select value={movementType} onValueChange={setMovementType}>
-                                        <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="manual">Manual</SelectItem>
-                                            <SelectItem value="adjustment">Ajuste</SelectItem>
-                                            <SelectItem value="purchase">Compra</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase">Monto a Abonar ($)</label>
-                                    <Input type="number" value={creditAmount} onChange={e => setCreditAmount(e.target.value)} className="h-12 text-lg font-black text-blue-600" placeholder="0" />
-                                </div>
-                            )}
-                        </div>
-
-                        {modalType === 'return' && (
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase text-blue-600">Seleccionar Cliente</label>
-                                <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                                    <SelectTrigger className="h-12 border-blue-200">
-                                        <SelectValue placeholder="Buscar cliente..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {customers.map(c => (
-                                            <SelectItem key={c.id} value={c.id}>
-                                                {c.full_name || c.email}
-                                                {c.store_credit > 0 && ` (Saldo: $${c.store_credit})`}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        )}
-
-                        <Input placeholder="Motivo (Opcional)" value={reason} onChange={e => setReason(e.target.value)} />
-                    </div>
-                    <DialogFooter>
-                        <Button className="w-full h-12 font-bold" onClick={handleMovement} disabled={submitting}>
-                            {submitting ? <Loader2 className="animate-spin" /> : 'Confirmar'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }

@@ -15,7 +15,7 @@ export async function PATCH(
         const { data: { user: currentUser } } = await supabase.auth.getUser();
 
         const body = await request.json();
-        const { status } = body;
+        const { status, finance_data } = body; // finance_data: { account_id, category_id, description? }
 
         // Use Admin Client to bypass RLS for administrative updates
         const adminSupabase = await createAdminClient();
@@ -23,7 +23,7 @@ export async function PATCH(
         // 1. Fetch current order to prevent double processing
         const { data: currentOrder } = await adminSupabase
             .from('orders')
-            .select('status, credit_applied, user_id, items:order_items(*)')
+            .select('status, total, credit_applied, user_id, items:order_items(*)')
             .eq('id', id)
             .single();
 
@@ -53,6 +53,48 @@ export async function PATCH(
                 error: 'Pedido no encontrado o sin permisos',
                 debug: { id, userId: currentUser?.id, status }
             }, { status: 404 });
+        }
+
+        // 2.5 Record Financial Transaction if status is confirmed/processing
+        if (status === 'processing' && finance_data?.account_id) {
+            // Check if transaction already exists for this order to avoid duplicates
+            const { data: existingTx } = await adminSupabase
+                .from('finance_transactions')
+                .select('id')
+                .eq('order_id', id)
+                .maybeSingle();
+
+            if (!existingTx) {
+                // Fetch account currency to handle conversion
+                const { data: account } = await adminSupabase
+                    .from('finance_accounts')
+                    .select('currency')
+                    .eq('id', finance_data.account_id)
+                    .single();
+
+                if (account) {
+                    // Resolve rate from global settings (BCV)
+                    const { data: settings } = await adminSupabase.from('store_settings').select('exchange_rate').eq('id', 'global').single();
+                    const rate = settings?.exchange_rate || 1;
+
+                    const amountUsd = account.currency === 'VES'
+                        ? Number(currentOrder.total) / Number(rate)
+                        : Number(currentOrder.total);
+
+                    await adminSupabase.from('finance_transactions').insert({
+                        account_id: finance_data.account_id,
+                        category_id: finance_data.category_id,
+                        order_id: id,
+                        type: 'income',
+                        amount: Number(currentOrder.total),
+                        currency: account.currency,
+                        exchange_rate: Number(rate),
+                        amount_usd_equivalent: Number(amountUsd),
+                        description: finance_data.description || `Pago verificado: Pedido #${id.slice(0, 8)}`,
+                        created_by: currentUser?.id
+                    });
+                }
+            }
         }
 
         // 3. Handle Cancellation (Stock restoration and Credit Refund)
@@ -116,6 +158,11 @@ export async function PATCH(
             if (orderDetails) {
                 let eventName: any = null;
                 switch (status) {
+                    case 'pending':
+                        if (currentOrder.status === 'quote') {
+                            eventName = 'budget_finalized';
+                        }
+                        break;
                     case 'processing': eventName = 'payment_confirmed'; break;
                     case 'shipped': eventName = 'order_shipped'; break;
                     case 'completed': eventName = 'order_delivered'; break;

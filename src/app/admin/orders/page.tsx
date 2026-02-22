@@ -15,8 +15,16 @@ import {
     RotateCcw,
     TrendingUp,
     Palette,
-    Plus
+    Plus,
+    Banknote
 } from 'lucide-react';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -33,6 +41,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -51,10 +60,27 @@ export default function AdminOrdersPage() {
     const [editingMetadata, setEditingMetadata] = useState<string | null>(null);
     const [tempMetadata, setTempMetadata] = useState<any>(null);
     const [paymentProof, setPaymentProof] = useState<any | null>(null);
+    const [financeAccounts, setFinanceAccounts] = useState<any[]>([]);
+    const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+    const [paymentTargetOrderId, setPaymentTargetOrderId] = useState<string | null>(null);
+    const [selectedAccountId, setSelectedAccountId] = useState<string>('');
 
     useEffect(() => {
         fetchOrders();
+        fetchFinanceAccounts();
     }, []);
+
+    const fetchFinanceAccounts = async () => {
+        try {
+            const res = await fetch('/api/admin/finances/accounts');
+            if (res.ok) {
+                const data = await res.json();
+                setFinanceAccounts(data);
+            }
+        } catch (error) {
+            console.error('Error fetching finance accounts:', error);
+        }
+    };
 
     const fetchOrders = async () => {
         try {
@@ -70,13 +96,16 @@ export default function AdminOrdersPage() {
         }
     };
 
-    const handleStatusUpdate = async (id: string, newStatus: string) => {
+    const handleStatusUpdate = async (id: string, newStatus: string, financeData?: any) => {
         setProcessingOrders(prev => new Set(prev).add(id));
         try {
             const res = await fetch(`/api/admin/orders/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus }),
+                body: JSON.stringify({
+                    status: newStatus,
+                    finance_data: financeData
+                }),
             });
             const data = await res.json();
 
@@ -212,6 +241,26 @@ export default function AdminOrdersPage() {
             } else {
                 const data = await res.json();
                 toast.error(data.error || "Error al procesar devolución");
+            }
+        } catch (error) {
+            toast.error("Error de conexión");
+        }
+    };
+
+    const handleNotionSync = async (orderId: string) => {
+        try {
+            const res = await fetch('/api/admin/notion/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: orderId }),
+            });
+
+            if (res.ok) {
+                toast.success("Sincronizado con Notion");
+                refreshOrder();
+            } else {
+                const data = await res.json();
+                toast.error(data.error || "Error al sincronizar con Notion");
             }
         } catch (error) {
             toast.error("Error de conexión");
@@ -354,7 +403,10 @@ export default function AdminOrdersPage() {
                                                             <Button
                                                                 size="sm"
                                                                 className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold italic text-[10px] uppercase rounded-lg shadow-lg shadow-emerald-500/20 gap-2"
-                                                                onClick={() => handleStatusUpdate(order.id, 'processing')}
+                                                                onClick={() => {
+                                                                    setPaymentTargetOrderId(order.id);
+                                                                    setIsPaymentDialogOpen(true);
+                                                                }}
                                                                 disabled={processingOrders.has(order.id)}
                                                             >
                                                                 {processingOrders.has(order.id) ? (
@@ -467,14 +519,28 @@ export default function AdminOrdersPage() {
                             <ShoppingBag className="text-primary" />
                             Detalles del Pedido #{selectedOrder?.id?.slice(0, 8)}
                         </DialogTitle>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="mr-8 rounded-xl gap-2 font-bold uppercase text-[10px]"
-                            onClick={() => window.print()}
-                        >
-                            <Printer size={14} /> Imprimir Hoja de Producción
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className={cn(
+                                    "rounded-xl gap-2 font-bold uppercase text-[10px]",
+                                    selectedOrder?.notion_synced ? "text-emerald-500 border-emerald-100 bg-emerald-50" : "text-slate-500"
+                                )}
+                                onClick={() => handleNotionSync(selectedOrder.id)}
+                            >
+                                <Palette size={14} className={selectedOrder?.notion_synced ? "fill-emerald-500" : ""} />
+                                {selectedOrder?.notion_synced ? 'Sincronizado Notion' : 'Sync Notion'}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-xl gap-2 font-bold uppercase text-[10px]"
+                                onClick={() => window.print()}
+                            >
+                                <Printer size={14} /> Imprimir Hoja de Producción
+                            </Button>
+                        </div>
                     </DialogHeader>
 
                     {selectedOrder && (
@@ -918,6 +984,63 @@ export default function AdminOrdersPage() {
                             </div>
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Confirm Payment Dialog */}
+            <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+                <DialogContent className="rounded-3xl max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-black uppercase italic tracking-tighter flex items-center gap-2">
+                            <Banknote className="text-emerald-500" /> Confirmar <span className="text-emerald-500">Pago</span>
+                        </DialogTitle>
+                        <DialogDescription>
+                            Selecciona la cuenta donde se recibió el dinero para registrar la transacción.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Cuenta de Destino</Label>
+                            <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                                <SelectTrigger className="rounded-xl h-12">
+                                    <SelectValue placeholder="Seleccionar Cuenta..." />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                    {financeAccounts.map((acc: any) => (
+                                        <SelectItem key={acc.id} value={acc.id}>
+                                            {acc.name} ({acc.currency}) - Bal: {acc.balance}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            className="flex-1 rounded-xl h-12 font-bold uppercase italic text-xs"
+                            onClick={() => setIsPaymentDialogOpen(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            className="flex-1 rounded-xl h-12 font-black uppercase italic text-xs bg-emerald-500 hover:bg-emerald-600"
+                            disabled={!selectedAccountId || !paymentTargetOrderId}
+                            onClick={async () => {
+                                if (paymentTargetOrderId && selectedAccountId) {
+                                    await handleStatusUpdate(paymentTargetOrderId, 'processing', {
+                                        account_id: selectedAccountId,
+                                        category_id: '8161186e-b80c-4ebd-99d2-90a15d3289b8' // Using the default 'Ventas' category ID from the SQL
+                                    });
+                                    setIsPaymentDialogOpen(false);
+                                    setPaymentTargetOrderId(null);
+                                    setSelectedAccountId('');
+                                }
+                            }}
+                        >
+                            Procesar Pago
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div >

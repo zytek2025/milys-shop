@@ -36,7 +36,18 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        let { variant_id, product_id, quantity, type, reason } = body;
+        let {
+            variant_id,
+            product_id,
+            quantity,
+            type,
+            reason,
+            unit_cost = 0,
+            utility_percentage = 0,
+            unit_price = 0,
+            exchange_rate: providedRate,
+            update_price = false
+        } = body;
 
         if ((!variant_id && !product_id) || typeof quantity !== 'number' || !type) {
             return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
@@ -44,9 +55,15 @@ export async function POST(request: NextRequest) {
 
         const supabase = await createClient();
 
-        // If it's a legacy product movement (has product_id instead of variant_id)
+        // 0. Get current exchange rate if not provided
+        let exchange_rate = providedRate;
+        if (!exchange_rate) {
+            const { data: settings } = await supabase.from('store_settings').select('exchange_rate').eq('id', 'global').single();
+            exchange_rate = settings?.exchange_rate || 0;
+        }
+
+        // 1. Ensure variant existence (legacy handling)
         if (!variant_id && product_id) {
-            // Ensure a default variant exists
             const { data: existingVars } = await supabase
                 .from('product_variants')
                 .select('id')
@@ -54,7 +71,6 @@ export async function POST(request: NextRequest) {
                 .limit(1);
 
             if (!existingVars || existingVars.length === 0) {
-                // Create default variant
                 const { data: newVar, error: vError } = await supabase
                     .from('product_variants')
                     .insert({
@@ -62,7 +78,7 @@ export async function POST(request: NextRequest) {
                         size: 'Único',
                         color: 'Único',
                         color_hex: '#000000',
-                        stock: 0 // Will be updated by the trigger once movement is inserted
+                        stock: 0
                     })
                     .select()
                     .single();
@@ -74,18 +90,20 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        if (type === 'return' && !variant_id && product_id) {
-            // Handle legacy returns if needed, though usually returns have a variant
-        }
-
-        // 1. Insert Movement
+        // 2. Insert Movement with Financial Data
         const { data: movement, error: insertError } = await supabase
             .from('stock_movements')
             .insert([{
                 variant_id,
+                product_id,
                 quantity,
                 type,
                 reason,
+                unit_cost,
+                utility_percentage,
+                unit_price,
+                exchange_rate,
+                total_value: quantity * unit_cost,
                 created_by: (await supabase.auth.getUser()).data.user?.id
             }])
             .select()
@@ -93,10 +111,27 @@ export async function POST(request: NextRequest) {
 
         if (insertError) throw insertError;
 
-        // 2. Update Stock in Product Variant
-        // The DB trigger `tr_update_stock_on_movement` will automatically update the product_variants stock
-        // so we NO LONGER need to manually update it here. This prevents double-additions.
+        // 3. Update Product/Variant Price & Cost if requested (usually for Entries)
+        if (update_price && unit_price > 0) {
+            const updatePayload: any = {
+                price_override: unit_price,
+                last_unit_cost: unit_cost,
+                last_utility_percentage: utility_percentage
+            };
 
+            if (variant_id) {
+                // Update variant override
+                await supabase.from('product_variants').update(updatePayload).eq('id', variant_id);
+            } else if (product_id) {
+                // Update base product price and cost
+                const productPayload = {
+                    price: unit_price,
+                    last_unit_cost: unit_cost,
+                    last_utility_percentage: utility_percentage
+                };
+                await supabase.from('products').update(productPayload).eq('id', product_id);
+            }
+        }
 
         return NextResponse.json(movement);
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, AlertTriangle, DollarSign, Layers } from 'lucide-react';
+import { Package, AlertTriangle, DollarSign, Layers, TrendingUp } from 'lucide-react';
 
 interface StatsProps {
     data: {
@@ -9,6 +9,8 @@ interface StatsProps {
         variantCount: number;
         lowStockCount: number;
         totalValue: number;
+        totalCostValue: number;
+        expectedProfit: number;
         totalItems: number;
         categoryStats: Record<string, number>;
     } | null;
@@ -24,7 +26,7 @@ export function InventoryStats({ data, isLoading }: StatsProps) {
 
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 <Card className="bg-white dark:bg-slate-900 border-none shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Total Productos</CardTitle>
@@ -37,11 +39,34 @@ export function InventoryStats({ data, isLoading }: StatsProps) {
 
                 <Card className="bg-white dark:bg-slate-900 border-none shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Valor Estimado</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Valor Venta</CardTitle>
                         <DollarSign className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-black">${data.totalValue.toLocaleString()}</div>
+                        <p className="text-[10px] uppercase font-black text-slate-400 italic">PVP Estimado</p>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-white dark:bg-slate-900 border-none shadow-sm">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Inversión (Costo)</CardTitle>
+                        <DollarSign className="h-4 w-4 text-rose-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-black">${data.totalCostValue.toLocaleString()}</div>
+                        <p className="text-[10px] uppercase font-black text-slate-400 italic">Costo de Stock</p>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-primary/10 border-none shadow-sm">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-black text-primary uppercase">Utilidad Proyectada</CardTitle>
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-black text-primary">${data.expectedProfit.toLocaleString()}</div>
+                        <p className="text-[10px] uppercase font-black text-primary/60 italic">Ganancia Bruta</p>
                     </CardContent>
                 </Card>
 

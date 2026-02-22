@@ -130,6 +130,29 @@ export async function POST(request: NextRequest) {
                 .eq('id', order_item_id);
         }
 
+        // G. Trigger Webhook for Return Processed
+        try {
+            const { sendWebhook } = await import('@/lib/webhook-dispatcher');
+            const { data: customerProfile } = await supabase
+                .from('profiles')
+                .select('full_name, whatsapp, email')
+                .eq('id', profile_id)
+                .single();
+
+            await sendWebhook('return_processed', {
+                order_id,
+                amount_credited: amount_to_credit,
+                new_balance: currentCredit + Number(amount_to_credit),
+                reason: reason || 'Devolución de producto'
+            }, {
+                name: customerProfile?.full_name || 'Cliente',
+                email: customerProfile?.email || '',
+                phone: customerProfile?.whatsapp || ''
+            });
+        } catch (webhookErr) {
+            console.error('Failed to dispatch return webhook:', webhookErr);
+        }
+
         return NextResponse.json({ success: true, new_balance: currentCredit + Number(amount_to_credit) });
     } catch (error: any) {
         console.error('Return processing error:', error);

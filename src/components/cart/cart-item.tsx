@@ -32,17 +32,20 @@ export function CartItemRow({
   const isOnRequest = metadata?.on_request === true;
   const budgetRequest = metadata?.budget_request;
 
-  const isNewFormat = !Array.isArray(metadata) && !!metadata.designs;
-  const designList = (isNewFormat ? metadata.designs : (Array.isArray(metadata) ? metadata : [])) as any[];
+  const isNewFormat = !Array.isArray(metadata) && (!!metadata.designs || !!metadata.budget_request?.designs);
+  const designList = (isNewFormat
+    ? (metadata.budget_request?.designs || metadata.designs || [])
+    : (Array.isArray(metadata) ? metadata : [])
+  ) as any[];
   const personalization = isNewFormat ? metadata.personalization : null;
-  const personalizationText = personalization?.text || personalization;
+  const personalizationText = typeof personalization === 'string' ? personalization : (personalization?.text || '');
   const personalizationSize = personalization?.size || null;
   const personalizationPrice = personalization?.price || 0;
 
   // Precio de los logos + texto
-  const designsPrice = designList.reduce((sum: number, d: any) => sum + (d.price || 0), 0);
+  const designsPrice = Array.isArray(designList) ? designList.reduce((sum: number, d: any) => sum + (d.price || 0), 0) : 0;
   const finalPrice = basePrice + designsPrice + personalizationPrice;
-  const subtotal = finalPrice * item.quantity;
+  const subtotal = finalPrice * (item.quantity || 1);
 
   return (
     <motion.div
@@ -67,10 +70,10 @@ export function CartItemRow({
         )}
 
         {/* Overlay preview for custom designs if it's a quote request */}
-        {isOnRequest && budgetRequest?.image_url && (
+        {isOnRequest && (budgetRequest?.image_url || budgetRequest?.designs?.[0]?.image_url) && (
           <div className="absolute bottom-0 right-0 w-8 h-8 rounded-tl-lg overflow-hidden border-t border-l border-white shadow-lg bg-white">
             <img
-              src={budgetRequest.image_url}
+              src={budgetRequest.image_url || budgetRequest.designs[0].image_url}
               alt="Tu diseño"
               className="w-full h-full object-contain p-0.5"
             />

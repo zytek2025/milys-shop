@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Save, Loader2, Landmark, Smartphone, MessageSquareQuote, Type, Palette, Plus, Trash2, Globe, CreditCard, DollarSign, Wallet, Bitcoin, Zap, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface StoreSettings {
     personalization_price_small: number;
@@ -53,6 +54,7 @@ const AVAILABLE_ICONS = [
 ];
 
 export default function AdminSettingsPage() {
+    const queryClient = useQueryClient();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [settings, setSettings] = useState<StoreSettings>({
@@ -146,6 +148,7 @@ export default function AdminSettingsPage() {
             const data = await res.json();
             if (res.ok) {
                 toast.success('Ajustes guardados correctamente');
+                queryClient.invalidateQueries({ queryKey: ['store-settings'] });
             } else {
                 toast.error(data.error || 'Error al guardar');
             }

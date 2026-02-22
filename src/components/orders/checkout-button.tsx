@@ -8,6 +8,7 @@ import { useCart, useClearCart } from '@/hooks/use-cart';
 import { useAuth } from '@/store/cart-store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { PriceDisplay } from '@/components/store-settings-provider';
 
 interface CheckoutButtonProps {
   onLoginRequired?: (config?: { view: 'login' | 'register' | 'summary' | 'guest'; message: string }) => void;
@@ -148,7 +149,7 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete, guestData }: 
         <div className="p-3 border-2 border-primary/20 bg-primary/5 rounded-xl flex items-center justify-between gap-3">
           <div className="flex flex-col">
             <span className="text-[10px] font-black uppercase tracking-widest text-primary">Saldo a Favor</span>
-            <span className="text-sm font-bold">${store_credit.toFixed(2)} acumulados</span>
+            <span className="text-sm font-bold"><PriceDisplay amount={store_credit} className="inline-flex" /> acumulados</span>
           </div>
           <Button
             size="sm"
@@ -164,12 +165,12 @@ export function CheckoutButton({ onLoginRequired, onOrderComplete, guestData }: 
       <div className="space-y-2 py-2">
         <div className="flex justify-between text-xs font-bold uppercase italic text-muted-foreground px-1">
           <span>{currentCartTotal > 0 ? 'Total Estimado' : 'Subtotal'}</span>
-          <span>${currentCartTotal.toFixed(2)}</span>
+          <PriceDisplay amount={currentCartTotal} />
         </div>
         {isAuthenticated && applyCredit && store_credit > 0 && (
           <div className="flex justify-between text-xs font-bold uppercase italic text-primary px-1">
             <span>Saldo Aplicado</span>
-            <span>-${Math.min(store_credit, currentCartTotal).toFixed(2)}</span>
+            <span>-<PriceDisplay amount={Math.min(store_credit, currentCartTotal)} className="inline-flex" /></span>
           </div>
         )}
       </div>

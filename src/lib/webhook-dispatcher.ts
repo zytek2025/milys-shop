@@ -9,7 +9,11 @@ export type WebhookEvent =
     | 'order_delivered'
     | 'order_cancelled'
     | 'return_processed'
+    | 'budget_finalized'
+    | 'payment_proof_received'
+    | 'profile_updated'
     | 'virtual_assistant' // Keep legacy if used
+    | 'customer_registered'
     | 'welcome'; // Keep legacy if used temporarily
 
 export interface WebhookCustomerData {

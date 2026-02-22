@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { OrderWithItems } from '@/types';
+import { PriceDisplay } from '@/components/store-settings-provider';
 
 interface OrderDetailProps {
   order: OrderWithItems;
@@ -108,8 +109,8 @@ export function OrderDetail({ order, onBack }: OrderDetailProps) {
                     </div>
                     <div>
                       <p className="font-bold text-sm tracking-tight capitalize">{item.product_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        ${item.price.toFixed(2)} × {item.quantity}
+                      <p className="text-xs text-muted-foreground flex gap-1">
+                        <PriceDisplay amount={item.price} /> × {item.quantity}
                       </p>
                       {(item.variant?.size || item.variant?.color) && (
                         <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">
@@ -120,9 +121,9 @@ export function OrderDetail({ order, onBack }: OrderDetailProps) {
                       )}
                     </div>
                   </div>
-                  <p className="font-black text-primary">
-                    ${(item.price * item.quantity).toFixed(2)}
-                  </p>
+                  <div className="font-black text-primary">
+                    <PriceDisplay amount={item.price * item.quantity} />
+                  </div>
                 </div>
 
                 {/* Customization Details */}
@@ -164,7 +165,7 @@ export function OrderDetail({ order, onBack }: OrderDetailProps) {
                                     <div className="flex justify-between items-start">
                                       <p className="text-[10px] font-black uppercase truncate">{d.name || 'Diseño de Cliente'}</p>
                                       {d.price > 0 && (
-                                        <span className="text-[10px] font-black text-primary ml-2">+${d.price.toFixed(2)}</span>
+                                        <span className="text-[10px] font-black text-primary ml-2">+<PriceDisplay amount={d.price} className="inline-flex" /></span>
                                       )}
                                     </div>
                                     <p className="text-[8px] text-slate-400 font-bold uppercase">
@@ -202,7 +203,7 @@ export function OrderDetail({ order, onBack }: OrderDetailProps) {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
-              <span>${order.total.toFixed(2)}</span>
+              <PriceDisplay amount={order.total} />
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Shipping</span>
@@ -211,7 +212,7 @@ export function OrderDetail({ order, onBack }: OrderDetailProps) {
             <Separator />
             <div className="flex justify-between font-semibold text-lg">
               <span>Total</span>
-              <span>${order.total.toFixed(2)}</span>
+              <PriceDisplay amount={order.total} className="flex flex-col items-end" />
             </div>
           </div>
         </CardContent>

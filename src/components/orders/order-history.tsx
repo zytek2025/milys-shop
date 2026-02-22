@@ -49,6 +49,8 @@ import { useUser, useUpdateProfile, useRequestAccountDeletion, useLogout } from 
 import type { OrderWithItems } from '@/types';
 import { toast } from 'sonner';
 
+import { PriceDisplay } from '@/components/store-settings-provider';
+
 interface OrderHistoryProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -203,7 +205,9 @@ export function OrderHistory({ open, onOpenChange }: OrderHistoryProps) {
                             <span className="text-muted-foreground">
                               {order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}
                             </span>
-                            <span className="font-semibold text-emerald-600">${order.total.toFixed(2)}</span>
+                            <span className="font-semibold text-emerald-600">
+                              <PriceDisplay amount={order.total} />
+                            </span>
                           </div>
                         </motion.div>
                       );
