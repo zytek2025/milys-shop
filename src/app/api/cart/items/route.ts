@@ -55,11 +55,16 @@ export async function POST(request: NextRequest) {
       }
       activeVariant = variant;
       const isOnRequest = customMetadata?.on_request === true;
-      if (variant.stock < quantity && !isOnRequest) {
+      const isBajoPedido = variant.stock <= 0 || product.stock <= 0; // If stock is 0, it operates as Bajo Pedido
+
+      if (variant.stock < quantity && variant.stock > 0 && !isOnRequest) {
         return NextResponse.json({ error: 'Insufficient variant stock' }, { status: 400 });
       }
-    } else if (product.stock < quantity && customMetadata?.on_request !== true) {
-      return NextResponse.json({ error: 'Insufficient stock' }, { status: 400 });
+    } else {
+      const isBajoPedido = product.stock <= 0;
+      if (product.stock < quantity && product.stock > 0 && customMetadata?.on_request !== true) {
+        return NextResponse.json({ error: 'Insufficient stock' }, { status: 400 });
+      }
     }
 
     let cartId: string;
@@ -122,7 +127,9 @@ export async function POST(request: NextRequest) {
 
       const stockToCheck = activeVariant ? (activeVariant as any).stock : product.stock;
       const isOnRequest = customMetadata?.on_request === true;
-      if (stockToCheck < newQuantity && !isOnRequest) {
+
+      // Allow if it's a quote request OR if the item is inherently "Bajo Pedido" (stock <= 0)
+      if (stockToCheck < newQuantity && stockToCheck > 0 && !isOnRequest) {
         return NextResponse.json({ error: 'Stock insuficiente para la cantidad combinada' }, { status: 400 });
       }
 
