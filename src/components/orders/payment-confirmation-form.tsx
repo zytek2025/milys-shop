@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRouter } from 'next/navigation';
 
 interface PaymentConfirmationFormProps {
     orderId: string;
@@ -20,6 +21,7 @@ interface PaymentConfirmationFormProps {
 
 export function PaymentConfirmationForm({ orderId, total, onSuccess }: PaymentConfirmationFormProps) {
     const supabase = createClient();
+    const router = useRouter();
     const [reference, setReference] = useState('');
     const [amount, setAmount] = useState('');
     const [file, setFile] = useState<File | null>(null);
@@ -126,6 +128,11 @@ export function PaymentConfirmationForm({ orderId, total, onSuccess }: PaymentCo
             setPreview(null);
             fetchData();
             onSuccess?.();
+
+            // Redirect to home page after briefly showing the success toast
+            setTimeout(() => {
+                router.push('/');
+            }, 1000);
         } catch (error: any) {
             console.error('Error confirming payment:', error);
             toast.error(error.message || 'Error al procesar la confirmación');
