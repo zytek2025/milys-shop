@@ -127,6 +127,7 @@ export interface UserProfile {
   balance?: number;
   shipping_address?: string;
   marketing_consent?: boolean;
+  whatsapp?: string;
   is_active?: boolean;
   deletion_requested_at?: string;
   permissions?: Permissions;
