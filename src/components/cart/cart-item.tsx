@@ -104,17 +104,17 @@ export function CartItemRow({
         )}
 
         <div className="flex items-center gap-2">
-          <p className="text-sm font-bold text-primary">
+          <div className="text-sm font-bold text-primary">
             {isOnRequest ? (
               <span className="text-amber-600 italic">Precio pendiente</span>
             ) : (
               <PriceDisplay amount={finalPrice} />
             )}
-          </p>
+          </div>
           {isOnRequest && finalPrice > 0 && (
-            <span className="text-[10px] text-muted-foreground line-through decoration-slate-300">
+            <div className="text-[10px] text-muted-foreground line-through decoration-slate-300">
               <PriceDisplay amount={finalPrice} />
-            </span>
+            </div>
           )}
         </div>
 
