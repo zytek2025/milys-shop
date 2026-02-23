@@ -288,12 +288,12 @@ export default function AdminPOSPage() {
                                                         <Button
                                                             key={v.id}
                                                             onClick={(_) => addToCart(product, v)}
-                                                            variant="outline"
+                                                            variant="ghost"
                                                             size="sm"
-                                                            className="w-full text-[10px] justify-between h-auto py-2"
+                                                            className="w-full text-[10px] justify-between h-auto py-2 bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-primary-foreground text-slate-700 dark:text-slate-300 border-transparent transition-colors shadow-sm"
                                                         >
-                                                            <span>{v.size} {v.color}</span>
-                                                            <span className="text-primary font-bold">+</span>
+                                                            <span className="font-semibold">{v.size} {v.color}</span>
+                                                            <span className="font-black">+</span>
                                                         </Button>
                                                     ))}
                                                 </div>
