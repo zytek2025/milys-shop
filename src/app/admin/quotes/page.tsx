@@ -354,43 +354,39 @@ export default function AdminQuotesPage() {
                                             {selectedQuote.items?.map((item: any, idx: number) => {
                                                 const designs = item.custom_metadata?.budget_request?.designs || [];
                                                 return (
-                                                    <div key={idx} className="p-8 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                                                        <div className="flex justify-between items-start gap-6">
-                                                            <div className="space-y-2 grow">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-primary font-black italic">
-                                                                        {idx + 1}
-                                                                    </div>
-                                                                    <h4 className="text-lg font-black tracking-tight">{item.product_name}</h4>
+                                                    <div key={idx} className="p-2 sm:p-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                                        <div className="flex justify-between items-center gap-3">
+                                                            <div className="flex items-center gap-2 grow truncate">
+                                                                <div className="h-6 w-6 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-primary font-black italic text-[10px] shrink-0">
+                                                                    {idx + 1}
                                                                 </div>
-                                                                <div className="flex flex-wrap gap-2 pl-13">
-                                                                    {item.custom_metadata?.size && <Badge variant="outline" className="rounded-lg text-[10px] font-black border-slate-200 uppercase bg-slate-50">Talla: {item.custom_metadata.size}</Badge>}
-                                                                    {item.custom_metadata?.color && <Badge variant="outline" className="rounded-lg text-[10px] font-black border-slate-200 uppercase bg-slate-50">Color: {item.custom_metadata.color}</Badge>}
+                                                                <h4 className="text-xs sm:text-sm font-black tracking-tight truncate">{item.product_name}</h4>
+                                                                <div className="flex gap-1 shrink-0 ml-2">
+                                                                    {item.custom_metadata?.size && <Badge variant="outline" className="rounded text-[8px] px-1 py-0 font-black border-slate-200 uppercase bg-slate-50">T: {item.custom_metadata.size}</Badge>}
+                                                                    {item.custom_metadata?.color && <Badge variant="outline" className="rounded text-[8px] px-1 py-0 font-black border-slate-200 uppercase bg-slate-50">C: {item.custom_metadata.color}</Badge>}
                                                                 </div>
-                                                                {designs.length > 0 && (
-                                                                    <div className="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-3">
-                                                                        {designs.map((d: any, dIdx: number) => (
-                                                                            <div key={dIdx} className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 flex gap-3 items-center">
-                                                                                <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border border-slate-200 shrink-0">
-                                                                                    {d.image_url ? (
-                                                                                        <img src={d.image_url} className="w-full h-full object-contain" alt="" />
-                                                                                    ) : (
-                                                                                        <div className="w-full h-full flex items-center justify-center text-slate-300"><Palette size={16} /></div>
-                                                                                    )}
-                                                                                </div>
-                                                                                <div className="flex flex-col text-[10px] leading-tight font-bold uppercase overflow-hidden">
-                                                                                    <span className="text-slate-400 truncate tracking-widest">{d.location || 'UBIC. S/N'}</span>
-                                                                                    <span className="text-primary truncate">${d.price || '0.00'}</span>
-                                                                                </div>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
                                                             </div>
-                                                            <div className="text-right shrink-0">
-                                                                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground italic mb-1">CANT: {item.quantity}</p>
-                                                                <p className="text-2xl font-black italic tracking-tighter text-primary">${(item.price * item.quantity).toFixed(2)}</p>
-                                                                <p className="text-[10px] font-bold text-slate-400">${item.price.toFixed(2)} c/u</p>
+
+                                                            {designs.length > 0 && (
+                                                                <div className="hidden sm:flex items-center gap-1 shrink-0 px-2 border-l border-r border-slate-100 dark:border-slate-800">
+                                                                    {designs.map((d: any, dIdx: number) => (
+                                                                        <div key={dIdx} className="w-5 h-5 rounded overflow-hidden bg-white border border-slate-200" title={`${d.location} - $${d.price}`}>
+                                                                            {d.image_url ? (
+                                                                                <img src={d.image_url} className="w-full h-full object-contain" alt="" />
+                                                                            ) : (
+                                                                                <div className="w-full h-full flex items-center justify-center text-slate-300"><Palette size={10} /></div>
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            <div className="text-right flex items-center gap-3 shrink-0">
+                                                                <div className="flex flex-col items-end">
+                                                                    <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground italic leading-none">CANT: {item.quantity}</p>
+                                                                    <p className="text-[10px] font-bold text-slate-400 leading-none mt-1">${item.price.toFixed(2)} c/u</p>
+                                                                </div>
+                                                                <p className="text-sm sm:text-base font-black italic tracking-tighter text-primary w-16 text-right">${(item.price * item.quantity).toFixed(2)}</p>
                                                             </div>
                                                         </div>
                                                     </div>
