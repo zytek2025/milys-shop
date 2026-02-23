@@ -306,7 +306,7 @@ export default function AdminQuotesPage() {
 
                                 {/* Customer Info Card */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+                                    <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
                                         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                             <Users size={80} />
                                         </div>
@@ -326,18 +326,18 @@ export default function AdminQuotesPage() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-amber-500 p-8 rounded-[2.5rem] shadow-xl shadow-amber-500/20 flex flex-col justify-between relative overflow-hidden group text-white">
+                                    <div className="bg-amber-500 p-6 rounded-[2.5rem] shadow-xl shadow-amber-500/20 flex flex-col justify-between relative overflow-hidden group text-white">
                                         <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:rotate-12 transition-transform duration-500 pointer-events-none">
-                                            <TrendingUp size={120} />
+                                            <TrendingUp size={100} />
                                         </div>
                                         <div className="relative z-10">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-8 block italic">Resumen de Cotización</p>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-4 block italic">Resumen de Cotización</p>
                                         </div>
                                         <div className="space-y-1 relative z-10 text-right mt-auto">
                                             <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Total a Pagar</span>
-                                            <h2 className="text-5xl lg:text-6xl font-black italic tracking-tighter leading-none">${selectedQuote.total.toFixed(2)}</h2>
+                                            <h2 className="text-4xl lg:text-5xl font-black italic tracking-tighter leading-none">${selectedQuote.total.toFixed(2)}</h2>
                                             {settings?.exchange_rate && (
-                                                <p className="text-sm font-bold opacity-90 italic mt-2">≈ Bs {(selectedQuote.total * settings.exchange_rate).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</p>
+                                                <p className="text-xs font-bold opacity-90 italic mt-1">≈ Bs {(selectedQuote.total * settings.exchange_rate).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</p>
                                             )}
                                         </div>
                                     </div>
