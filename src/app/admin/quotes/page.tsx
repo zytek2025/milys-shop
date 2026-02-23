@@ -257,26 +257,26 @@ export default function AdminQuotesPage() {
                     {selectedQuote && (
                         <>
                             <div className="p-8 md:p-12 space-y-8">
-                                <DialogHeader className="flex flex-row items-center justify-between space-y-0">
+                                <DialogHeader className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0">
                                     <div className="space-y-1">
-                                        <DialogTitle className="text-3xl font-black tracking-tighter italic uppercase text-primary flex items-center gap-3">
+                                        <DialogTitle className="text-2xl sm:text-3xl font-black tracking-tighter italic uppercase text-primary flex items-center gap-3">
                                             <FileText size={24} /> Presupuesto
                                         </DialogTitle>
-                                        <DialogDescription className="font-mono text-xs uppercase tracking-widest font-bold opacity-60">
+                                        <DialogDescription className="font-mono text-[10px] sm:text-xs uppercase tracking-widest font-bold opacity-60">
                                             ID: {selectedQuote.id} | Control: {selectedQuote.control_id}
                                         </DialogDescription>
                                     </div>
-                                    <div className="flex gap-2 no-print">
+                                    <div className="flex flex-wrap gap-2 no-print w-full md:w-auto">
                                         <Button
-                                            className="h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 px-6 shadow-lg shadow-emerald-500/20 uppercase italic text-xs tracking-widest"
+                                            className="h-10 sm:h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 px-4 shadow-lg shadow-emerald-500/20 uppercase italic text-[10px] sm:text-xs tracking-widest flex-1 sm:flex-none justify-center"
                                             onClick={() => handleConvertToOrder(selectedQuote.id)}
                                         >
                                             <CheckCircle2 size={16} />
-                                            Convertir a Pedido
+                                            Convertir
                                         </Button>
                                         <Button
                                             variant="outline"
-                                            className="h-12 rounded-2xl gap-2 font-bold uppercase italic text-[10px]"
+                                            className="h-10 sm:h-12 rounded-2xl gap-2 font-bold uppercase italic text-[10px] flex-1 sm:flex-none justify-center"
                                             onClick={() => {
                                                 setIsDetailsOpen(false);
                                                 router.push(`/admin/pos?edit=${selectedQuote.id}`);
@@ -287,7 +287,7 @@ export default function AdminQuotesPage() {
                                         </Button>
                                         <Button
                                             variant="outline"
-                                            className="h-12 rounded-2xl gap-2 font-bold uppercase italic text-[10px] text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200"
+                                            className="h-10 sm:h-12 rounded-2xl gap-2 font-bold uppercase italic text-[10px] text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200 flex-1 sm:flex-none justify-center"
                                             onClick={() => handleDeleteQuote(selectedQuote.id)}
                                         >
                                             <Trash2 size={16} />
@@ -295,11 +295,11 @@ export default function AdminQuotesPage() {
                                         </Button>
                                         <Button
                                             variant="outline"
-                                            className="h-12 rounded-2xl gap-2 font-bold uppercase italic text-[10px]"
+                                            className="h-10 sm:h-12 rounded-2xl gap-2 font-bold uppercase italic text-[10px] flex-1 sm:flex-none justify-center"
                                             onClick={() => setIsReceiptOpen(true)}
                                         >
                                             <Printer size={16} />
-                                            Generar Recibo
+                                            Recibo
                                         </Button>
                                     </div>
                                 </DialogHeader>
