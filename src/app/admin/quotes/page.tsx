@@ -306,38 +306,38 @@ export default function AdminQuotesPage() {
 
                                 {/* Customer Info Card */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+                                    <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
                                         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                            <Users size={80} />
+                                            <Users size={60} />
                                         </div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4 block italic">Información del Cliente</p>
-                                        <div className="space-y-4">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 block italic">Información del Cliente</p>
+                                        <div className="space-y-3">
                                             <div className="flex flex-col">
-                                                <span className="text-lg font-black tracking-tight">{selectedQuote.customer_name || 'No proporcionado'}</span>
-                                                <span className="text-sm font-medium text-slate-400">{selectedQuote.customer_email || 'Sin correo electrónico'}</span>
+                                                <span className="text-base font-black tracking-tight">{selectedQuote.customer_name || 'No proporcionado'}</span>
+                                                <span className="text-xs font-medium text-slate-400">{selectedQuote.customer_email || 'Sin correo electrónico'}</span>
                                             </div>
-                                            <div className="flex items-center gap-3 text-sm font-bold py-3 border-y border-slate-50 dark:border-slate-800">
-                                                <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary italic">@</div>
+                                            <div className="flex items-center gap-2 text-xs font-bold py-2 border-y border-slate-50 dark:border-slate-800">
+                                                <div className="h-6 w-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary italic">@</div>
                                                 {selectedQuote.customer_phone || 'Sin WhatsApp'}
                                             </div>
-                                            <div className="text-xs font-semibold leading-relaxed text-slate-500 italic">
+                                            <div className="text-[10px] font-semibold leading-relaxed text-slate-500 italic">
                                                 {selectedQuote.shipping_address || 'Sin dirección de envío'}
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="bg-amber-500 p-6 rounded-[2.5rem] shadow-xl shadow-amber-500/20 flex flex-col justify-between relative overflow-hidden group text-white">
+                                    <div className="bg-amber-500 p-5 rounded-3xl shadow-xl shadow-amber-500/20 flex flex-col justify-between relative overflow-hidden group text-white">
                                         <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:rotate-12 transition-transform duration-500 pointer-events-none">
-                                            <TrendingUp size={100} />
+                                            <TrendingUp size={80} />
                                         </div>
                                         <div className="relative z-10">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-4 block italic">Resumen de Cotización</p>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-3 block italic">Resumen de Cotización</p>
                                         </div>
                                         <div className="space-y-1 relative z-10 text-right mt-auto">
                                             <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Total a Pagar</span>
-                                            <h2 className="text-4xl lg:text-5xl font-black italic tracking-tighter leading-none">${selectedQuote.total.toFixed(2)}</h2>
+                                            <h2 className="text-3xl lg:text-4xl font-black italic tracking-tighter leading-none">${selectedQuote.total.toFixed(2)}</h2>
                                             {settings?.exchange_rate && (
-                                                <p className="text-xs font-bold opacity-90 italic mt-1">≈ Bs {(selectedQuote.total * settings.exchange_rate).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</p>
+                                                <p className="text-[10px] font-bold opacity-90 italic mt-1">≈ Bs {(selectedQuote.total * settings.exchange_rate).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</p>
                                             )}
                                         </div>
                                     </div>
