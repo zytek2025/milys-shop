@@ -50,12 +50,39 @@ export async function GET() {
         const totalExpenses = expenses?.reduce((acc, exp) => acc + (Number(exp.amount) || 0), 0) || 0;
         const netProfit = totalRevenue - totalExpenses;
 
+        // Get weekly chart data
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+
+        const { data: recentTxs } = await supabase
+            .from('finance_transactions')
+            .select('type, amount_usd_equivalent, transaction_date')
+            .gte('transaction_date', sevenDaysAgo.toISOString());
+
+        const days = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - (6 - i));
+            return d;
+        });
+
+        const weeklyChartData = days.map(day => {
+            const dayStr = day.toISOString().split('T')[0];
+            const dayTxs = (recentTxs || []).filter(t => t.transaction_date.startsWith(dayStr));
+            return {
+                name: day.toLocaleDateString('es-VE', { weekday: 'short' }),
+                ingresos: dayTxs.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount_usd_equivalent), 0),
+                egresos: dayTxs.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount_usd_equivalent), 0)
+            };
+        });
+
         return NextResponse.json({
             productsCount: productsCount || 0,
             ordersCount: ordersCount || 0,
             totalRevenue,
             totalExpenses,
-            netProfit
+            netProfit,
+            weeklyChartData
         });
     } catch (error) {
         console.error('Error fetching admin stats:', error);

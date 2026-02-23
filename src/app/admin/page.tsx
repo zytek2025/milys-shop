@@ -20,6 +20,7 @@ interface AdminStats {
     totalRevenue: number;
     totalExpenses: number;
     netProfit: number;
+    weeklyChartData?: any[];
 }
 
 export default function AdminDashboardPage() {
@@ -160,15 +161,7 @@ export default function AdminDashboardPage() {
                     </CardHeader>
                     <CardContent className="h-[300px] px-6 pb-8">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={[
-                                { name: 'Lun', ingresos: 4000, egresos: 2400 },
-                                { name: 'Mar', ingresos: 3000, egresos: 1398 },
-                                { name: 'Mié', ingresos: 2000, egresos: 9800 },
-                                { name: 'Jue', ingresos: 2780, egresos: 3908 },
-                                { name: 'Vie', ingresos: 1890, egresos: 4800 },
-                                { name: 'Sáb', ingresos: 2390, egresos: 3800 },
-                                { name: 'Dom', ingresos: 3490, egresos: 4300 },
-                            ]} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
+                            <BarChart data={stats?.weeklyChartData || []} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888888' }} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888888' }} tickFormatter={(value) => `$${value}`} />
