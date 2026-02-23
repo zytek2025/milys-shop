@@ -109,9 +109,9 @@ export function OrderDetail({ order, onBack }: OrderDetailProps) {
                     </div>
                     <div>
                       <p className="font-bold text-sm tracking-tight capitalize">{item.product_name}</p>
-                      <p className="text-xs text-muted-foreground flex gap-1">
+                      <div className="text-xs text-muted-foreground flex gap-1 items-center">
                         <PriceDisplay amount={item.price} /> × {item.quantity}
-                      </p>
+                      </div>
                       {(item.variant?.size || item.variant?.color) && (
                         <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">
                           {item.variant.color && <span>{item.variant.color}</span>}
@@ -165,7 +165,7 @@ export function OrderDetail({ order, onBack }: OrderDetailProps) {
                                     <div className="flex justify-between items-start">
                                       <p className="text-[10px] font-black uppercase truncate">{d.name || 'Diseño de Cliente'}</p>
                                       {d.price > 0 && (
-                                        <span className="text-[10px] font-black text-primary ml-2">+<PriceDisplay amount={d.price} className="inline-flex" /></span>
+                                        <div className="text-[10px] font-black text-primary ml-2 flex items-center">+<PriceDisplay amount={d.price} className="inline-flex" /></div>
                                       )}
                                     </div>
                                     <p className="text-[8px] text-slate-400 font-bold uppercase">
