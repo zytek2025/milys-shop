@@ -554,8 +554,8 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                                 {selectedDesigns.map(design => (
                                     <div key={design.instanceId} className="group relative rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 shadow-sm animate-in fade-in slide-in-from-left duration-300">
                                         <div className="flex gap-4">
-                                            <div className="relative aspect-square w-20 rounded-xl bg-white dark:bg-slate-900 overflow-hidden border">
-                                                <img src={design.image_url} alt={design.name} className="w-full h-full object-contain p-2" />
+                                            <div className="relative aspect-square w-20 rounded-xl bg-white dark:bg-slate-900 border">
+                                                <img src={design.image_url} alt={design.name} className="w-full h-full object-contain p-2 rounded-xl" />
                                                 <button
                                                     onClick={() => setSelectedDesigns(prev => prev.filter(d => d.instanceId !== design.instanceId))}
                                                     className="absolute -top-2 -right-2 bg-destructive text-white p-1.5 rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all z-10"
@@ -703,8 +703,8 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                                 {customDesigns.map(design => (
                                     <div key={design.instanceId} className="group relative rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 shadow-sm animate-in fade-in slide-in-from-left duration-300">
                                         <div className="flex gap-4">
-                                            <div className="relative aspect-square w-20 rounded-xl bg-white dark:bg-slate-900 overflow-hidden border">
-                                                <img src={design.preview} alt="Custom upload" className="w-full h-full object-contain p-2" />
+                                            <div className="relative aspect-square w-20 rounded-xl bg-white dark:bg-slate-900 border">
+                                                <img src={design.preview} alt="Custom upload" className="w-full h-full object-contain p-2 rounded-xl" />
                                                 <button
                                                     onClick={() => removeCustomDesign(design.instanceId)}
                                                     className="absolute -top-2 -right-2 bg-destructive text-white p-1.5 rounded-full shadow-lg hover:bg-rose-600 hover:scale-110 transition-all z-10"
@@ -812,10 +812,21 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                                 maxLength={80}
                                 value={customText}
                                 onChange={(e) => setCustomText(e.target.value)}
-                                className="rounded-2xl h-14 bg-slate-50 dark:bg-slate-900 border-none pl-4 pr-16 text-sm font-medium"
+                                className="rounded-2xl h-14 bg-slate-50 dark:bg-slate-900 border-none pl-4 pr-24 text-sm font-medium"
                             />
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                                {customText.length}/80
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                                {customText && (
+                                    <button
+                                        onClick={() => setCustomText('')}
+                                        className="text-slate-400 hover:text-destructive transition-colors"
+                                        title="Borrar texto"
+                                    >
+                                        <X size={16} strokeWidth={3} />
+                                    </button>
+                                )}
+                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                                    {customText.length}/80
+                                </span>
                             </div>
                         </div>
                         <div className="w-full sm:w-48 space-y-1">
