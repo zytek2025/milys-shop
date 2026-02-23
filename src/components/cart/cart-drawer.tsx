@@ -105,7 +105,7 @@ export function CartDrawer({ open, onOpenChange, onLoginRequired, guestData }: C
   const handleOrderComplete = (orderId: string) => {
     onOpenChange(false);
     toast.success('¡Tu pedido ha sido realizado con éxito!');
-    router.push('/');
+    router.push(`/orders/${orderId}`);
   };
 
   const items = cart?.items ?? [];
