@@ -33,7 +33,7 @@ interface CheckoutInfoFormProps {
 
 export function CheckoutInfoForm({ onSuccess, onCancel }: CheckoutInfoFormProps) {
     const [isLoading, setIsLoading] = useState(false);
-    const { user, setProfile } = useAuth();
+    const { user, setUser } = useAuth();
     const supabase = createClient();
 
     const form = useForm<CheckoutInfoValues>({
@@ -61,7 +61,7 @@ export function CheckoutInfoForm({ onSuccess, onCancel }: CheckoutInfoFormProps)
             if (error) throw error;
 
             // Update local state so checkout button proceeds
-            setProfile({ ...user, whatsapp: data.whatsapp, shipping_address: data.shipping_address });
+            setUser({ ...user, whatsapp: data.whatsapp, shipping_address: data.shipping_address });
 
             toast.success('Datos de envío guardados correctamente');
             onSuccess(); // Triggers the actual checkout continuation
