@@ -805,8 +805,8 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
             {isCustomizable && designMode === 'gallery' && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-500 delay-200">
                     <SectionLabel label="Paso Adicional: Personalización de Texto" />
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="relative flex-1">
+                    <div className="flex flex-col gap-4">
+                        <div className="relative w-full">
                             <Input
                                 placeholder="Ej: Nombre o mensaje especial..."
                                 maxLength={80}
@@ -829,28 +829,31 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                                 </span>
                             </div>
                         </div>
-                        <div className="w-full sm:w-48 space-y-1">
-                            <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Tamaño de Texto</Label>
-                            <select
-                                value={customTextSize}
-                                onChange={(e) => setCustomTextSize(e.target.value as 'small' | 'large')}
-                                className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
-                            >
-                                <option value="small">Pequeño (+${storeSettings?.personalization_price_small ?? '1.00'})</option>
-                                <option value="large">Grande (+${storeSettings?.personalization_price_large ?? '3.00'})</option>
-                            </select>
-                        </div>
-                        <div className="w-full sm:w-48 space-y-1">
-                            <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Ubicación</Label>
-                            <select
-                                value={customTextLocation}
-                                onChange={(e) => setCustomTextLocation(e.target.value)}
-                                className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
-                            >
-                                {designLocations.map(loc => (
-                                    <option key={loc} value={loc}>{loc}</option>
-                                ))}
-                            </select>
+
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex-1 space-y-1">
+                                <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Tamaño de Texto</Label>
+                                <select
+                                    value={customTextSize}
+                                    onChange={(e) => setCustomTextSize(e.target.value as 'small' | 'large')}
+                                    className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
+                                >
+                                    <option value="small">Pequeño (+${storeSettings?.personalization_price_small ?? '1.00'})</option>
+                                    <option value="large">Grande (+${storeSettings?.personalization_price_large ?? '3.00'})</option>
+                                </select>
+                            </div>
+                            <div className="flex-1 space-y-1">
+                                <Label className="text-[9px] uppercase font-bold text-muted-foreground ml-2">Ubicación</Label>
+                                <select
+                                    value={customTextLocation}
+                                    onChange={(e) => setCustomTextLocation(e.target.value)}
+                                    className="w-full h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none text-xs font-bold px-4 focus:ring-1 focus:ring-primary outline-none"
+                                >
+                                    {designLocations.map(loc => (
+                                        <option key={loc} value={loc}>{loc}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <p className="text-[10px] text-muted-foreground italic px-2">
