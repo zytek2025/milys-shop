@@ -39,9 +39,9 @@ export function PaymentInstructions({ paymentMethodId, orderTotal = 0 }: { payme
     if (displayMethods.length === 0) return null;
 
     return (
-        <div className="space-y-3 my-4">
-            <h3 className="text-sm font-black italic uppercase tracking-tighter text-primary">Formas de Pago</h3>
-            <p className="text-[9px] text-muted-foreground font-bold uppercase italic opacity-70">
+        <div className="space-y-4 my-6">
+            <h3 className="text-base font-black italic uppercase tracking-tighter text-primary">Formas de Pago</h3>
+            <p className="text-xs text-muted-foreground font-bold uppercase italic opacity-70">
                 {paymentMethodId
                     ? 'Realiza el pago siguiendo estas instrucciones:'
                     : 'Selecciona una opción y transfiere:'}
@@ -54,35 +54,35 @@ export function PaymentInstructions({ paymentMethodId, orderTotal = 0 }: { payme
 
                     return (
                         <Card key={method.id} className="border border-primary/20 shadow-sm bg-primary/5 overflow-hidden transition-all hover:bg-primary/10">
-                            <CardHeader className="p-2 bg-white dark:bg-slate-900 border-b border-primary/5">
+                            <CardHeader className="p-3 sm:p-4 bg-white dark:bg-slate-900 border-b border-primary/5">
                                 <div className="flex justify-between items-center">
-                                    <CardTitle className="text-[10px] flex items-center gap-1.5 uppercase italic font-black">
-                                        <Landmark className="h-3 w-3 text-primary" /> {method.name}
+                                    <CardTitle className="text-xs sm:text-sm flex items-center gap-2 uppercase italic font-black">
+                                        <Landmark className="h-4 w-4 text-primary" /> {method.name}
                                     </CardTitle>
                                     {orderTotal > 0 && method.is_discount_active && method.discount_percentage > 0 && (
-                                        <Badge className="bg-emerald-500 text-white font-black text-[8px] uppercase italic py-0 h-3.5 px-1">
+                                        <Badge className="bg-emerald-500 text-white font-black text-[10px] uppercase italic py-0.5 px-2">
                                             -{method.discount_percentage}%
                                         </Badge>
                                     )}
                                 </div>
                             </CardHeader>
-                            <CardContent className="p-2 space-y-1.5">
-                                <div className="bg-white dark:bg-slate-900 p-2 rounded-lg relative group border border-slate-100 dark:border-slate-800">
-                                    <p className="text-[9px] font-mono whitespace-pre-wrap leading-tight">{method.instructions}</p>
+                            <CardContent className="p-3 sm:p-4 space-y-3">
+                                <div className="bg-white dark:bg-slate-900 p-3 rounded-lg relative group border border-slate-100 dark:border-slate-800">
+                                    <p className="text-xs sm:text-sm font-mono whitespace-pre-wrap leading-relaxed pr-8">{method.instructions}</p>
                                     <Button
                                         size="icon"
                                         variant="ghost"
-                                        className="absolute top-0.5 right-0.5 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="absolute top-1 right-1 h-8 w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-slate-50 dark:bg-slate-800"
                                         onClick={() => copyToClipboard(method.instructions, method.id)}
                                     >
-                                        {copiedKey === method.id ? <Check className="h-2.5 w-2.5 text-emerald-500" /> : <Copy className="h-2.5 w-2.5" />}
+                                        {copiedKey === method.id ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4 text-slate-500" />}
                                     </Button>
                                 </div>
 
                                 {orderTotal > 0 && (
-                                    <div className="flex justify-between items-center px-1 pt-1 overflow-hidden">
-                                        <span className="text-[9px] font-black uppercase italic text-muted-foreground whitespace-nowrap">Monto a pagar:</span>
-                                        <PriceDisplay amount={finalForThisMethod} className="font-black text-primary tracking-tighter text-sm" />
+                                    <div className="flex justify-between items-center px-1 pt-2 overflow-hidden">
+                                        <span className="text-xs font-black uppercase italic text-muted-foreground whitespace-nowrap">Monto a pagar:</span>
+                                        <PriceDisplay amount={finalForThisMethod} className="font-black text-primary tracking-tighter text-lg sm:text-xl" />
                                     </div>
                                 )}
 
@@ -108,11 +108,11 @@ export function PaymentInstructions({ paymentMethodId, orderTotal = 0 }: { payme
                 })}
             </div>
 
-            <div className="bg-amber-50 dark:bg-amber-950/20 p-2.5 rounded-xl border border-amber-100 dark:border-amber-800 flex gap-2">
-                <div className="h-6 w-6 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center shrink-0">
-                    <Check className="h-3 w-3 text-amber-600" />
+            <div className="bg-amber-50 dark:bg-amber-950/20 p-3 sm:p-4 rounded-xl border border-amber-100 dark:border-amber-800 flex gap-3 items-start">
+                <div className="h-8 w-8 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center shrink-0">
+                    <Check className="h-4 w-4 text-amber-600" />
                 </div>
-                <p className="text-[9px] text-amber-800 dark:text-amber-200 font-medium italic leading-tight">
+                <p className="text-xs sm:text-sm text-amber-800 dark:text-amber-200 font-medium italic leading-snug mt-1">
                     Adjunta tu comprobante en el formulario para procesar tu pedido.
                 </p>
             </div>
