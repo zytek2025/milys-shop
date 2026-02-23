@@ -204,7 +204,11 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
         customTextSize === 'small' ? 1.00 : 3.00
     ) : 0;
 
-    const currentStock = hasVariants ? (activeVariant?.stock || 0) : (product.stock || 0);
+    const totalVariantStock = variants.length > 0
+        ? variants.reduce((sum, v) => sum + (v.stock || 0), 0)
+        : (product.stock || 0);
+
+    const currentStock = hasVariants ? (activeVariant?.stock || 0) : totalVariantStock;
     const totalPrice = (garmentPrice + designsPrice + personalizationPrice) * (typeof quantity === 'number' && quantity > 0 ? quantity : 1);
 
     const toggleDesign = (design: Design) => {
