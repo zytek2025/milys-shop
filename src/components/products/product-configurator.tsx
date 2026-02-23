@@ -425,18 +425,18 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                     </span>
                 </div>
                 {(selectedDesigns.length > 0 || customText) && designMode === 'gallery' && (
-                    <p className="text-[10px] font-sans font-medium text-slate-400 uppercase tracking-widest">
+                    <div className="text-[10px] font-sans font-medium text-slate-400 uppercase tracking-widest">
                         Base: <PriceDisplay amount={garmentPrice} className="inline-flex" />
                         {selectedDesigns.length > 0 && <span className="text-lavanda mx-1">|</span>}
                         {selectedDesigns.length > 0 && <span>Logos: <PriceDisplay amount={designsPrice} className="inline-flex" /></span>}
                         {customText && <span className="text-lavanda mx-1">|</span>}
                         {customText && <span>Personalización: <PriceDisplay amount={personalizationPrice} className="inline-flex" /></span>}
-                    </p>
+                    </div>
                 )}
                 {designMode === 'upload' && (
-                    <p className="text-[10px] font-sans font-medium text-slate-400 uppercase tracking-widest">
+                    <div className="text-[10px] font-sans font-medium text-slate-400 uppercase tracking-widest">
                         Base estimada: <PriceDisplay amount={garmentPrice} className="inline-flex" /> + Personalización
-                    </p>
+                    </div>
                 )}
             </div>
 
