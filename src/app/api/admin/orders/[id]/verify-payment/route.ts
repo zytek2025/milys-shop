@@ -52,9 +52,34 @@ export async function PATCH(
                 ? Number(confirmation.amount_paid) / Number(rate)
                 : Number(confirmation.amount_paid);
 
+            let finalCategoryId = category_id;
+            if (!finalCategoryId) {
+                // Try to find a category named 'Ventas'
+                const { data: salesCategory } = await supabase
+                    .from('finance_categories')
+                    .select('id')
+                    .ilike('name', 'Ventas')
+                    .eq('type', 'income')
+                    .maybeSingle();
+
+                if (salesCategory) {
+                    finalCategoryId = salesCategory.id;
+                } else {
+                    // Create it
+                    const { data: newCategory, error: catError } = await supabase
+                        .from('finance_categories')
+                        .insert({ name: 'Ventas', type: 'income', icon: 'zap' })
+                        .select('id')
+                        .single();
+                    if (!catError && newCategory) {
+                        finalCategoryId = newCategory.id;
+                    }
+                }
+            }
+
             const { error: txError } = await supabase.from('finance_transactions').insert({
                 account_id,
-                category_id: category_id || '8161186e-b80c-4ebd-99d2-90a15d3289b8', // Default Vendategory
+                category_id: finalCategoryId,
                 order_id: orderId,
                 type: 'income',
                 amount: Number(confirmation.amount_paid),

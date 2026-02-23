@@ -116,9 +116,20 @@ export async function PATCH(
                         ? Number(currentOrder.total) / Number(rate)
                         : Number(currentOrder.total);
 
+                    let finalCategoryId = finance_data.category_id;
+                    if (!finalCategoryId) {
+                        const { data: salesCat } = await adminSupabase.from('finance_categories').select('id').ilike('name', 'Ventas').eq('type', 'income').maybeSingle();
+                        if (salesCat) {
+                            finalCategoryId = salesCat.id;
+                        } else {
+                            const { data: newCat, error: catErr } = await adminSupabase.from('finance_categories').insert({ name: 'Ventas', type: 'income', icon: 'zap' }).select('id').single();
+                            if (!catErr && newCat) finalCategoryId = newCat.id;
+                        }
+                    }
+
                     const { error: txError } = await adminSupabase.from('finance_transactions').insert({
                         account_id: finance_data.account_id,
-                        category_id: finance_data.category_id,
+                        category_id: finalCategoryId,
                         order_id: id,
                         type: 'income',
                         amount: Number(currentOrder.total),
