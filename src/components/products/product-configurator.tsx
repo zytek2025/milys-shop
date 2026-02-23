@@ -943,7 +943,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
             <div className="pt-6 border-t border-slate-100 dark:border-slate-900">
                 <Button
                     className="w-full h-16 rounded-2xl text-xl font-black italic shadow-2xl shadow-primary/30 gap-4 uppercase tracking-tighter hover:scale-[1.02] active:scale-95 transition-all"
-                    disabled={isAdding || (designMode === 'gallery' && currentStock <= 0)}
+                    disabled={isAdding || (hasVariants && !activeVariant)}
                     onClick={handleAddToCart}
                 >
                     {isAdding ? (
@@ -956,8 +956,8 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                         : designMode === 'upload'
                             ? 'Solicitar Presupuesto'
                             : currentStock <= 0
-                                ? 'Agotado'
-                                : 'Personalizar y Comprar'}
+                                ? 'Encargar (Bajo Pedido)'
+                                : (isCustomizable ? 'Personalizar y Comprar' : 'Añadir al Carrito')}
                 </Button>
             </div>
         </div>
