@@ -205,7 +205,7 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     ) : 0;
 
     const currentStock = hasVariants ? (activeVariant?.stock || 0) : (product.stock || 0);
-    const totalPrice = (garmentPrice + designsPrice + personalizationPrice) * quantity;
+    const totalPrice = (garmentPrice + designsPrice + personalizationPrice) * (typeof quantity === 'number' && quantity > 0 ? quantity : 1);
 
     const toggleDesign = (design: Design) => {
         setSelectedDesigns(prev => {
