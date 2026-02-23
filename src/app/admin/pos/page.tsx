@@ -276,7 +276,7 @@ export default function AdminPOSPage() {
                                         </div>
                                         <div>
                                             <p className="font-black text-sm leading-tight line-clamp-2 mb-1">{product.name}</p>
-                                            <p className="text-primary font-bold italic tracking-tighter"><PriceDisplay amount={product.price} /></p>
+                                            <div className="text-primary font-bold italic tracking-tighter"><PriceDisplay amount={product.price} /></div>
                                         </div>
 
                                         {/* Quick Add Overlay */}
