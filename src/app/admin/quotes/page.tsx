@@ -253,7 +253,7 @@ export default function AdminQuotesPage() {
 
             {/* Details Modal */}
             <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden bg-slate-50 dark:bg-slate-950">
+                <DialogContent className="max-w-4xl sm:max-w-4xl md:max-w-5xl lg:max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden bg-slate-50 dark:bg-slate-950">
                     {selectedQuote && (
                         <>
                             <div className="p-8 md:p-12 space-y-8">
