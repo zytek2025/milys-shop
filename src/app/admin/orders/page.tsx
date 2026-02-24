@@ -654,7 +654,7 @@ export default function AdminOrdersPage() {
                                 </div>
 
                                 <div className="space-y-6">
-                                    {selectedOrder.order_items?.map((item: any, idx: number) => {
+                                    {selectedOrder.items?.map((item: any, idx: number) => {
                                         const metadata = item.custom_metadata || {};
                                         const isNewFormat = !Array.isArray(metadata) && (!!metadata.designs || !!metadata.budget_request);
 
@@ -676,15 +676,15 @@ export default function AdminOrdersPage() {
                                         return (
                                             <div key={idx} className="border-2 border-black p-4 space-y-4 break-inside-avoid mb-6">
                                                 <div className="flex justify-between border-b-2 border-black pb-2">
-                                                    <span className="text-xl font-black uppercase">{item.products?.name}</span>
+                                                    <span className="text-xl font-black uppercase">{item.product?.name || item.product_name}</span>
                                                     <span className="text-2xl font-black">CANT: {item.quantity}</span>
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="bg-slate-100 p-3 border border-black">
                                                         <p className="text-[10px] font-black uppercase mb-1">Especificaciones Prenda</p>
-                                                        <p className="text-lg font-bold">Talla: {item.product_variants?.size || 'N/A'}</p>
-                                                        <p className="text-lg font-bold">Color: {item.product_variants?.color || 'N/A'}</p>
+                                                        <p className="text-lg font-bold">Talla: {item.variant?.size || 'N/A'}</p>
+                                                        <p className="text-lg font-bold">Color: {item.variant?.color || 'N/A'}</p>
                                                     </div>
 
                                                     {personalizationText && (

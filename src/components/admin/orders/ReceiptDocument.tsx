@@ -12,8 +12,8 @@ interface ReceiptDocumentProps {
 export function ReceiptDocument({ order, settings }: ReceiptDocumentProps) {
     if (!order) return null;
 
-    const items = order.order_items || [];
-    const subtotal = order.total_amount || 0;
+    const items = order.items || [];
+    const subtotal = order.total || 0;
     const exchangeRate = settings?.exchange_rate || 1;
     const subtotalVes = subtotal * exchangeRate;
 
@@ -67,15 +67,15 @@ export function ReceiptDocument({ order, settings }: ReceiptDocumentProps) {
                     {items.map((item: any, idx: number) => (
                         <tr key={idx} className="hover:bg-slate-50 transition-colors">
                             <td className="px-4 py-4">
-                                <p className="font-black text-sm uppercase italic tracking-tight">{item.products?.name}</p>
+                                <p className="font-black text-sm uppercase italic tracking-tight">{item.product?.name || item.product_name}</p>
                                 <p className="text-[10px] font-bold text-slate-400 mt-1">
-                                    {item.product_variants?.size && `Talla: ${item.product_variants.size}`}
-                                    {item.product_variants?.color && ` | Color: ${item.product_variants.color}`}
+                                    {item.variant?.size && `Talla: ${item.variant.size}`}
+                                    {item.variant?.color && ` | Color: ${item.variant.color}`}
                                 </p>
                             </td>
                             <td className="px-4 py-4 text-center font-bold text-sm">{item.quantity}</td>
-                            <td className="px-4 py-4 text-right font-medium text-sm">${Number(item.unit_price).toFixed(2)}</td>
-                            <td className="px-4 py-4 text-right font-black text-sm">${(item.quantity * item.unit_price).toFixed(2)}</td>
+                            <td className="px-4 py-4 text-right font-medium text-sm">${Number(item.price).toFixed(2)}</td>
+                            <td className="px-4 py-4 text-right font-black text-sm">${(item.quantity * item.price).toFixed(2)}</td>
                         </tr>
                     ))}
                     {items.length === 0 && (
