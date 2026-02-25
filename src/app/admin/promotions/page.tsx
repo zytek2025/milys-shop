@@ -308,123 +308,125 @@ export default function AdminPromotionsPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
-                                <TableHead className="pl-8 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Nombre</TableHead>
-                                <TableHead className="font-bold text-slate-400 uppercase text-[10px] tracking-widest">Tipo</TableHead>
-                                <TableHead className="font-bold text-slate-400 uppercase text-[10px] tracking-widest">Alcance</TableHead>
-                                <TableHead className="font-bold text-slate-400 uppercase text-[10px] tracking-widest">Vigencia</TableHead>
-                                <TableHead className="font-bold text-slate-400 uppercase text-[10px] tracking-widest">Estado</TableHead>
-                                <TableHead className="text-right pr-8 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Acciones</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="h-64 text-center">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
-                                            <span className="text-slate-400 italic font-medium">Cargando ofertas...</span>
-                                        </div>
-                                    </TableCell>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
+                                    <TableHead className="pl-8 font-bold text-slate-400 uppercase text-[10px] tracking-widest min-w-[200px]">Nombre</TableHead>
+                                    <TableHead className="font-bold text-slate-400 uppercase text-[10px] tracking-widest min-w-[150px]">Tipo</TableHead>
+                                    <TableHead className="font-bold text-slate-400 uppercase text-[10px] tracking-widest min-w-[120px]">Alcance</TableHead>
+                                    <TableHead className="font-bold text-slate-400 uppercase text-[10px] tracking-widest min-w-[150px]">Vigencia</TableHead>
+                                    <TableHead className="font-bold text-slate-400 uppercase text-[10px] tracking-widest min-w-[100px]">Estado</TableHead>
+                                    <TableHead className="text-right pr-8 font-bold text-slate-400 uppercase text-[10px] tracking-widest min-w-[100px]">Acciones</TableHead>
                                 </TableRow>
-                            ) : filteredPromotions.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="h-64 text-center">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <Tag className="h-12 w-12 text-slate-200 mb-2" />
-                                            <p className="text-slate-400 italic font-medium">No hay campañas configuradas.</p>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                filteredPromotions.map((promo) => (
-                                    <TableRow key={promo.id} className="group border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                                        <TableCell className="pl-8 py-6">
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-slate-900 dark:text-white">{promo.name}</span>
-                                                <span className="text-xs text-slate-400 italic mt-0.5 line-clamp-1">{promo.description || 'Sin descripción'}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col gap-1">
-                                                <Badge variant="secondary" className="max-w-fit rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-none font-bold italic text-[10px]">
-                                                    {typeLabels[promo.type]}
-                                                </Badge>
-                                                {(promo.min_orders_required ?? 0) > 0 && (
-                                                    <Badge variant="outline" className="max-w-fit rounded-lg border-amber-500/50 text-amber-600 bg-amber-50 dark:bg-amber-950/20 text-[9px] font-black italic px-2 py-0">
-                                                        💎 FIDELIDAD ({promo.min_orders_required}+)
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-bold uppercase text-slate-500">{promo.target_type}</span>
-                                                {promo.target_id && (
-                                                    <Badge className="bg-primary/10 text-primary border-none text-[9px] uppercase font-black">
-                                                        {promo.target_id}
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col text-[11px] text-slate-500 font-medium">
-                                                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                                                    <Calendar size={10} />
-                                                    {format(new Date(promo.start_date), 'dd MMM yyyy', { locale: es })}
-                                                </div>
-                                                {(promo.min_orders_required || 0) > 0 && (
-                                                    <div className="flex items-center gap-1 text-slate-500 mt-1">
-                                                        <Star size={10} />
-                                                        Fidelidad
-                                                    </div>
-                                                )}
-                                                {promo.end_date && (
-                                                    <div className="flex items-center gap-1.5 text-slate-400 mt-1">
-                                                        <ChevronRight size={10} />
-                                                        {format(new Date(promo.end_date), 'dd MMM yyyy', { locale: es })}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            {promo.is_active ? (
-                                                <div className="flex items-center gap-1.5 text-emerald-500 font-bold italic text-xs uppercase tracking-tighter">
-                                                    <CheckCircle2 size={14} /> Activa
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-1.5 text-slate-300 dark:text-slate-700 font-bold italic text-xs uppercase tracking-tighter">
-                                                    <XCircle size={14} /> Pausada
-                                                </div>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right pr-8">
-                                            <div className="flex justify-end gap-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-9 w-9 rounded-xl hover:bg-white dark:hover:bg-slate-800 shadow-sm"
-                                                    onClick={() => handleOpenDialog(promo)}
-                                                >
-                                                    <Edit2 size={16} className="text-slate-400 group-hover:text-primary transition-colors" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-9 w-9 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950 shadow-sm group/del"
-                                                    onClick={() => handleDelete(promo.id)}
-                                                >
-                                                    <Trash2 size={16} className="text-slate-400 group-hover/del:text-rose-500 transition-colors" />
-                                                </Button>
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="h-64 text-center">
+                                            <div className="flex flex-col items-center gap-3">
+                                                <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+                                                <span className="text-slate-400 italic font-medium">Cargando ofertas...</span>
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                                ) : filteredPromotions.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="h-64 text-center">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <Tag className="h-12 w-12 text-slate-200 mb-2" />
+                                                <p className="text-slate-400 italic font-medium">No hay campañas configuradas.</p>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    filteredPromotions.map((promo) => (
+                                        <TableRow key={promo.id} className="group border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                            <TableCell className="pl-8 py-6">
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-slate-900 dark:text-white">{promo.name}</span>
+                                                    <span className="text-xs text-slate-400 italic mt-0.5 line-clamp-1">{promo.description || 'Sin descripción'}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-1">
+                                                    <Badge variant="secondary" className="max-w-fit rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-none font-bold italic text-[10px]">
+                                                        {typeLabels[promo.type]}
+                                                    </Badge>
+                                                    {(promo.min_orders_required ?? 0) > 0 && (
+                                                        <Badge variant="outline" className="max-w-fit rounded-lg border-amber-500/50 text-amber-600 bg-amber-50 dark:bg-amber-950/20 text-[9px] font-black italic px-2 py-0">
+                                                            💎 FIDELIDAD ({promo.min_orders_required}+)
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-bold uppercase text-slate-500">{promo.target_type}</span>
+                                                    {promo.target_id && (
+                                                        <Badge className="bg-primary/10 text-primary border-none text-[9px] uppercase font-black">
+                                                            {promo.target_id}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col text-[11px] text-slate-500 font-medium">
+                                                    <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                                                        <Calendar size={10} />
+                                                        {format(new Date(promo.start_date), 'dd MMM yyyy', { locale: es })}
+                                                    </div>
+                                                    {(promo.min_orders_required || 0) > 0 && (
+                                                        <div className="flex items-center gap-1 text-slate-500 mt-1">
+                                                            <Star size={10} />
+                                                            Fidelidad
+                                                        </div>
+                                                    )}
+                                                    {promo.end_date && (
+                                                        <div className="flex items-center gap-1.5 text-slate-400 mt-1">
+                                                            <ChevronRight size={10} />
+                                                            {format(new Date(promo.end_date), 'dd MMM yyyy', { locale: es })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {promo.is_active ? (
+                                                    <div className="flex items-center gap-1.5 text-emerald-500 font-bold italic text-xs uppercase tracking-tighter">
+                                                        <CheckCircle2 size={14} /> Activa
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-1.5 text-slate-300 dark:text-slate-700 font-bold italic text-xs uppercase tracking-tighter">
+                                                        <XCircle size={14} /> Pausada
+                                                    </div>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-right pr-8">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-9 w-9 rounded-xl hover:bg-white dark:hover:bg-slate-800 shadow-sm"
+                                                        onClick={() => handleOpenDialog(promo)}
+                                                    >
+                                                        <Edit2 size={16} className="text-slate-400 group-hover:text-primary transition-colors" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-9 w-9 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950 shadow-sm group/del"
+                                                        onClick={() => handleDelete(promo.id)}
+                                                    >
+                                                        <Trash2 size={16} className="text-slate-400 group-hover/del:text-rose-500 transition-colors" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
 

@@ -141,7 +141,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         return (permissions as any)[item.requiredPermission];
     });
 
-    return <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 font-sans relative overflow-x-hidden">
+    return <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 font-sans relative">
 
         {/* Premium Background Decorative Elements - Simplified for Solid Look */}
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-slate-50 dark:bg-slate-950">

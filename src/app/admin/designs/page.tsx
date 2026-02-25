@@ -372,53 +372,55 @@ export default function AdminDesignsPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
-                                <TableHead className="w-[80px] sm:w-[100px] hidden sm:table-cell">ID</TableHead>
-                                <TableHead className="w-[80px] sm:w-[100px]">Arte</TableHead>
-                                <TableHead>Nombre</TableHead>
-                                <TableHead className="hidden md:table-cell">Categoría</TableHead>
-                                <TableHead className="text-right">Acciones</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                <TableRow><TableCell colSpan={5} className="h-48 text-center"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow>
-                            ) : filteredDesigns.length === 0 ? (
-                                <TableRow><TableCell colSpan={5} className="h-48 text-center text-muted-foreground">No hay diseños publicados.</TableCell></TableRow>
-                            ) : (
-                                filteredDesigns.map((design) => (
-                                    <TableRow key={design.id} className="border-slate-100 dark:border-slate-800">
-                                        <TableCell className="hidden sm:table-cell">
-                                            <Badge variant="outline" className="font-mono text-[9px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                                                {design.control_id || 'DSG-???'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-slate-50 overflow-hidden border">
-                                                <img src={design.image_url} alt="" className="w-full h-full object-cover" />
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="font-bold max-w-[150px] sm:max-w-none truncate sm:whitespace-normal">
-                                            {design.name}
-                                        </TableCell>
-                                        <TableCell className="hidden md:table-cell">
-                                            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-muted-foreground">
-                                                {design.category?.name || 'Sin categoría'}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(design)}><Edit2 size={16} /></Button>
-                                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(design.id)}><Trash2 size={16} /></Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
+                                    <TableHead className="w-[80px] sm:w-[100px] hidden sm:table-cell">ID</TableHead>
+                                    <TableHead className="w-[80px] sm:w-[100px] min-w-[80px]">Arte</TableHead>
+                                    <TableHead className="min-w-[150px]">Nombre</TableHead>
+                                    <TableHead className="hidden md:table-cell">Categoría</TableHead>
+                                    <TableHead className="text-right min-w-[100px]">Acciones</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
+                                    <TableRow><TableCell colSpan={5} className="h-48 text-center"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow>
+                                ) : filteredDesigns.length === 0 ? (
+                                    <TableRow><TableCell colSpan={5} className="h-48 text-center text-muted-foreground">No hay diseños publicados.</TableCell></TableRow>
+                                ) : (
+                                    filteredDesigns.map((design) => (
+                                        <TableRow key={design.id} className="border-slate-100 dark:border-slate-800">
+                                            <TableCell className="hidden sm:table-cell">
+                                                <Badge variant="outline" className="font-mono text-[9px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                                                    {design.control_id || 'DSG-???'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-slate-50 overflow-hidden border">
+                                                    <img src={design.image_url} alt="" className="w-full h-full object-cover" />
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="font-bold max-w-[150px] sm:max-w-none truncate sm:whitespace-normal">
+                                                {design.name}
+                                            </TableCell>
+                                            <TableCell className="hidden md:table-cell">
+                                                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-muted-foreground">
+                                                    {design.category?.name || 'Sin categoría'}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(design)}><Edit2 size={16} /></Button>
+                                                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(design.id)}><Trash2 size={16} /></Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
 

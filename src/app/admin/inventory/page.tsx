@@ -415,63 +415,65 @@ export default function InventoryPage() {
                                                 <p className="font-bold uppercase tracking-widest text-xs">Busca y agrega productos para ajustar</p>
                                             </div>
                                         ) : (
-                                            <Table>
-                                                <TableHeader className="bg-slate-50/50 dark:bg-slate-800/30">
-                                                    <TableRow className="hover:bg-transparent border-none">
-                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest pl-4 sm:pl-8">Producto</TableHead>
-                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-16 sm:w-24">Cant.</TableHead>
-                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-24 sm:w-32">Costo</TableHead>
-                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-24 sm:w-32 hidden xs:table-cell">Venta (USD)</TableHead>
-                                                        <TableHead className="w-10 sm:w-12 pr-4 sm:pr-8"></TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {selectedItems.map((item) => (
-                                                        <TableRow key={item.id} className="border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                                            <TableCell className="py-4 sm:py-6 pl-4 sm:pl-8">
-                                                                <p className="font-black text-xs sm:text-sm max-w-[100px] sm:max-w-none truncate">{item.name}</p>
-                                                                <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-tighter truncate">{item.details}</p>
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <Input
-                                                                    type="number"
-                                                                    value={item.qty}
-                                                                    onChange={(e) => updateItemField(item.id, 'qty', parseInt(e.target.value))}
-                                                                    className="h-9 sm:h-10 text-center font-black border-slate-200 rounded-xl focus:ring-0 px-1"
-                                                                />
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <div className="relative">
-                                                                    <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-bold text-slate-400">$</span>
-                                                                    <Input
-                                                                        type="number"
-                                                                        value={item.cost}
-                                                                        onChange={(e) => updateItemField(item.id, 'cost', e.target.value)}
-                                                                        className="h-9 sm:h-10 pl-5 sm:pl-7 font-bold border-slate-200 rounded-xl focus:ring-0 px-1"
-                                                                    />
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell className="hidden xs:table-cell">
-                                                                <div className="relative">
-                                                                    <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-bold text-slate-400">$</span>
-                                                                    <Input
-                                                                        type="number"
-                                                                        step="0.01"
-                                                                        value={item.price}
-                                                                        onChange={(e) => updateItemField(item.id, 'price', e.target.value)}
-                                                                        className="h-9 sm:h-10 pl-5 sm:pl-7 font-black border-primary/20 rounded-xl focus:ring-0 bg-primary/5 text-primary px-1"
-                                                                    />
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell className="pr-4 sm:pr-8">
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg" onClick={() => removeItem(item.id)}>
-                                                                    <Minus size={14} />
-                                                                </Button>
-                                                            </TableCell>
+                                            <div className="overflow-x-auto">
+                                                <Table>
+                                                    <TableHeader className="bg-slate-50/50 dark:bg-slate-800/30">
+                                                        <TableRow className="hover:bg-transparent border-none">
+                                                            <TableHead className="font-black uppercase text-[9px] tracking-widest pl-4 sm:pl-8">Producto</TableHead>
+                                                            <TableHead className="font-black uppercase text-[9px] tracking-widest w-16 sm:w-24">Cant.</TableHead>
+                                                            <TableHead className="font-black uppercase text-[9px] tracking-widest w-24 sm:w-32">Costo</TableHead>
+                                                            <TableHead className="font-black uppercase text-[9px] tracking-widest w-24 sm:w-32 hidden xs:table-cell">Venta (USD)</TableHead>
+                                                            <TableHead className="w-10 sm:w-12 pr-4 sm:pr-8"></TableHead>
                                                         </TableRow>
-                                                    ))}
-                                                </TableBody>
-                                            </Table>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {selectedItems.map((item) => (
+                                                            <TableRow key={item.id} className="border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                                                                <TableCell className="py-4 sm:py-6 pl-4 sm:pl-8">
+                                                                    <p className="font-black text-xs sm:text-sm max-w-[100px] sm:max-w-none truncate">{item.name}</p>
+                                                                    <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-tighter truncate">{item.details}</p>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <Input
+                                                                        type="number"
+                                                                        value={item.qty}
+                                                                        onChange={(e) => updateItemField(item.id, 'qty', parseInt(e.target.value))}
+                                                                        className="h-9 sm:h-10 text-center font-black border-slate-200 rounded-xl focus:ring-0 px-1"
+                                                                    />
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="relative">
+                                                                        <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-bold text-slate-400">$</span>
+                                                                        <Input
+                                                                            type="number"
+                                                                            value={item.cost}
+                                                                            onChange={(e) => updateItemField(item.id, 'cost', e.target.value)}
+                                                                            className="h-9 sm:h-10 pl-5 sm:pl-7 font-bold border-slate-200 rounded-xl focus:ring-0 px-1"
+                                                                        />
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="hidden xs:table-cell">
+                                                                    <div className="relative">
+                                                                        <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-bold text-slate-400">$</span>
+                                                                        <Input
+                                                                            type="number"
+                                                                            step="0.01"
+                                                                            value={item.price}
+                                                                            onChange={(e) => updateItemField(item.id, 'price', e.target.value)}
+                                                                            className="h-9 sm:h-10 pl-5 sm:pl-7 font-black border-primary/20 rounded-xl focus:ring-0 bg-primary/5 text-primary px-1"
+                                                                        />
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="pr-4 sm:pr-8">
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg" onClick={() => removeItem(item.id)}>
+                                                                        <Minus size={14} />
+                                                                    </Button>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
                                         )}
                                     </div>
                                 </CardContent>
@@ -596,55 +598,57 @@ export default function InventoryPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="p-0">
-                            <Table>
-                                <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
-                                    <TableRow className="border-none">
-                                        <TableHead className="font-black uppercase text-[9px] tracking-widest pl-8">Fecha / Admin</TableHead>
-                                        <TableHead className="font-black uppercase text-[9px] tracking-widest">Producto</TableHead>
-                                        <TableHead className="font-black uppercase text-[9px] tracking-widest">Tipo / Motivo</TableHead>
-                                        <TableHead className="font-black uppercase text-[9px] tracking-widest text-right">Cantidad</TableHead>
-                                        <TableHead className="font-black uppercase text-[9px] tracking-widest text-right">Costo (USD)</TableHead>
-                                        <TableHead className="font-black uppercase text-[9px] tracking-widest text-right pr-8">Val. Total</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {movements.map((m) => (
-                                        <TableRow key={m.id} className="border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                                            <TableCell className="pl-8 py-5">
-                                                <p className="font-bold text-xs">{new Date(m.created_at).toLocaleDateString()}</p>
-                                                <p className="text-[9px] text-slate-400 font-medium">{new Date(m.created_at).toLocaleTimeString()}</p>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-black text-xs">{m.product_name}</span>
-                                                    <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-tighter">{m.product_details}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col gap-1">
-                                                    <Badge variant="secondary" className="text-[9px] font-black uppercase h-5 px-2 w-fit">{m.type}</Badge>
-                                                    <span className="text-[9px] italic text-slate-400 font-medium">{m.reason}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className={cn("text-right font-black text-sm", m.quantity > 0 ? "text-emerald-500" : "text-rose-500")}>
-                                                {m.quantity > 0 ? '+' : ''}{m.quantity}
-                                            </TableCell>
-                                            <TableCell className="text-right font-bold text-xs space-y-1">
-                                                <div className="flex flex-col items-end">
-                                                    <span>${(m.unit_cost || 0).toFixed(2)}</span>
-                                                    <span className="text-[9px] text-emerald-500 font-black">{m.utility_percentage}% Util.</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right font-black pr-8 text-sm">
-                                                <div className="flex flex-col items-end">
-                                                    <span>${(m.total_value || (m.quantity * (m.unit_cost || 0))).toFixed(2)}</span>
-                                                    <span className="text-[9px] text-slate-400 font-medium">Tasa: {m.exchange_rate}</span>
-                                                </div>
-                                            </TableCell>
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
+                                        <TableRow className="border-none">
+                                            <TableHead className="font-black uppercase text-[9px] tracking-widest pl-8">Fecha / Admin</TableHead>
+                                            <TableHead className="font-black uppercase text-[9px] tracking-widest">Producto</TableHead>
+                                            <TableHead className="font-black uppercase text-[9px] tracking-widest">Tipo / Motivo</TableHead>
+                                            <TableHead className="font-black uppercase text-[9px] tracking-widest text-right">Cantidad</TableHead>
+                                            <TableHead className="font-black uppercase text-[9px] tracking-widest text-right">Costo (USD)</TableHead>
+                                            <TableHead className="font-black uppercase text-[9px] tracking-widest text-right pr-8">Val. Total</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {movements.map((m) => (
+                                            <TableRow key={m.id} className="border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                                                <TableCell className="pl-8 py-5">
+                                                    <p className="font-bold text-xs">{new Date(m.created_at).toLocaleDateString()}</p>
+                                                    <p className="text-[9px] text-slate-400 font-medium">{new Date(m.created_at).toLocaleTimeString()}</p>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-black text-xs">{m.product_name}</span>
+                                                        <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-tighter">{m.product_details}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col gap-1">
+                                                        <Badge variant="secondary" className="text-[9px] font-black uppercase h-5 px-2 w-fit">{m.type}</Badge>
+                                                        <span className="text-[9px] italic text-slate-400 font-medium">{m.reason}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className={cn("text-right font-black text-sm", m.quantity > 0 ? "text-emerald-500" : "text-rose-500")}>
+                                                    {m.quantity > 0 ? '+' : ''}{m.quantity}
+                                                </TableCell>
+                                                <TableCell className="text-right font-bold text-xs space-y-1">
+                                                    <div className="flex flex-col items-end">
+                                                        <span>${(m.unit_cost || 0).toFixed(2)}</span>
+                                                        <span className="text-[9px] text-emerald-500 font-black">{m.utility_percentage}% Util.</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right font-black pr-8 text-sm">
+                                                    <div className="flex flex-col items-end">
+                                                        <span>${(m.total_value || (m.quantity * (m.unit_cost || 0))).toFixed(2)}</span>
+                                                        <span className="text-[9px] text-slate-400 font-medium">Tasa: {m.exchange_rate}</span>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
