@@ -12,12 +12,22 @@ export async function PUT(
         }
 
         const body = await request.json();
-        const { name, description, price, category, stock, image_url, variants } = body;
+        const { name, description, price, category, stock, image_url, image_url_2, image_url_3, variants } = body;
         const supabase = await createClient();
 
         const { data: updatedProducts, error } = await supabase
             .from('products')
-            .update({ name, description, price, category, stock, image_url, updated_at: new Date().toISOString() })
+            .update({
+                name,
+                description,
+                price,
+                category,
+                stock,
+                image_url,
+                image_url_2,
+                image_url_3,
+                updated_at: new Date().toISOString()
+            })
             .eq('id', id)
             .select();
 

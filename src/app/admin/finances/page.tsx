@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,14 @@ import { cn } from '@/lib/utils';
 import { PrintButton } from '@/components/admin/shared/PrintButton';
 import { useStoreSettings } from '@/components/store-settings-provider';
 import { useQueryClient } from '@tanstack/react-query';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
+} from '@/components/ui/table';
 
 // Types
 interface Account {
@@ -64,6 +72,27 @@ interface Transaction {
     category?: { name: string; type: string };
 }
 
+interface Product {
+    id: string;
+    name: string;
+    price: number;
+    last_unit_cost?: number;
+    additional_cost?: number;
+    last_utility_percentage?: number;
+    product_variants?: ProductVariant[];
+}
+
+interface ProductVariant {
+    id: string;
+    product_id: string;
+    size: string | null;
+    color: string | null;
+    price_override: number | null;
+    last_unit_cost?: number;
+    additional_cost?: number;
+    last_utility_percentage?: number;
+}
+
 const COLORS = ['#10b981', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 interface PaymentMethod {
@@ -93,6 +122,7 @@ export default function FinancesDashboard() {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [isMounted, setIsMounted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -144,26 +174,30 @@ export default function FinancesDashboard() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [accRes, catRes, txRes] = await Promise.all([
+            const [accRes, catRes, txRes, prodRes] = await Promise.all([
                 fetch('/api/admin/finances/accounts'),
                 fetch('/api/admin/finances/categories'),
-                fetch('/api/admin/finances/transactions?limit=500')
+                fetch('/api/admin/finances/transactions?limit=500'),
+                fetch('/api/admin/products')
             ]);
 
-            const [accData, catData, txData] = await Promise.all([
+            const [accData, catData, txData, prodData] = await Promise.all([
                 accRes.ok ? accRes.json() : [],
                 catRes.ok ? catRes.json() : [],
-                txRes.ok ? txRes.json() : []
+                txRes.ok ? txRes.json() : [],
+                prodRes.ok ? prodRes.json() : []
             ]);
 
             setAccounts(Array.isArray(accData) ? accData : []);
             setCategories(Array.isArray(catData) ? catData : []);
             setTransactions(Array.isArray(txData) ? txData : []);
+            setProducts(Array.isArray(prodData) ? prodData : []);
         } catch (error) {
             toast.error('Error al cargar datos financieros');
             setAccounts([]);
             setCategories([]);
             setTransactions([]);
+            setProducts([]);
         } finally {
             setLoading(false);
         }
@@ -549,7 +583,8 @@ export default function FinancesDashboard() {
                 return {
                     date: month.toLocaleDateString('es-VE', dateFormat),
                     Ingresos: income,
-                    Egresos: expense
+                    Egresos: expense,
+                    Utilidad: income - expense
                 };
             });
         }
@@ -572,7 +607,8 @@ export default function FinancesDashboard() {
                 return {
                     date: `${hour}:00`,
                     Ingresos: income,
-                    Egresos: expense
+                    Egresos: expense,
+                    Utilidad: income - expense
                 };
             });
         }
@@ -594,7 +630,8 @@ export default function FinancesDashboard() {
             return {
                 date: day.toLocaleDateString('es-VE', dateFormat),
                 Ingresos: income,
-                Egresos: expense
+                Egresos: expense,
+                Utilidad: income - expense
             };
         });
     };
@@ -680,6 +717,9 @@ export default function FinancesDashboard() {
                         </TabsTrigger>
                         <TabsTrigger value="ledger" className="rounded-xl h-10 px-6 font-bold uppercase italic text-[10px] tracking-widest gap-2">
                             <History size={14} /> Libro Mayor
+                        </TabsTrigger>
+                        <TabsTrigger value="profitability" className="rounded-xl h-10 px-6 font-bold uppercase italic text-[10px] tracking-widest gap-2">
+                            <TrendingUp size={14} /> Rentabilidad
                         </TabsTrigger>
                         <TabsTrigger value="accounts" className="rounded-xl h-10 px-6 font-bold uppercase italic text-[10px] tracking-widest gap-2">
                             <Landmark size={14} /> Cuentas
@@ -998,6 +1038,10 @@ export default function FinancesDashboard() {
                                                 <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1} />
                                                 <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                                             </linearGradient>
+                                            <linearGradient id="colorUtilidad" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                            </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
                                         <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
@@ -1009,6 +1053,7 @@ export default function FinancesDashboard() {
                                         />
                                         <Area type="monotone" dataKey="Ingresos" stroke="#10b981" fillOpacity={1} fill="url(#colorIngresos)" strokeWidth={3} />
                                         <Area type="monotone" dataKey="Egresos" stroke="#ef4444" fillOpacity={1} fill="url(#colorEgresos)" strokeWidth={3} />
+                                        <Area type="monotone" dataKey="Utilidad" stroke="#3b82f6" fillOpacity={1} fill="url(#colorUtilidad)" strokeWidth={3} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </CardContent>
@@ -1083,6 +1128,98 @@ export default function FinancesDashboard() {
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="profitability" className="space-y-6">
+                    <Card className="shadow-xl border-none bg-white dark:bg-slate-900 rounded-3xl overflow-hidden">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="text-xl font-black uppercase italic tracking-tight">Rentabilidad por Producto</CardTitle>
+                                <CardDescription>Análisis comparativo de costos, precios y utilidad neta.</CardDescription>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+                                        <TableRow>
+                                            <TableHead className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Producto / Variante</TableHead>
+                                            <TableHead className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Costo Total</TableHead>
+                                            <TableHead className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Precio Venta</TableHead>
+                                            <TableHead className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Utilidad ($)</TableHead>
+                                            <TableHead className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Margen (%)</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {products.map(product => {
+                                            const hasVariants = product.product_variants && product.product_variants.length > 0;
+
+                                            const renderRow = (id: string, name: string, cost: number, additionalCost: number, price: number, isVariant = false) => {
+                                                const totalCost = cost + additionalCost;
+                                                const utility = price - totalCost;
+                                                const margin = price > 0 ? (utility / price) * 100 : 0;
+
+                                                return (
+                                                    <TableRow key={id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                                        <TableCell className="px-6 py-4">
+                                                            <div className="flex flex-col">
+                                                                <span className={cn("text-xs font-bold", isVariant && "pl-4 text-muted-foreground")}>
+                                                                    {isVariant ? `↳ ${name}` : name}
+                                                                </span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="px-6 py-4 text-right font-mono text-xs">
+                                                            ${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        </TableCell>
+                                                        <TableCell className="px-6 py-4 text-right font-bold text-xs">
+                                                            ${price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        </TableCell>
+                                                        <TableCell className={cn("px-6 py-4 text-right font-black text-xs", utility > 0 ? "text-emerald-500" : "text-rose-500")}>
+                                                            ${utility.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        </TableCell>
+                                                        <TableCell className="px-6 py-4 text-center">
+                                                            <span className={cn(
+                                                                "inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-black uppercase",
+                                                                margin > 30 ? "bg-emerald-100 text-emerald-600" :
+                                                                    margin > 15 ? "bg-blue-100 text-blue-600" :
+                                                                        "bg-rose-100 text-rose-600"
+                                                            )}>
+                                                                {margin.toFixed(1)}%
+                                                            </span>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            };
+
+                                            if (!hasVariants) {
+                                                return renderRow(product.id, product.name, product.last_unit_cost || 0, product.additional_cost || 0, product.price || 0);
+                                            }
+
+                                            return (
+                                                <Fragment key={product.id}>
+                                                    <TableRow className="bg-slate-50/50 dark:bg-slate-900/50 border-b-0">
+                                                        <TableCell colSpan={5} className="px-6 py-2">
+                                                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">{product.name}</span>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                    {product.product_variants?.map(variant => (
+                                                        renderRow(
+                                                            variant.id,
+                                                            `${variant.size || ''} ${variant.color || ''}`.trim() || 'Único',
+                                                            variant.last_unit_cost || product.last_unit_cost || 0,
+                                                            variant.additional_cost || product.additional_cost || 0,
+                                                            variant.price_override || product.price || 0,
+                                                            true
+                                                        )
+                                                    ))}
+                                                </Fragment>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
                             </div>
                         </CardContent>
                     </Card>

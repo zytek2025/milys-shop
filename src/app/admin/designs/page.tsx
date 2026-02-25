@@ -337,18 +337,23 @@ export default function AdminDesignsPage() {
                     <h1 className="text-2xl font-bold tracking-tight">Biblioteca de Diseños</h1>
                     <p className="text-muted-foreground">Gestiona tus artes y configura sus precios globales.</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <Button
                         variant="outline"
                         onClick={() => setIsBulkOpen(true)}
-                        className="rounded-xl gap-2 h-11 px-5 font-bold border-2"
+                        className="rounded-xl gap-2 h-11 px-4 sm:px-5 font-bold border-2 flex-1 sm:flex-none"
                     >
                         <Layers size={18} />
-                        Carga Masiva
+                        <span className="hidden xs:inline">Carga Masiva</span>
+                        <span className="xs:hidden">Masiva</span>
                     </Button>
-                    <Button onClick={() => handleOpenDialog()} className="rounded-xl gap-2 shadow-lg shadow-primary/20 h-11 px-6 font-bold">
+                    <Button
+                        onClick={() => handleOpenDialog()}
+                        className="rounded-xl gap-2 shadow-lg shadow-primary/20 h-11 px-4 sm:px-6 font-bold flex-1 sm:flex-none"
+                    >
                         <Plus size={18} />
-                        Subir Diseño
+                        <span className="hidden xs:inline">Subir Diseño</span>
+                        <span className="xs:hidden">Subir</span>
                     </Button>
                 </div>
             </div>
@@ -370,10 +375,10 @@ export default function AdminDesignsPage() {
                     <Table>
                         <TableHeader>
                             <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
-                                <TableHead className="w-[100px]">ID</TableHead>
-                                <TableHead className="w-[100px]">Arte</TableHead>
+                                <TableHead className="w-[80px] sm:w-[100px] hidden sm:table-cell">ID</TableHead>
+                                <TableHead className="w-[80px] sm:w-[100px]">Arte</TableHead>
                                 <TableHead>Nombre</TableHead>
-                                <TableHead>Tipo/Categoría</TableHead>
+                                <TableHead className="hidden md:table-cell">Categoría</TableHead>
                                 <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -385,18 +390,20 @@ export default function AdminDesignsPage() {
                             ) : (
                                 filteredDesigns.map((design) => (
                                     <TableRow key={design.id} className="border-slate-100 dark:border-slate-800">
-                                        <TableCell>
+                                        <TableCell className="hidden sm:table-cell">
                                             <Badge variant="outline" className="font-mono text-[9px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                                                 {design.control_id || 'DSG-???'}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="w-12 h-12 rounded-lg bg-slate-50 overflow-hidden border">
+                                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-slate-50 overflow-hidden border">
                                                 <img src={design.image_url} alt="" className="w-full h-full object-cover" />
                                             </div>
                                         </TableCell>
-                                        <TableCell className="font-bold">{design.name}</TableCell>
-                                        <TableCell>
+                                        <TableCell className="font-bold max-w-[150px] sm:max-w-none truncate sm:whitespace-normal">
+                                            {design.name}
+                                        </TableCell>
+                                        <TableCell className="hidden md:table-cell">
                                             <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-muted-foreground">
                                                 {design.category?.name || 'Sin categoría'}
                                             </span>

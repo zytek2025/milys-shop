@@ -108,20 +108,29 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
 
     const navItems = [
-        { label: 'Panel Principal', icon: LayoutDashboard, href: '/admin', requiredPermission: null }, // Dashboard is always visible if admin
-        { label: 'Control Stock', icon: Package, href: '/admin/inventory', requiredPermission: 'can_manage_prices' },
-        { label: 'Finanzas & Crédito', icon: DollarSign, href: '/admin/finances', requiredPermission: 'can_view_metrics' },
-        { label: 'Crear Diseño (Canva)', icon: Palette, href: '/admin/designs/create', requiredPermission: 'can_manage_designs' },
-        { label: 'Prendas/Productos', icon: Package, href: '/admin/products', requiredPermission: 'can_manage_prices' },
-        { label: 'Colección de Logos', icon: Palette, href: '/admin/designs', requiredPermission: 'can_manage_designs' },
-        { label: 'Categorías de Logos', icon: Layers, href: '/admin/design-categories', requiredPermission: 'can_manage_designs' },
-        { label: 'Categorías de Productos', icon: Layers, href: '/admin/categories', requiredPermission: 'can_manage_prices' },
+        // Metas & Dashboard
+        { label: 'Panel Principal', icon: LayoutDashboard, href: '/admin', requiredPermission: null },
+        { label: 'Informes', icon: BarChart3, href: '/admin/reports', requiredPermission: 'can_view_metrics' },
+
+        // Ventas & Clientes
         { label: 'Pedidos', icon: ShoppingBag, href: '/admin/orders', requiredPermission: 'can_view_metrics' },
         { label: 'Punto de Venta', icon: ShoppingCart, href: '/admin/pos', requiredPermission: 'can_view_metrics' },
         { label: 'Presupuestos', icon: FileText, href: '/admin/quotes', requiredPermission: 'can_view_metrics' },
-        { label: 'Informes', icon: BarChart3, href: '/admin/reports', requiredPermission: 'can_view_metrics' },
         { label: 'Devoluciones', icon: RotateCcw, href: '/admin/returns', requiredPermission: 'can_view_metrics' },
         { label: 'Clientes', icon: Users, href: '/admin/customers', requiredPermission: 'can_manage_users' },
+
+        // Catálogo e Inventario
+        { label: 'Control Stock', icon: Package, href: '/admin/inventory', requiredPermission: 'can_manage_prices' },
+        { label: 'Prendas/Productos', icon: Package, href: '/admin/products', requiredPermission: 'can_manage_prices' },
+        { label: 'Categorías de Productos', icon: Layers, href: '/admin/categories', requiredPermission: 'can_manage_prices' },
+        { label: 'Finanzas & Crédito', icon: DollarSign, href: '/admin/finances', requiredPermission: 'can_view_metrics' },
+
+        // Artes & Diseños
+        { label: 'Colección de Logos', icon: Palette, href: '/admin/designs', requiredPermission: 'can_manage_designs' },
+        { label: 'Categorías de Logos', icon: Layers, href: '/admin/design-categories', requiredPermission: 'can_manage_designs' },
+        { label: 'Crear Diseño (Canva)', icon: Palette, href: '/admin/designs/create', requiredPermission: 'can_manage_designs' },
+
+        // Administración
         { label: 'Gestión de Usuarios', icon: Users, href: '/admin/users', requiredPermission: 'can_manage_users' },
         { label: 'Ajustes', icon: SettingsIcon, href: '/admin/settings', requiredPermission: 'can_view_settings' },
     ];
@@ -232,7 +241,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </Button>
             </header>
 
-            <div className="p-6 md:p-12 lg:p-16 max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-1000 ease-out">
+            <div className="p-4 sm:p-6 md:p-12 lg:p-16 max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-1000 ease-out overflow-x-hidden sm:overflow-x-visible">
                 {children}
             </div>
         </main>

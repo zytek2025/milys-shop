@@ -90,11 +90,12 @@ export default function AdminProductsPage() {
                     <p className="text-muted-foreground">Administra los productos de tu tienda.</p>
                 </div>
                 <Button
-                    className="shrink-0 gap-2 rounded-xl h-11 px-6 shadow-lg shadow-primary/20"
+                    className="shrink-0 gap-2 rounded-xl h-11 px-4 sm:px-6 shadow-lg shadow-primary/20"
                     onClick={handleAdd}
                 >
                     <Plus size={18} />
-                    Nuevo Producto
+                    <span className="hidden xs:inline">Nuevo Producto</span>
+                    <span className="xs:hidden">Nuevo</span>
                 </Button>
             </div>
 
@@ -115,12 +116,12 @@ export default function AdminProductsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
-                                    <TableHead className="w-[80px]">Imagen</TableHead>
+                                    <TableHead className="w-[60px] sm:w-[80px]">Imagen</TableHead>
                                     <TableHead>Producto</TableHead>
-                                    <TableHead>Categoría</TableHead>
-                                    <TableHead>Variantes</TableHead>
+                                    <TableHead className="hidden md:table-cell">Categoría</TableHead>
+                                    <TableHead className="hidden lg:table-cell">Variantes</TableHead>
                                     <TableHead>Precio</TableHead>
-                                    <TableHead>Stock Total</TableHead>
+                                    <TableHead className="hidden sm:table-cell">Stock</TableHead>
                                     <TableHead className="text-right">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -167,13 +168,15 @@ export default function AdminProductsPage() {
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="font-medium">{product.name}</TableCell>
-                                                <TableCell>
+                                                <TableCell className="font-medium max-w-[120px] sm:max-w-none truncate sm:whitespace-normal">
+                                                    {product.name}
+                                                </TableCell>
+                                                <TableCell className="hidden md:table-cell">
                                                     <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-xs font-semibold uppercase tracking-wider">
                                                         {product.category || 'Sin Cat.'}
                                                     </span>
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="hidden lg:table-cell">
                                                     <div className="flex items-center gap-1.5">
                                                         <span className="text-xs font-bold text-slate-500">{variants.length}</span>
                                                         {variants.length > 0 && (
@@ -187,12 +190,15 @@ export default function AdminProductsPage() {
                                                 </TableCell>
                                                 <TableCell className="font-semibold text-sm">
                                                     {hasPriceRange ? (
-                                                        <span className="text-primary">${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}</span>
+                                                        <div className="flex flex-col text-primary">
+                                                            <span>${minPrice.toFixed(2)}</span>
+                                                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">a ${maxPrice.toFixed(2)}</span>
+                                                        </div>
                                                     ) : (
                                                         <span>${minPrice.toFixed(2)}</span>
                                                     )}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="hidden sm:table-cell">
                                                     <div className="flex flex-col gap-1">
                                                         <div className="flex items-center gap-2">
                                                             <span className={totalStock < 5 ? 'text-destructive font-bold' : ''}>
@@ -207,8 +213,8 @@ export default function AdminProductsPage() {
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-2">
+                                                <TableCell className="text-right pr-4 sm:pr-6">
+                                                    <div className="flex justify-end gap-1 sm:gap-2">
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"

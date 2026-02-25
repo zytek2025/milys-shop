@@ -5,8 +5,13 @@ export interface Product {
   description: string | null;
   price: number;
   image_url: string | null;
+  image_url_2: string | null;
+  image_url_3: string | null;
   category: string | null;
   stock: number;
+  last_unit_cost?: number;
+  additional_cost?: number;
+  last_utility_percentage?: number;
   created_at: string;
   updated_at: string;
   product_variants?: ProductVariant[];
@@ -46,6 +51,9 @@ export interface ProductVariant {
   color_hex: string | null;
   stock: number;
   price_override: number | null;
+  last_unit_cost?: number;
+  additional_cost?: number;
+  last_utility_percentage?: number;
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +63,8 @@ export interface ProductInsert {
   description?: string | null;
   price: number;
   image_url?: string | null;
+  image_url_2?: string | null;
+  image_url_3?: string | null;
   category?: string | null;
   stock?: number;
 }

@@ -307,24 +307,24 @@ export default function InventoryPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                 <div>
-                    <h1 className="text-4xl font-black bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent dark:from-white dark:to-slate-400 tracking-tighter italic uppercase">
+                    <h1 className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent dark:from-white dark:to-slate-400 tracking-tighter italic uppercase">
                         Control de <span className="text-primary">Inventario</span>
                     </h1>
-                    <p className="text-slate-500 font-medium italic">Gestión inteligente de stock y precios ERP.</p>
+                    <p className="text-slate-500 font-medium italic text-sm sm:text-base">Gestión inteligente de stock y precios ERP.</p>
                 </div>
-                <div className="flex gap-2 no-print">
-                    <PrintButton label="Imprimir Stock" />
-                    <Card className="bg-primary/5 border-primary/10 px-4 py-2 flex items-center gap-3 rounded-2xl">
-                        <DollarSign className="text-primary w-5 h-5" />
+                <div className="flex flex-wrap gap-2 no-print w-full sm:w-auto">
+                    <PrintButton label="Stock" />
+                    <Card className="bg-primary/5 border-primary/10 px-3 sm:px-4 py-2 flex items-center gap-3 rounded-2xl flex-1 sm:flex-none">
+                        <DollarSign className="text-primary w-4 h-4 sm:w-5 sm:h-5" />
                         <div>
-                            <p className="text-[10px] font-black uppercase text-slate-400">Tasa del Día</p>
-                            <p className="text-sm font-black text-primary">Bs. {exchangeRate.toFixed(2)}</p>
+                            <p className="text-[8px] sm:text-[10px] font-black uppercase text-slate-400 leading-none">Tasa</p>
+                            <p className="text-xs sm:text-sm font-black text-primary leading-tight">Bs. {exchangeRate.toFixed(2)}</p>
                         </div>
                     </Card>
-                    <Button onClick={fetchData} variant="outline" size="icon" className="h-12 w-12 rounded-2xl">
-                        <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
+                    <Button onClick={fetchData} variant="outline" size="icon" className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl">
+                        <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
                     </Button>
                 </div>
             </div>
@@ -418,66 +418,54 @@ export default function InventoryPage() {
                                             <Table>
                                                 <TableHeader className="bg-slate-50/50 dark:bg-slate-800/30">
                                                     <TableRow className="hover:bg-transparent border-none">
-                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest pl-8">Producto / Variante</TableHead>
-                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-24">Cantidad</TableHead>
-                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-32">Costo (USD)</TableHead>
-                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-32">Utilidad %</TableHead>
-                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-32">Venta (USD)</TableHead>
-                                                        <TableHead className="w-12 pr-8"></TableHead>
+                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest pl-4 sm:pl-8">Producto</TableHead>
+                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-16 sm:w-24">Cant.</TableHead>
+                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-24 sm:w-32">Costo</TableHead>
+                                                        <TableHead className="font-black uppercase text-[9px] tracking-widest w-24 sm:w-32 hidden xs:table-cell">Venta (USD)</TableHead>
+                                                        <TableHead className="w-10 sm:w-12 pr-4 sm:pr-8"></TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
                                                     {selectedItems.map((item) => (
                                                         <TableRow key={item.id} className="border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                                            <TableCell className="py-6 pl-8">
-                                                                <p className="font-black text-sm">{item.name}</p>
-                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{item.details}</p>
+                                                            <TableCell className="py-4 sm:py-6 pl-4 sm:pl-8">
+                                                                <p className="font-black text-xs sm:text-sm max-w-[100px] sm:max-w-none truncate">{item.name}</p>
+                                                                <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-tighter truncate">{item.details}</p>
                                                             </TableCell>
                                                             <TableCell>
                                                                 <Input
                                                                     type="number"
                                                                     value={item.qty}
                                                                     onChange={(e) => updateItemField(item.id, 'qty', parseInt(e.target.value))}
-                                                                    className="h-10 text-center font-black border-slate-200 rounded-xl focus:ring-0"
+                                                                    className="h-9 sm:h-10 text-center font-black border-slate-200 rounded-xl focus:ring-0 px-1"
                                                                 />
                                                             </TableCell>
                                                             <TableCell>
                                                                 <div className="relative">
-                                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">$</span>
+                                                                    <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-bold text-slate-400">$</span>
                                                                     <Input
                                                                         type="number"
                                                                         value={item.cost}
                                                                         onChange={(e) => updateItemField(item.id, 'cost', e.target.value)}
-                                                                        className="h-10 pl-7 font-bold border-slate-200 rounded-xl focus:ring-0"
+                                                                        className="h-9 sm:h-10 pl-5 sm:pl-7 font-bold border-slate-200 rounded-xl focus:ring-0 px-1"
                                                                     />
                                                                 </div>
                                                             </TableCell>
-                                                            <TableCell>
+                                                            <TableCell className="hidden xs:table-cell">
                                                                 <div className="relative">
-                                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">%</span>
-                                                                    <Input
-                                                                        type="number"
-                                                                        value={item.utility}
-                                                                        onChange={(e) => updateItemField(item.id, 'utility', e.target.value)}
-                                                                        className="h-10 pr-7 font-bold border-slate-200 rounded-xl focus:ring-0 border-emerald-100 bg-emerald-50/30 text-emerald-600"
-                                                                    />
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <div className="relative">
-                                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">$</span>
+                                                                    <span className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-[9px] sm:text-[10px] font-bold text-slate-400">$</span>
                                                                     <Input
                                                                         type="number"
                                                                         step="0.01"
                                                                         value={item.price}
                                                                         onChange={(e) => updateItemField(item.id, 'price', e.target.value)}
-                                                                        className="h-10 pl-7 font-black border-primary/20 rounded-xl focus:ring-0 bg-primary/5 text-primary"
+                                                                        className="h-9 sm:h-10 pl-5 sm:pl-7 font-black border-primary/20 rounded-xl focus:ring-0 bg-primary/5 text-primary px-1"
                                                                     />
                                                                 </div>
                                                             </TableCell>
-                                                            <TableCell className="pr-8">
+                                                            <TableCell className="pr-4 sm:pr-8">
                                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg" onClick={() => removeItem(item.id)}>
-                                                                    <Minus size={16} />
+                                                                    <Minus size={14} />
                                                                 </Button>
                                                             </TableCell>
                                                         </TableRow>

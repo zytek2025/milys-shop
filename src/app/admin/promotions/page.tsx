@@ -13,7 +13,8 @@ import {
     XCircle,
     Info,
     ChevronRight,
-    Star
+    Star,
+    ShieldCheck
 } from 'lucide-react';
 import {
     Table,
@@ -74,26 +75,61 @@ export default function AdminPromotionsPage() {
     });
     const [saving, setSaving] = useState(false);
 
+    // VIP Settings State
+    const [vipEnabled, setVipEnabled] = useState(false);
+    const [vipDescription, setVipDescription] = useState('');
+    const [savingVip, setSavingVip] = useState(false);
+
     useEffect(() => {
         fetchPromotions();
     }, []);
 
     const fetchPromotions = async () => {
         try {
-            const [promoRes, prodRes] = await Promise.all([
+            const [promoRes, prodRes, settingsRes] = await Promise.all([
                 fetch('/api/admin/promotions'),
-                fetch('/api/admin/products')
+                fetch('/api/admin/products'),
+                fetch('/api/settings')
             ]);
 
             const promoData = await promoRes.json();
             const prodData = await prodRes.json();
+            const settingsData = await settingsRes.json();
 
             if (promoRes.ok) setPromotions(promoData);
             if (prodRes.ok) setProducts(prodData.products || prodData || []);
+            if (settingsRes.ok) {
+                setVipEnabled(settingsData.vip_enabled ?? false);
+                setVipDescription(settingsData.vip_benefits_desc ?? '');
+            }
         } catch (error) {
             toast.error('Error al cargar datos');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSaveVipSettings = async () => {
+        setSavingVip(true);
+        try {
+            const res = await fetch('/api/admin/settings', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    vip_enabled: vipEnabled,
+                    vip_benefits_desc: vipDescription
+                })
+            });
+
+            if (res.ok) {
+                toast.success('Configuración VIP actualizada');
+            } else {
+                toast.error('Error al guardar configuración VIP');
+            }
+        } catch (error) {
+            toast.error('Error de conexión');
+        } finally {
+            setSavingVip(false);
         }
     };
 
@@ -210,6 +246,53 @@ export default function AdminPromotionsPage() {
                 </Button>
             </div>
 
+            {/* VIP CONFIGURATION CARD */}
+            <Card className="border-none shadow-2xl shadow-indigo-100/50 dark:shadow-none overflow-hidden rounded-[2rem] bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-100/50 dark:border-indigo-900/20">
+                <CardHeader className="flex flex-row items-center justify-between pb-6">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                            <ShieldCheck size={24} />
+                        </div>
+                        <div>
+                            <CardTitle className="text-xl font-black italic uppercase tracking-tight text-indigo-900 dark:text-indigo-100">Configuración VIP Access</CardTitle>
+                            <CardDescription className="font-medium text-indigo-600/60 dark:text-indigo-400/60">Controla la visibilidad y beneficios del club exclusivo.</CardDescription>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold uppercase tracking-widest text-indigo-900/40 dark:text-indigo-100/40">
+                            {vipEnabled ? 'Activado' : 'Desactivado'}
+                        </span>
+                        <Switch
+                            checked={vipEnabled}
+                            onCheckedChange={setVipEnabled}
+                            className="data-[state=checked]:bg-indigo-600"
+                        />
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-6 pt-0">
+                    <div className="space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-900/40 dark:text-indigo-100/40 px-1">Descripción de Beneficios (Home Page)</Label>
+                        <div className="relative">
+                            <textarea
+                                value={vipDescription}
+                                onChange={(e) => setVipDescription(e.target.value)}
+                                className="w-full min-h-[100px] rounded-3xl bg-white dark:bg-slate-900 border-none px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-indigo-600/20 transition-all resize-none shadow-sm"
+                                placeholder="Escribe los beneficios del club VIP..."
+                            />
+                        </div>
+                    </div>
+                    <div className="flex justify-end">
+                        <Button
+                            onClick={handleSaveVipSettings}
+                            disabled={savingVip}
+                            className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 gap-2 h-11 px-8 font-bold uppercase italic text-[10px] tracking-widest"
+                        >
+                            {savingVip ? <Loader2 size={16} className="animate-spin" /> : 'Actualizar VIP'}
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
             <Card className="border-none shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden rounded-[2rem] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/20 dark:border-slate-800">
                 <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-6">
                     <div className="flex flex-col md:flex-row gap-4 justify-between">
@@ -269,7 +352,7 @@ export default function AdminPromotionsPage() {
                                                 <Badge variant="secondary" className="max-w-fit rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-none font-bold italic text-[10px]">
                                                     {typeLabels[promo.type]}
                                                 </Badge>
-                                                {promo.min_orders_required > 0 && (
+                                                {(promo.min_orders_required ?? 0) > 0 && (
                                                     <Badge variant="outline" className="max-w-fit rounded-lg border-amber-500/50 text-amber-600 bg-amber-50 dark:bg-amber-950/20 text-[9px] font-black italic px-2 py-0">
                                                         💎 FIDELIDAD ({promo.min_orders_required}+)
                                                     </Badge>
