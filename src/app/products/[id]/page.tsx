@@ -7,6 +7,7 @@ import { ShoppingCart, ArrowLeft, Check, Info } from 'lucide-react';
 import Link from 'next/link';
 import { ProductConfigurator } from '@/components/products/product-configurator';
 import { notFound } from 'next/navigation';
+import { ProductImageGallery } from '@/components/products/product-image-gallery';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,25 +64,16 @@ export default async function ProductPage(props: {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                 {/* Visuals Column */}
                 <div className="space-y-4">
-                    <div className="aspect-square rounded-3xl overflow-hidden bg-slate-50 border border-slate-100 dark:bg-slate-900 dark:border-slate-800 shadow-xl">
-                        {product.image_url ? (
-                            <img
-                                src={product.image_url}
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                            />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-300">
-                                Sin imagen disponible
-                            </div>
-                        )}
-                    </div>
+                    <ProductImageGallery
+                        images={[product.image_url, product.image_url_2, product.image_url_3].filter(Boolean) as string[]}
+                        productName={product.name}
+                    />
 
                     {product.description && (
                         <>
-                            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4">Descripción</h3>
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 mt-8">Descripción</h3>
                             <div className="p-6 rounded-2xl bg-slate-50/90 dark:bg-slate-900/90 border border-slate-100 dark:border-slate-800 backdrop-blur-sm">
-                                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                                <p className="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
                                     {product.description}
                                 </p>
                             </div>

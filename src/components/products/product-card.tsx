@@ -104,10 +104,15 @@ export function ProductCard({ product, promotion }: ProductCardProps) {
             </div>
           </div>
 
-          <CardHeader className="px-6 py-5 pb-2">
+          <CardHeader className="px-6 py-4 pb-2">
             <CardTitle className="text-lg font-bold tracking-tight line-clamp-2 group-hover:text-primary transition-colors duration-300 min-h-[3.5rem] leading-[1.2] font-serif">
               {product.name}
             </CardTitle>
+            {product.description && (
+              <p className="text-xs text-muted-foreground mt-2 line-clamp-2 font-medium">
+                {product.description}
+              </p>
+            )}
           </CardHeader>
 
           <CardContent className="px-6 pb-6 pt-2">
