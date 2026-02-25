@@ -84,6 +84,13 @@ export function Hero() {
                         </Link>
 
                         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                            <Link href="/coleccion-legado" className="flex-1 sm:flex-none">
+                                <Button size="lg" className="rounded-2xl px-8 text-base h-16 gap-3 border-transparent text-[#e8b4b8] bg-[#3a2c2e] hover:bg-[#2a1c1e] shadow-xl w-full hover:border-[#c9a96e] transition-all">
+                                    <Sparkles className="w-5 h-5 text-[#c9a96e]" />
+                                    Colección Legado
+                                </Button>
+                            </Link>
+
                             <Link href="/?category=Prendas Personalizables#products" className="flex-1 sm:flex-none">
                                 <Button size="lg" variant="outline" className="rounded-2xl px-8 text-base h-16 gap-3 border-primary/30 text-primary bg-white hover:bg-slate-50 w-full hover:border-primary transition-all">
                                     <Palette className="w-5 h-5" />
