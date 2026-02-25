@@ -1,0 +1,371 @@
+{
+  "name": "Mily AI Assistant - Meta WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mily-assistant-trigger",
+        "options": {}
+      },
+      "id": "node_1",
+      "name": "Webhook Entry",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.record.order_status }}",
+              "operation": "notEqual",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "id": "node_2",
+      "name": "Pedido Incompleto",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.record.recovery_sent }}",
+              "operation": "notEqual",
+              "value2": "true"
+            }
+          ]
+        }
+      },
+      "id": "node_3",
+      "name": "No Enviado Aun",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "amount": 15,
+        "unit": "minutes"
+      },
+      "id": "node_4",
+      "name": "Esperar 15 minutos",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.record.whatsapp }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "node_5",
+      "name": "Tiene WhatsApp",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1080, 300]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "complete",
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 300
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Eres Mily, asistente virtual elegante de milys.shop. Redacta mensajes de WhatsApp cortos (max 3 lineas), calidos, con 1-2 emojis. Nunca seas insistente. Personaliza con el nombre del cliente. Pregunta de forma natural si puedes ayudar a completar su pedido."
+            },
+            {
+              "role": "user",
+              "content": "=Cliente: {{ $json.body.record.full_name }}. Productos: {{ $json.body.record.cart_items }}. Redacta mensaje de WhatsApp para recuperar su pedido."
+            }
+          ]
+        }
+      },
+      "id": "node_6",
+      "name": "AI Mensaje WhatsApp",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1300, 180]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "complete",
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 600
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Eres Mily, asistente de milys.shop. Redacta un email HTML elegante para recuperar un carrito abandonado. Incluye nombre del cliente, sus productos, y un boton con texto Terminar mi pedido que enlace a https://milys.shop/cart. Usa colores suaves y femeninos. Devuelve solo el HTML completo."
+            },
+            {
+              "role": "user",
+              "content": "=Cliente: {{ $json.body.record.full_name }}. Email: {{ $json.body.record.email }}. Productos: {{ $json.body.record.cart_items }}. Redacta el email HTML."
+            }
+          ]
+        }
+      },
+      "id": "node_7",
+      "name": "AI Email HTML",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1300, 440]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "phoneNumberId": "={{ $credentials.phoneNumberId }}",
+        "recipientPhoneNumber": "={{ $json.body.record.whatsapp }}",
+        "textBody": "={{ $node['AI Mensaje WhatsApp'].json.choices[0].message.content }}"
+      },
+      "id": "node_8",
+      "name": "Meta Enviar WhatsApp",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [1540, 180]
+    },
+    {
+      "parameters": {
+        "fromEmail": "mily@milys.shop",
+        "toEmail": "={{ $json.body.record.email }}",
+        "subject": "Tu pedido en milys.shop te espera",
+        "emailType": "html",
+        "message": "={{ $node['AI Email HTML'].json.choices[0].message.content }}",
+        "options": {}
+      },
+      "id": "node_9",
+      "name": "Enviar Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1540, 440]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.NEXT_PUBLIC_SUPABASE_URL }}/rest/v1/orders?id=eq.{{ $json.body.record.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={ \"recovery_sent\": true, \"recovery_sent_at\": \"{{ new Date().toISOString() }}\" }"
+      },
+      "id": "node_10",
+      "name": "Supabase Marcar Enviado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "amount": 24,
+        "unit": "hours"
+      },
+      "id": "node_11",
+      "name": "Esperar 24 horas",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.NEXT_PUBLIC_SUPABASE_URL }}/rest/v1/orders?id=eq.{{ $json.body.record.id }}&select=order_status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
+          ]
+        }
+      },
+      "id": "node_12",
+      "name": "Verificar Estado Pedido",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2220, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json[0].order_status }}",
+              "operation": "notEqual",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "id": "node_13",
+      "name": "Sigue Incompleto",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2440, 300]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "complete",
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0.5,
+          "maxTokens": 150
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Eres Mily de milys.shop. Este es el segundo y ultimo recordatorio. Se muy breve y amable. Maximo 2 lineas. No insistas. Solo ofrece ayuda si tienen alguna duda."
+            },
+            {
+              "role": "user",
+              "content": "=Segundo recordatorio para {{ $json.body.record.full_name }}."
+            }
+          ]
+        }
+      },
+      "id": "node_14",
+      "name": "AI Segundo Recordatorio",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [2660, 180]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "phoneNumberId": "={{ $credentials.phoneNumberId }}",
+        "recipientPhoneNumber": "={{ $json.body.record.whatsapp }}",
+        "textBody": "={{ $node['AI Segundo Recordatorio'].json.choices[0].message.content }}"
+      },
+      "id": "node_15",
+      "name": "Meta Segundo WhatsApp",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [2880, 180]
+    }
+  ],
+  "connections": {
+    "Webhook Entry": {
+      "main": [
+        [{ "node": "Pedido Incompleto", "type": "main", "index": 0 }]
+      ]
+    },
+    "Pedido Incompleto": {
+      "main": [
+        [{ "node": "No Enviado Aun", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "No Enviado Aun": {
+      "main": [
+        [{ "node": "Esperar 15 minutos", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Esperar 15 minutos": {
+      "main": [
+        [{ "node": "Tiene WhatsApp", "type": "main", "index": 0 }]
+      ]
+    },
+    "Tiene WhatsApp": {
+      "main": [
+        [{ "node": "AI Mensaje WhatsApp", "type": "main", "index": 0 }],
+        [{ "node": "AI Email HTML", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI Mensaje WhatsApp": {
+      "main": [
+        [{ "node": "Meta Enviar WhatsApp", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI Email HTML": {
+      "main": [
+        [{ "node": "Enviar Email", "type": "main", "index": 0 }]
+      ]
+    },
+    "Meta Enviar WhatsApp": {
+      "main": [
+        [{ "node": "Supabase Marcar Enviado", "type": "main", "index": 0 }]
+      ]
+    },
+    "Enviar Email": {
+      "main": [
+        [{ "node": "Supabase Marcar Enviado", "type": "main", "index": 0 }]
+      ]
+    },
+    "Supabase Marcar Enviado": {
+      "main": [
+        [{ "node": "Esperar 24 horas", "type": "main", "index": 0 }]
+      ]
+    },
+    "Esperar 24 horas": {
+      "main": [
+        [{ "node": "Verificar Estado Pedido", "type": "main", "index": 0 }]
+      ]
+    },
+    "Verificar Estado Pedido": {
+      "main": [
+        [{ "node": "Sigue Incompleto", "type": "main", "index": 0 }]
+      ]
+    },
+    "Sigue Incompleto": {
+      "main": [
+        [{ "node": "AI Segundo Recordatorio", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "AI Segundo Recordatorio": {
+      "main": [
+        [{ "node": "Meta Segundo WhatsApp", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

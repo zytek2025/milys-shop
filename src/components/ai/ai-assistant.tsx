@@ -62,7 +62,7 @@ export function AIAssistant() {
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="mb-4 w-[350px] max-w-[calc(100vw-2rem)] bg-white rounded-3xl shadow-2xl border border-lavanda/30 overflow-hidden flex flex-col h-[500px]"
+                        className="mb-4 w-[350px] max-w-[calc(100vw-2rem)] bg-white rounded-3xl shadow-2xl border border-lavanda/30 overflow-hidden flex flex-col h-[500px] max-h-[70vh] sm:max-h-none"
                     >
                         {/* Header */}
                         <div className="p-4 bg-slate-50 border-b border-lavanda/20 flex items-center justify-between">
@@ -133,7 +133,7 @@ export function AIAssistant() {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300",
+                    "w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300",
                     isOpen ? "bg-white text-lavanda rotate-90" : "bg-lavanda text-slate-800"
                 )}
             >

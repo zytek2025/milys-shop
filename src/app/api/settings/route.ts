@@ -35,7 +35,9 @@ export async function GET() {
             currency_symbol: 'Bs',
             exchange_rate: 60.0,
             personalization_price_small: 1.00,
-            personalization_price_large: 3.00
+            personalization_price_large: 3.00,
+            vip_enabled: false,
+            vip_benefits_desc: ''
         };
 
         // Inject currency into payment methods

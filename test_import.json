@@ -1,0 +1,500 @@
+﻿{
+    "name": "Linky CRM - Mily IA Vendedora (WhatsApp)",
+    "nodes": [
+        {
+            "parameters": {
+                "content": "## 📥 Recepción de Mensajes\nWebhook que recibe notificaciones de **Evolution API**.\n\nFiltra solo mensajes de texto entrantes (no enviados por nosotros).",
+                "height": 220,
+                "width": 380,
+                "color": 4
+            },
+            "id": "nota-recepcion",
+            "name": "Nota: Recepción",
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [
+                180,
+                80
+            ]
+        },
+        {
+            "parameters": {
+                "content": "## 🛣️ Enrutador AI (Mily)\nClasifica la intención del usuario:\n\n1. 📖 **Catálogo**: Preguntas sobre precios/productos\n2. 📅 **Citas**: Intención de agendar o consultar horarios\n3. 💬 **General**: Saludos y dudas generales",
+                "height": 220,
+                "width": 380,
+                "color": 2
+            },
+            "id": "nota-enrutador",
+            "name": "Nota: Enrutador",
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [
+                780,
+                80
+            ]
+        },
+        {
+            "parameters": {
+                "content": "## 💾 Guardado de Datos\nRegistra automáticamente:\n- 👤 **Leads**: Nuevos contactos\n- 💬 **Conversaciones**: Historial para el CRM\n- 📅 **Citas**: Si se confirma el agendamiento",
+                "height": 220,
+                "width": 380,
+                "color": 6
+            },
+            "id": "nota-guardado",
+            "name": "Nota: Guardado",
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [
+                1380,
+                80
+            ]
+        },
+        {
+            "parameters": {
+                "content": "## 📤 Respuesta WhatsApp\nEnvía la respuesta generada por la IA de vuelta al usuario vía WhatsApp.",
+                "height": 160,
+                "width": 320,
+                "color": 7
+            },
+            "id": "nota-respuesta",
+            "name": "Nota: Respuesta",
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [
+                1980,
+                420
+            ]
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "whatsapp-incoming",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-wa",
+            "name": "WhatsApp Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1.1,
+            "position": [
+                220,
+                300
+            ],
+            "webhookId": "whatsapp-incoming"
+        },
+        {
+            "parameters": {
+                "jsCode": "const body = $input.first().json.data || $input.first().json;\nif (!body.message || body.key.fromMe) return [];\n\nreturn [{\n  json: {\n    remoteJid: body.key.remoteJid,\n    pushName: body.pushName,\n    text: body.message.conversation || body.message.extendedTextMessage?.text || '',\n    instanceName: $input.first().json.instance || 'default'\n  }\n}];"
+            },
+            "id": "filtro-entrada",
+            "name": "Validar Mensaje",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                440,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "modelId": "gpt-4o-mini",
+                "messages": {
+                    "values": [
+                        {
+                            "content": "Eres un clasificador de intenciones para un CRM. Clasifica el mensaje del usuario en una de estas categorías: 'catalog' (si pregunta por productos, precios o servicios), 'appointment' (si quiere agendar, cambiar o preguntar por una cita), o 'general' (saludos, dudas sobre la empresa, etc).\n\nResponde solo con la palabra clave.",
+                            "role": "system"
+                        },
+                        {
+                            "content": "={{ $json.text }}",
+                            "role": "user"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "router-ai",
+            "name": "Mily: Router AI",
+            "type": "n8n-nodes-base.openAi",
+            "typeVersion": 1.4,
+            "position": [
+                660,
+                300
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "openai-credentials",
+                    "name": "OpenAI API"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "dataType": "string",
+                "value1": "={{ $json.message.content }}",
+                "rules": {
+                    "rules": [
+                        {
+                            "operation": "contains",
+                            "value2": "catalog"
+                        },
+                        {
+                            "operation": "contains",
+                            "value2": "appointment"
+                        }
+                    ]
+                },
+                "fallbackOutput": 2
+            },
+            "id": "switch-intent",
+            "name": "Ruta según Intención",
+            "type": "n8n-nodes-base.switch",
+            "typeVersion": 3.1,
+            "position": [
+                880,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "REEMPLAZAR_POR_URL_DEL_BACKEND/api/{{ $json.body.decoded.tenantId }}/catalog",
+                "options": {}
+            },
+            "id": "get-catalog",
+            "name": "Cargar Catálogo",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1100,
+                160
+            ]
+        },
+        {
+            "parameters": {
+                "modelId": "gpt-4o-mini",
+                "messages": {
+                    "values": [
+                        {
+                            "content": "=Eres Mily, la asistente virtual experta en ventas de Linky CRM. Tu objetivo es ayudar al usuario con sus dudas sobre el catálogo.\n\nDATOS DEL CATÁLOGO:\n{{ JSON.stringify($('Cargar Catálogo').first().json.products) }}\n\nResponde de forma amable, profesional y breve en WhatsApp. Usa emojis.",
+                            "role": "system"
+                        },
+                        {
+                            "content": "={{ $('Validar Mensaje').first().json.text }}",
+                            "role": "user"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "catalog-ai",
+            "name": "Mily: Experta Catálogo",
+            "type": "n8n-nodes-base.openAi",
+            "typeVersion": 1.4,
+            "position": [
+                1320,
+                160
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "openai-credentials",
+                    "name": "OpenAI API"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "REEMPLAZAR_POR_URL_DEL_BACKEND/api/{{ $('Validar Mensaje').first().json.instanceName }}/crm",
+                "options": {}
+            },
+            "id": "get-appts",
+            "name": "Cargar Citas Disponibles",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1100,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "modelId": "gpt-4o-mini",
+                "messages": {
+                    "values": [
+                        {
+                            "content": "Eres Mily, asistente de agendamiento. Ayuda al usuario a agendar una cita. Si elige una fecha y hora, confírmalo.\n\nResponde breve y profesional en WhatsApp.",
+                            "role": "system"
+                        },
+                        {
+                            "content": "={{ $('Validar Mensaje').first().json.text }}",
+                            "role": "user"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "appt-ai",
+            "name": "Mily: Asistente Citas",
+            "type": "n8n-nodes-base.openAi",
+            "typeVersion": 1.4,
+            "position": [
+                1320,
+                300
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "openai-credentials",
+                    "name": "OpenAI API"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "modelId": "gpt-4o-mini",
+                "messages": {
+                    "values": [
+                        {
+                            "content": "Eres Mily, asistente virtual amable de Linky CRM. Responde saludos y dudas generales sobre la empresa de forma cálida y breve.",
+                            "role": "system"
+                        },
+                        {
+                            "content": "={{ $('Validar Mensaje').first().json.text }}",
+                            "role": "user"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "general-ai",
+            "name": "Mily: Atención General",
+            "type": "n8n-nodes-base.openAi",
+            "typeVersion": 1.4,
+            "position": [
+                1320,
+                440
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "openai-credentials",
+                    "name": "OpenAI API"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "REEMPLAZAR_POR_URL_DEL_BACKEND/api/{{ $('Validar Mensaje').first().json.instanceName }}/crm",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"name\": \"{{ $('Validar Mensaje').first().json.pushName }}\",\n  \"phone\": \"{{ $('Validar Mensaje').first().json.remoteJid.split('@')[0] }}\",\n  \"source\": \"WhatsApp\",\n  \"status\": \"Prospecto\"\n}",
+                "options": {}
+            },
+            "id": "save-lead",
+            "name": "Guardar Lead",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1600,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://cst-evolution-api-292f1d83-e740bb58.usecloudstation.com/message/sendText/default",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "8ea3a893cb794abe"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"number\": \"{{ $('Validar Mensaje').first().json.remoteJid }}\",\n  \"text\": \"{{ $json.message.content }}\"\n}",
+                "options": {}
+            },
+            "id": "send-wa",
+            "name": "Enviar Respuesta WA",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1820,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "REEMPLAZAR_POR_URL_DEL_BACKEND/api/{{ $('Validar Mensaje').first().json.instanceName }}/conversations",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"remoteJid\": \"{{ $('Validar Mensaje').first().json.remoteJid }}\",\n  \"message\": \"{{ $('Validar Mensaje').first().json.text }}\",\n  \"reply\": \"{{ $json.message.content }}\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}",
+                "options": {}
+            },
+            "id": "log-convo",
+            "name": "Guardar Log Conversación",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                2040,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "WhatsApp Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Validar Mensaje",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validar Mensaje": {
+            "main": [
+                [
+                    {
+                        "node": "Mily: Router AI",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Mily: Router AI": {
+            "main": [
+                [
+                    {
+                        "node": "Ruta según Intención",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Ruta según Intención": {
+            "main": [
+                [
+                    {
+                        "node": "Cargar Catálogo",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Cargar Citas Disponibles",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Mily: Atención General",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Cargar Catálogo": {
+            "main": [
+                [
+                    {
+                        "node": "Mily: Experta Catálogo",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Mily: Experta Catálogo": {
+            "main": [
+                [
+                    {
+                        "node": "Guardar Lead",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Cargar Citas Disponibles": {
+            "main": [
+                [
+                    {
+                        "node": "Mily: Asistente Citas",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Mily: Asistente Citas": {
+            "main": [
+                [
+                    {
+                        "node": "Guardar Lead",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Mily: Atención General": {
+            "main": [
+                [
+                    {
+                        "node": "Guardar Lead",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Guardar Lead": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar Respuesta WA",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Enviar Respuesta WA": {
+            "main": [
+                [
+                    {
+                        "node": "Guardar Log Conversación",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "tags": [
+        {
+            "name": "linky-crm"
+        },
+        {
+            "name": "whatsapp"
+        },
+        {
+            "name": "mily-ai"
+        }
+    ],
+    "pinData": {},
+    "versionId": "2"
+}

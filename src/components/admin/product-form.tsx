@@ -82,7 +82,9 @@ export function ProductForm({ product, isOpen, onClose, onSuccess }: ProductForm
         price: '',
         category: '',
         stock: '0',
-        image_url: ''
+        image_url: '',
+        image_url_2: '',
+        image_url_3: ''
     });
 
     const [variants, setVariants] = useState<any[]>([]);
@@ -100,7 +102,9 @@ export function ProductForm({ product, isOpen, onClose, onSuccess }: ProductForm
                     price: product.price?.toString() || '',
                     category: product.category || '',
                     stock: product.stock?.toString() || '0',
-                    image_url: product.image_url || ''
+                    image_url: product.image_url || '',
+                    image_url_2: product.image_url_2 || '',
+                    image_url_3: product.image_url_3 || ''
                 });
                 fetchVariants(product.id);
             } else {
@@ -110,7 +114,9 @@ export function ProductForm({ product, isOpen, onClose, onSuccess }: ProductForm
                     price: '',
                     category: '',
                     stock: '0',
-                    image_url: ''
+                    image_url: '',
+                    image_url_2: '',
+                    image_url_3: ''
                 });
                 setVariants([]);
                 setSelectedSizes([]);
@@ -145,7 +151,7 @@ export function ProductForm({ product, isOpen, onClose, onSuccess }: ProductForm
         }
     };
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, slot: 'image_url' | 'image_url_2' | 'image_url_3') => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -162,7 +168,7 @@ export function ProductForm({ product, isOpen, onClose, onSuccess }: ProductForm
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al subir imagen');
 
-            setFormData({ ...formData, image_url: data.url });
+            setFormData(prev => ({ ...prev, [slot]: data.url }));
             toast.success('Imagen subida con éxito');
         } catch (error: any) {
             toast.error(error.message);
@@ -469,61 +475,77 @@ export function ProductForm({ product, isOpen, onClose, onSuccess }: ProductForm
                             )}
 
                             <div className="space-y-4">
-                                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Imagen del Producto</Label>
-                                <div className="flex gap-6 p-6 bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800">
-                                    <div className="relative group shrink-0">
-                                        <div className="h-32 w-32 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center bg-white dark:bg-slate-950 overflow-hidden shadow-inner">
-                                            {formData.image_url ? (
-                                                <img
-                                                    src={formData.image_url}
-                                                    alt="Preview"
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="flex flex-col items-center gap-1 text-slate-300">
-                                                    <ImageIcon size={32} />
-                                                    <span className="text-[10px] font-bold uppercase">Sin imagen</span>
+                                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Imágenes del Producto (Máx. 3)</Label>
+                                <div className="grid grid-cols-1 gap-4">
+                                    {[
+                                        { id: 'image_url', label: 'Principal', value: formData.image_url },
+                                        { id: 'image_url_2', label: 'Secundaria 1', value: formData.image_url_2 },
+                                        { id: 'image_url_3', label: 'Secundaria 2', value: formData.image_url_3 },
+                                    ].map((slot) => (
+                                        <div key={slot.id} className="flex flex-col sm:flex-row gap-6 p-4 bg-slate-50 dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800">
+                                            <div className="relative group shrink-0 mx-auto sm:mx-0">
+                                                <div className="h-24 w-24 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center bg-white dark:bg-slate-950 overflow-hidden shadow-inner relative">
+                                                    {slot.value ? (
+                                                        <>
+                                                            <img
+                                                                src={slot.value}
+                                                                alt={slot.label}
+                                                                className="h-full w-full object-cover"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setFormData(prev => ({ ...prev, [slot.id]: '' }))}
+                                                                className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            >
+                                                                <X size={12} />
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center gap-1 text-slate-300">
+                                                            <ImageIcon size={24} />
+                                                            <span className="text-[8px] font-bold uppercase">{slot.label}</span>
+                                                        </div>
+                                                    )}
+                                                    {uploading && (
+                                                        <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 flex items-center justify-center">
+                                                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                            {uploading && (
-                                                <div className="absolute inset-0 bg-white dark:bg-slate-900 flex items-center justify-center">
-                                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                            </div>
 
-                                    <div className="flex-1 flex flex-col justify-center gap-3">
-                                        <div className="relative">
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleImageUpload}
-                                                className="hidden"
-                                                id="file-upload"
-                                                disabled={uploading}
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                className="w-full rounded-2xl gap-2 h-12 text-xs font-black uppercase tracking-tighter border-2"
-                                                onClick={() => document.getElementById('file-upload')?.click()}
-                                                disabled={uploading}
-                                            >
-                                                <Upload size={16} />
-                                                {formData.image_url ? 'Cambiar Imagen' : 'Subir desde PC'}
-                                            </Button>
+                                            <div className="flex-1 flex flex-col justify-center gap-2">
+                                                <div className="relative">
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) => handleImageUpload(e, slot.id as any)}
+                                                        className="hidden"
+                                                        id={`file-upload-${slot.id}`}
+                                                        disabled={uploading}
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        className="w-full rounded-xl gap-2 h-10 text-[10px] font-black uppercase tracking-tighter border-2"
+                                                        onClick={() => document.getElementById(`file-upload-${slot.id}`)?.click()}
+                                                        disabled={uploading}
+                                                    >
+                                                        <Upload size={14} />
+                                                        {slot.value ? 'Cambiar' : `Subir ${slot.label}`}
+                                                    </Button>
+                                                </div>
+                                                <div className="relative">
+                                                    <Input
+                                                        placeholder="O URL de imagen..."
+                                                        value={slot.value}
+                                                        onChange={e => setFormData(prev => ({ ...prev, [slot.id]: e.target.value }))}
+                                                        className="rounded-lg h-10 text-[10px] font-medium border-none bg-white dark:bg-slate-950 shadow-sm"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="relative">
-                                            <Input
-                                                id="image_url"
-                                                placeholder="O pega una URL de imagen..."
-                                                value={formData.image_url}
-                                                onChange={e => setFormData({ ...formData, image_url: e.target.value })}
-                                                className="rounded-xl h-12 text-xs font-medium border-none bg-white dark:bg-slate-950 shadow-sm"
-                                            />
-                                        </div>
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>

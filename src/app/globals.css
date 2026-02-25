@@ -130,6 +130,33 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Utility to hide search bar on scroll if needed, or other things */
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  @keyframes shine {
+    from {
+      transform: translateX(-100%);
+    }
+
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shine {
+    animation: shine 2s infinite;
+  }
 }
 
 /* Universal Print Styles */

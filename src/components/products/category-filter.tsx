@@ -32,7 +32,7 @@ export function CategoryFilter({ categories: dbCategories }: CategoryFilterProps
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center gap-6 mb-12"
     >
-      <div className="flex flex-wrap gap-3 justify-center">
+      <div className="flex w-full overflow-x-auto pb-2 px-6 gap-3 md:flex-wrap md:justify-center md:px-0 no-scrollbar">
         <AnimatePresence mode="popLayout">
           {categories.map((category) => {
             const isActive = selectedCategory === category.value;

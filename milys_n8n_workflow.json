@@ -1,0 +1,65 @@
+{
+  "name": "Milys Store - Notificaciones (Final)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "milys-notifications",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-milys",
+      "name": "Supabase Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "milys-notifications"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.table_name }}",
+        "rules": {
+          "rules": [
+            { "operation": "equals", "value2": "profiles" },
+            { "operation": "equals", "value2": "orders" },
+            { "operation": "equals", "value2": "payment_confirmations" }
+          ]
+        }
+      },
+      "id": "switch-tables",
+      "name": "Switch por Tabla",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "URL_DE_SLACK_AQUI",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"👤 *Nuevo Evento en Milys Store*\\nTabla: {{ $json.table_name }}\\nOperación: {{ $json.operation }}\"\n}",
+        "options": {}
+      },
+      "id": "slack-alert",
+      "name": "Slack: Alerta Equipo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 200]
+    }
+  ],
+  "connections": {
+    "Supabase Webhook": {
+      "main": [[{ "node": "Switch por Tabla", "type": "main", "index": 0 }]]
+    },
+    "Switch por Tabla": {
+      "main": [
+        [{ "node": "Slack: Alerta Equipo", "type": "main", "index": 0 }],
+        [{ "node": "Slack: Alerta Equipo", "type": "main", "index": 0 }],
+        [{ "node": "Slack: Alerta Equipo", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" }
+}

@@ -1,0 +1,383 @@
+{
+  "name": "Mily AI Assistant v3 - Meta WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mily-assistant-trigger",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook Entry",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "notes": "Recibe eventos de Supabase cuando un carrito queda incompleto"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.record.order_status}}",
+              "operation": "equals",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "id": "2",
+      "name": "¿Pedido ya completado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [400, 300],
+      "notes": "Si el pedido ya está completo, no hacemos nada"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.record.recovery_sent}}",
+              "operation": "equals",
+              "value2": "true"
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "¿Ya enviamos mensaje?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [600, 400],
+      "notes": "Evita mensajes duplicados al mismo cliente"
+    },
+    {
+      "parameters": {
+        "amount": 15,
+        "unit": "minutes"
+      },
+      "id": "4",
+      "name": "Esperar 15 minutos",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [800, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.body.record.whatsapp}}",
+              "operator": "isEmpty"
+            },
+            {
+              "value1": "={{$json.body.record.shipping_address}}",
+              "operator": "isEmpty"
+            }
+          ],
+          "combinator": "or"
+        }
+      },
+      "id": "5",
+      "name": "¿Faltan datos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1000, 400],
+      "notes": "Solo actúa si realmente faltan datos"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.body.record.whatsapp}}",
+              "operator": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "6",
+      "name": "¿Tiene WhatsApp?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1200, 400]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 300
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Eres Mily, asistente virtual elegante de milys.shop. Redacta mensajes de WhatsApp cortos (máx 3 líneas), cálidos, con 1-2 emojis relevantes. Nunca seas insistente. Personaliza con el nombre del cliente. Si falta dirección, pregunta de forma natural. Si falta WhatsApp, menciona que pueden responder por este medio."
+            },
+            {
+              "role": "user",
+              "content": "=Cliente: {{$json.body.record.full_name}}. Productos en carrito: {{$json.body.record.cart_items}}. Lo que falta: {{$json.body.record.shipping_address ? 'dirección de envío' : 'WhatsApp y dirección'}}. Redacta el mensaje."
+            }
+          ]
+        }
+      },
+      "id": "7",
+      "name": "AI: Mensaje WhatsApp",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 500
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Eres Mily, asistente virtual de milys.shop. Redacta un email HTML elegante y cálido para recuperar un carrito abandonado. Incluye el nombre del cliente, menciona sus productos (si los hay), y un llamado a la acción claro con un botón que diga '¡Terminar mi pedido!' que lleve a https://milys.shop/cart. Usa colores suaves y femeninos en el HTML."
+            },
+            {
+              "role": "user",
+              "content": "=Cliente: {{$json.body.record.full_name}}. Email: {{$json.body.record.email}}. Productos: {{$json.body.record.cart_items}}. Redacta el email HTML."
+            }
+          ]
+        }
+      },
+      "id": "8",
+      "name": "AI: Email HTML",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1450, 550]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "phoneNumberId": "={{$credentials.whatsAppTriggerApi.phoneNumberId}}",
+        "recipientPhoneNumber": "={{$json.body.record.whatsapp}}",
+        "textBody": "={{$node[\"AI: Mensaje WhatsApp\"].json.choices[0].message.content}}"
+      },
+      "id": "9",
+      "name": "Meta: Enviar WhatsApp",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [1700, 300],
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "name": "WhatsApp account"
+        }
+      },
+      "notes": "Usa tus credenciales de Meta ya configuradas en n8n"
+    },
+    {
+      "parameters": {
+        "fromEmail": "mily@milys.shop",
+        "toEmail": "={{$json.body.record.email}}",
+        "subject": "💖 ¡Casi listo! Tu pedido en milys.shop te espera",
+        "html": "={{$node[\"AI: Email HTML\"].json.choices[0].message.content}}",
+        "options": {
+          "replyTo": "soporte@milys.shop"
+        }
+      },
+      "id": "10",
+      "name": "Enviar Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1700, 550]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{$env.NEXT_PUBLIC_SUPABASE_URL}}/rest/v1/orders?id=eq.{{$json.body.record.id}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "recovery_sent",
+              "value": "true"
+            },
+            {
+              "name": "recovery_sent_at",
+              "value": "={{new Date().toISOString()}}"
+            },
+            {
+              "name": "recovery_channel",
+              "value": "=={{$json.body.record.whatsapp ? 'whatsapp' : 'email'}}"
+            }
+          ]
+        }
+      },
+      "id": "11",
+      "name": "Supabase: Marcar como enviado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1950, 400],
+      "notes": "Actualiza el registro para evitar mensajes duplicados"
+    },
+    {
+      "parameters": {
+        "amount": 24,
+        "unit": "hours"
+      },
+      "id": "12",
+      "name": "Esperar 24 horas",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [2200, 400],
+      "notes": "Si no responde en 24h, enviamos segundo recordatorio"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.NEXT_PUBLIC_SUPABASE_URL}}/rest/v1/orders?id=eq.{{$json.body.record.id}}&select=order_status,recovery_converted",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}"
+            }
+          ]
+        }
+      },
+      "id": "13",
+      "name": "Supabase: ¿Ya completó el pedido?",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2400, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[0].order_status}}",
+              "operation": "notEquals",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "id": "14",
+      "name": "¿Sigue sin completar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2600, 400]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0.6,
+          "maxTokens": 200
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Eres Mily de milys.shop. Es el segundo y último recordatorio. Sé breve, amable y no insistente. Ofrece ayuda si tienen alguna duda. Máximo 2 líneas."
+            },
+            {
+              "role": "user",
+              "content": "=Segundo recordatorio para {{$json.body.record.full_name}}. Canal: {{$json.body.record.whatsapp ? 'WhatsApp' : 'email'}}."
+            }
+          ]
+        }
+      },
+      "id": "15",
+      "name": "AI: Segundo recordatorio",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [2800, 400]
+    }
+  ],
+  "connections": {
+    "Webhook Entry": {
+      "main": [[{ "node": "¿Pedido ya completado?", "type": "main", "index": 0 }]]
+    },
+    "¿Pedido ya completado?": {
+      "main": [
+        [],
+        [{ "node": "¿Ya enviamos mensaje?", "type": "main", "index": 0 }]
+      ]
+    },
+    "¿Ya enviamos mensaje?": {
+      "main": [
+        [],
+        [{ "node": "Esperar 15 minutos", "type": "main", "index": 0 }]
+      ]
+    },
+    "Esperar 15 minutos": {
+      "main": [[{ "node": "¿Faltan datos?", "type": "main", "index": 0 }]]
+    },
+    "¿Faltan datos?": {
+      "main": [
+        [{ "node": "¿Tiene WhatsApp?", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "¿Tiene WhatsApp?": {
+      "main": [
+        [{ "node": "AI: Mensaje WhatsApp", "type": "main", "index": 0 }],
+        [{ "node": "AI: Email HTML", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI: Mensaje WhatsApp": {
+      "main": [[{ "node": "Meta: Enviar WhatsApp", "type": "main", "index": 0 }]]
+    },
+    "AI: Email HTML": {
+      "main": [[{ "node": "Enviar Email", "type": "main", "index": 0 }]]
+    },
+    "Meta: Enviar WhatsApp": {
+      "main": [[{ "node": "Supabase: Marcar como enviado", "type": "main", "index": 0 }]]
+    },
+    "Enviar Email": {
+      "main": [[{ "node": "Supabase: Marcar como enviado", "type": "main", "index": 0 }]]
+    },
+    "Supabase: Marcar como enviado": {
+      "main": [[{ "node": "Esperar 24 horas", "type": "main", "index": 0 }]]
+    },
+    "Esperar 24 horas": {
+      "main": [[{ "node": "Supabase: ¿Ya completó el pedido?", "type": "main", "index": 0 }]]
+    },
+    "Supabase: ¿Ya completó el pedido?": {
+      "main": [[{ "node": "¿Sigue sin completar?", "type": "main", "index": 0 }]]
+    },
+    "¿Sigue sin completar?": {
+      "main": [
+        [{ "node": "AI: Segundo recordatorio", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

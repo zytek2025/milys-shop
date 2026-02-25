@@ -30,11 +30,11 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { name, description, price, category, stock, image_url, variants } = body;
+        const { name, description, price, category, stock, image_url, image_url_2, image_url_3, variants } = body;
 
         const { data: product, error } = await supabase
             .from('products')
-            .insert({ name, description, price, category, stock, image_url })
+            .insert({ name, description, price, category, stock, image_url, image_url_2, image_url_3 })
             .select()
             .single();
 

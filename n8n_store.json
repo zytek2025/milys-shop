@@ -1,0 +1,129 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "milys-notifications",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Supabase Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [440, 240]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.table_name}}",
+                    "rightValue": "profiles",
+                    "operator": "equal"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameTo": "Nuevo Cliente"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.table_name}}",
+                    "rightValue": "orders",
+                    "operator": "equal"
+                  },
+                  {
+                    "leftValue": "={{$json.operation}}",
+                    "rightValue": "INSERT",
+                    "operator": "equal"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameTo": "Nuevo Pedido"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.table_name}}",
+                    "rightValue": "payment_confirmations",
+                    "operator": "equal"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameTo": "Pago Reportado"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2",
+      "name": "Switch por Tabla",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [660, 240]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "TU_CANAL_ID",
+          "mode": "list"
+        },
+        "text": "=👤 *Nuevo Cliente Registrado*\nNombre: {{$json.record.full_name}}\nEmail: {{$json.record.email}}",
+        "otherOptions": {}
+      },
+      "id": "3",
+      "name": "Slack: Alerta Equipo",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [900, 100]
+    },
+    {
+      "parameters": {
+        "fromEmail": "hola@milys.shop",
+        "toEmail": "={{$json.record.email}}",
+        "subject": "👑 ¡Bienvenida a Milys Store!",
+        "html": "=<h1>¡Bienvenida, {{$json.record.full_name}}!</h1><p>Gracias por unirte a nuestra comunidad exclusiva...</p>",
+        "options": {}
+      },
+      "id": "4",
+      "name": "Email: Bienvenida",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1120, 100]
+    }
+  ],
+  "connections": {
+    "Supabase Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch por Tabla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch por Tabla": {
+      "main": [
+        [
+          { "node": "Slack: Alerta Equipo", "type": "main", "index": 0 },
+          { "node": "Email: Bienvenida", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  }
+}

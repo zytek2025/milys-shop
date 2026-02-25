@@ -1,0 +1,567 @@
+{
+  "name": "Mily AI Assistant - Meta WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mily-assistant-trigger",
+        "options": {}
+      },
+      "id": "ae6db65d-afad-4c5f-be25-dc7c2e8a1600",
+      "name": "Webhook Entry",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        96
+      ],
+      "webhookId": "ac8c3882-1341-43ee-90b1-f2d88c3bf3d8"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.record.order_status }}",
+              "operation": "notEqual",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "id": "b78d5f23-5029-41e6-8b59-bda154f49e7f",
+      "name": "Pedido Incompleto",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.record.recovery_sent }}",
+              "operation": "notEqual",
+              "value2": "true"
+            }
+          ]
+        }
+      },
+      "id": "c614beee-74f0-4413-8a40-85118f18c72a",
+      "name": "No Enviado Aun",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 0.01,
+        "unit": "minutes"
+      },
+      "id": "67e2b9ee-e03f-4647-bf3e-25c8b09474af",
+      "name": "Esperar 15 minutos",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        96
+      ],
+      "webhookId": "5f01c1ea-3ae4-4988-9a83-e87cbede34dc"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.record.whatsapp }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "d92d6c27-4aa3-48e5-816f-9cc0574c71ee",
+      "name": "Tiene WhatsApp",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o-mini",
+        "options": {
+          "maxTokens": 300,
+          "temperature": 0.7
+        },
+        "requestOptions": {}
+      },
+      "id": "9b62b9c5-83e5-425b-9ef9-d655cab475dd",
+      "name": "AI Mensaje WhatsApp",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        16,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "0KKqCtIqxbpAvUSU",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o-mini",
+        "options": {
+          "maxTokens": 600,
+          "temperature": 0.7
+        },
+        "requestOptions": {}
+      },
+      "id": "5c49b017-a5be-4beb-afd7-7fa25b2cbfdf",
+      "name": "AI Email HTML",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        16,
+        192
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "0KKqCtIqxbpAvUSU",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "={{ $credentials.phoneNumberId }}",
+        "recipientPhoneNumber": "={{ $json.body.record.whatsapp }}",
+        "textBody": "={{ $node['AI Mensaje WhatsApp'].json.choices[0].message.content }}",
+        "additionalFields": {}
+      },
+      "id": "cccbdc27-9101-4ced-a952-fab23fcb720f",
+      "name": "Meta Enviar WhatsApp",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        240,
+        0
+      ],
+      "webhookId": "32d03f56-4a2f-40d7-b6e1-2e02a71e4503",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "DyGOn9njIB2O7Euv",
+          "name": "WhatsApp account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.NEXT_PUBLIC_SUPABASE_URL }}/rest/v1/orders?id=eq.{{ $json.body.record.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "08f8aa9b-29d6-40fe-ac0f-9f1c0d3e0d4e",
+      "name": "Supabase Marcar Enviado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        464,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 0.01
+      },
+      "id": "a7b52f7b-3023-469f-92b6-4218b9343858",
+      "name": "Esperar 24 horas",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        688,
+        96
+      ],
+      "webhookId": "7fa54615-9c65-4c2e-86b9-b584bc38c232"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.NEXT_PUBLIC_SUPABASE_URL }}/rest/v1/orders?id=eq.{{ $json.body.record.id }}&select=order_status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "784b6164-8fec-4371-8b19-11dd96c27840",
+      "name": "Verificar Estado Pedido",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        912,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json[0].order_status }}",
+              "operation": "notEqual",
+              "value2": "completed"
+            }
+          ]
+        }
+      },
+      "id": "9c7e054d-e66d-4de9-9fe1-18853c1871c8",
+      "name": "Sigue Incompleto",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o-mini",
+        "options": {
+          "maxTokens": 150,
+          "temperature": 0.5
+        },
+        "requestOptions": {}
+      },
+      "id": "dd4a15c4-90e9-4fa6-b690-90af4c7409a7",
+      "name": "AI Segundo Recordatorio",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        96
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "0KKqCtIqxbpAvUSU",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "={{ $credentials.phoneNumberId }}",
+        "recipientPhoneNumber": "={{ $json.body.record.whatsapp }}",
+        "textBody": "={{ $node['AI Segundo Recordatorio'].json.choices[0].message.content }}",
+        "additionalFields": {}
+      },
+      "id": "e48c154a-9579-4e8f-bab9-b30840d7e202",
+      "name": "Meta Segundo WhatsApp",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        96
+      ],
+      "webhookId": "8e443dbe-7fce-4d14-aacf-63d349bc8a50",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "DyGOn9njIB2O7Euv",
+          "name": "WhatsApp account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=",
+        "subject": "hola",
+        "message": "hola ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        192
+      ],
+      "id": "beb15fc6-ae8e-4c0e-9151-eef58fdb2632",
+      "name": "Send a message",
+      "webhookId": "8bf3276f-5558-48fe-a31b-d34a28cee871",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUrlzWUgGBMg5mA",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook Entry": [
+      {
+        "json": {
+          "headers": {
+            "host": "zytek.app.n8n.cloud",
+            "content-length": "326",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "205.147.17.24",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "NO",
+            "cf-ray": "9d33166da9280731-OSL",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "205.147.17.24, 172.64.209.58",
+            "x-forwarded-host": "zytek.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-107-64778765cb-27lmd",
+            "x-is-trusted": "yes",
+            "x-real-ip": "205.147.17.24"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "record": {
+              "id": "test-order-1771979358077",
+              "full_name": "Cliente Prueba Mily",
+              "email": "dfornerino.usa@gmail.com",
+              "whatsapp": "",
+              "cart_items": "1x Splash Waikiki Beach Coconut, 1x A Thousand Wishes",
+              "order_status": "pending",
+              "recovery_sent": false,
+              "created_at": "2026-02-25T00:29:18.077Z"
+            },
+            "operation": "INSERT",
+            "table_name": "orders"
+          },
+          "webhookUrl": "https://zytek.app.n8n.cloud/webhook/mily-assistant-trigger",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook Entry": {
+      "main": [
+        [
+          {
+            "node": "Pedido Incompleto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pedido Incompleto": {
+      "main": [
+        [
+          {
+            "node": "No Enviado Aun",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Enviado Aun": {
+      "main": [
+        [
+          {
+            "node": "Esperar 15 minutos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar 15 minutos": {
+      "main": [
+        [
+          {
+            "node": "Tiene WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tiene WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "AI Mensaje WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Email HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Mensaje WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Meta Enviar WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Email HTML": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meta Enviar WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Supabase Marcar Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Marcar Enviado": {
+      "main": [
+        [
+          {
+            "node": "Esperar 24 horas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar 24 horas": {
+      "main": [
+        [
+          {
+            "node": "Verificar Estado Pedido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Estado Pedido": {
+      "main": [
+        [
+          {
+            "node": "Sigue Incompleto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sigue Incompleto": {
+      "main": [
+        [
+          {
+            "node": "AI Segundo Recordatorio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Segundo Recordatorio": {
+      "main": [
+        [
+          {
+            "node": "Meta Segundo WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Supabase Marcar Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e4f4da71-9a6e-4d23-81d2-351cbb015f30",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d97b70fa1e714b05690bbd7eb631ccf39191434635c7dba9bf8d9f411e76f8cc"
+  },
+  "id": "XapypXi9qO5UQHWV",
+  "tags": []
+}
