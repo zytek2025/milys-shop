@@ -19,7 +19,8 @@ import {
     Settings as SettingsIcon,
     DollarSign,
     BarChart3,
-    FileText
+    FileText,
+    ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -107,39 +108,67 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         redirect('/auth/login');
     }
 
-    const navItems = [
-        // Metas & Dashboard
-        { label: 'Panel Principal', icon: LayoutDashboard, href: '/admin', requiredPermission: null },
-        { label: 'Informes', icon: BarChart3, href: '/admin/reports', requiredPermission: 'can_view_metrics' },
-
-        // Ventas & Clientes
-        { label: 'Pedidos', icon: ShoppingBag, href: '/admin/orders', requiredPermission: 'can_view_metrics' },
-        { label: 'Punto de Venta', icon: ShoppingCart, href: '/admin/pos', requiredPermission: 'can_view_metrics' },
-        { label: 'Presupuestos', icon: FileText, href: '/admin/quotes', requiredPermission: 'can_view_metrics' },
-        { label: 'Devoluciones', icon: RotateCcw, href: '/admin/returns', requiredPermission: 'can_view_metrics' },
-        { label: 'Clientes', icon: Users, href: '/admin/customers', requiredPermission: 'can_manage_users' },
-
-        // Catálogo e Inventario
-        { label: 'Control Stock', icon: Package, href: '/admin/inventory', requiredPermission: 'can_manage_prices' },
-        { label: 'Prendas/Productos', icon: Package, href: '/admin/products', requiredPermission: 'can_manage_prices' },
-        { label: 'Categorías de Productos', icon: Layers, href: '/admin/categories', requiredPermission: 'can_manage_prices' },
-        { label: 'Finanzas & Crédito', icon: DollarSign, href: '/admin/finances', requiredPermission: 'can_view_metrics' },
-
-        // Artes & Diseños
-        { label: 'Colección de Logos', icon: Palette, href: '/admin/designs', requiredPermission: 'can_manage_designs' },
-        { label: 'Categorías de Logos', icon: Layers, href: '/admin/design-categories', requiredPermission: 'can_manage_designs' },
-        { label: 'Crear Diseño (Canva)', icon: Palette, href: '/admin/designs/create', requiredPermission: 'can_manage_designs' },
-
-        // Administración
-        { label: 'Gestión de Usuarios', icon: Users, href: '/admin/users', requiredPermission: 'can_manage_users' },
-        { label: 'Ajustes', icon: SettingsIcon, href: '/admin/settings', requiredPermission: 'can_view_settings' },
+    const navGroups = [
+        {
+            label: 'Principal',
+            icon: LayoutDashboard,
+            items: [
+                { label: 'Panel Principal', icon: LayoutDashboard, href: '/admin', requiredPermission: null },
+                { label: 'Informes', icon: BarChart3, href: '/admin/reports', requiredPermission: 'can_view_metrics' },
+            ]
+        },
+        {
+            label: 'Ventas',
+            icon: ShoppingCart,
+            items: [
+                { label: 'Punto de Venta', icon: ShoppingCart, href: '/admin/pos', requiredPermission: 'can_view_metrics' },
+                { label: 'Pedidos', icon: ShoppingBag, href: '/admin/orders', requiredPermission: 'can_view_metrics' },
+                { label: 'Presupuestos', icon: FileText, href: '/admin/quotes', requiredPermission: 'can_view_metrics' },
+                { label: 'Devoluciones', icon: RotateCcw, href: '/admin/returns', requiredPermission: 'can_view_metrics' },
+            ]
+        },
+        {
+            label: 'Catálogo e Inventario',
+            icon: Package,
+            items: [
+                { label: 'Control Stock', icon: Package, href: '/admin/inventory', requiredPermission: 'can_manage_prices' },
+                { label: 'Productos', icon: Package, href: '/admin/products', requiredPermission: 'can_manage_prices' },
+                { label: 'Categorías', icon: Layers, href: '/admin/categories', requiredPermission: 'can_manage_prices' },
+                { label: 'Promociones', icon: Tags, href: '/admin/promotions', requiredPermission: 'can_manage_prices' },
+            ]
+        },
+        {
+            label: 'Clientes',
+            icon: Users,
+            items: [
+                { label: 'Gestión CRM', icon: Users, href: '/admin/customers', requiredPermission: 'can_manage_users' },
+            ]
+        },
+        {
+            label: 'Finanzas',
+            icon: DollarSign,
+            items: [
+                { label: 'Finanzas & Crédito', icon: DollarSign, href: '/admin/finances', requiredPermission: 'can_view_metrics' },
+            ]
+        },
+        {
+            label: 'Artes y Diseños',
+            icon: Palette,
+            items: [
+                { label: 'Colección de Logos', icon: Palette, href: '/admin/designs', requiredPermission: 'can_manage_designs' },
+                { label: 'Categorías Logos', icon: Layers, href: '/admin/design-categories', requiredPermission: 'can_manage_designs' },
+                { label: 'Crear Canva', icon: Palette, href: '/admin/designs/create', requiredPermission: 'can_manage_designs' },
+            ]
+        },
+        {
+            label: 'Administración',
+            icon: SettingsIcon,
+            items: [
+                { label: 'Usuarios', icon: Users, href: '/admin/users', requiredPermission: 'can_manage_users' },
+                { label: 'Ajustes', icon: SettingsIcon, href: '/admin/settings', requiredPermission: 'can_view_settings' },
+            ]
+        }
     ];
-
-    const filteredNavItems = navItems.filter(item => {
-        if (!item.requiredPermission) return true;
-        if (is_super_admin) return true;
-        return (permissions as any)[item.requiredPermission];
-    });
 
     return <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 font-sans relative">
 
@@ -175,34 +204,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     </div>
                 </div>
 
-                <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto custom-scrollbar">
-                    {filteredNavItems.map((item) => {
-                        const isActive = pathname === item.href;
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={cn(
-                                    "group flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300",
-                                    isActive
-                                        ? "bg-primary text-primary-foreground shadow-[0_10px_20px_-5px_rgba(var(--primary),0.3)] ring-1 ring-primary/20"
-                                        : "text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/50"
-                                )}
-                                onClick={() => setIsSidebarOpen(false)}
-                            >
-                                <div className={cn(
-                                    "p-1.5 rounded-lg transition-colors group-hover:scale-110 duration-300",
-                                    isActive ? "bg-white" : "bg-slate-50 dark:bg-slate-800 group-hover:bg-white dark:group-hover:bg-slate-700"
-                                )}>
-                                    <item.icon size={18} />
-                                </div>
-                                <span className="flex-1 tracking-tight">{item.label}</span>
-                                {isActive && (
-                                    <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground/50 animate-pulse" />
-                                )}
-                            </Link>
-                        );
-                    })}
+                <nav className="flex-1 px-4 py-2 space-y-2 overflow-y-auto custom-scrollbar">
+                    {navGroups.map((group, index) => (
+                        <NavGroup
+                            key={index}
+                            group={group}
+                            pathname={pathname}
+                            is_super_admin={is_super_admin}
+                            permissions={permissions}
+                            onLinkClick={() => setIsSidebarOpen(false)}
+                        />
+                    ))}
                 </nav>
 
                 <div className="p-6">
@@ -247,3 +259,72 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </main>
     </div>;
 }
+
+function NavGroup({ group, pathname, is_super_admin, permissions, onLinkClick }: any) {
+    const [isOpen, setIsOpen] = useState(false);
+
+    // Filter items based on permissions
+    const visibleItems = group.items.filter((item: any) => {
+        if (!item.requiredPermission) return true;
+        if (is_super_admin) return true;
+        return (permissions as any)[item.requiredPermission];
+    });
+
+    // Check if any child is active
+    const hasActiveChild = visibleItems.some((item: any) => pathname === item.href);
+
+    useEffect(() => {
+        if (hasActiveChild) setIsOpen(true);
+    }, [hasActiveChild]);
+
+    if (visibleItems.length === 0) return null;
+
+    return (
+        <div className="space-y-1">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className={cn(
+                    "w-full flex items-center justify-between px-5 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
+                    isOpen ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white" : "text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                )}
+            >
+                <div className="flex items-center gap-3">
+                    <group.icon size={18} className={isOpen ? "text-primary dark:text-primary" : "text-slate-400"} />
+                    <span className="tracking-widest uppercase text-[10px]">{group.label}</span>
+                </div>
+                <div className={cn("transition-transform duration-300", isOpen ? "rotate-180 text-primary" : "rotate-0 text-slate-400")}>
+                    <ChevronDown size={14} />
+                </div>
+            </button>
+            <div
+                className={cn(
+                    "grid transition-all duration-300 ease-in-out",
+                    isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"
+                )}
+            >
+                <div className="overflow-hidden flex flex-col gap-1 pl-4 border-l-2 border-slate-100 dark:border-slate-800 ml-7 space-y-1">
+                    {visibleItems.map((item: any) => {
+                        const isActive = pathname === item.href;
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={cn(
+                                    "flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300",
+                                    isActive
+                                        ? "bg-primary text-primary-foreground shadow-[0_5px_15px_-5px_rgba(var(--primary),0.3)]"
+                                        : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/80"
+                                )}
+                                onClick={onLinkClick}
+                            >
+                                <item.icon size={14} className={isActive ? "" : "opacity-70 text-slate-400"} />
+                                <span className="flex-1 tracking-tight">{item.label}</span>
+                            </Link>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+}
+
