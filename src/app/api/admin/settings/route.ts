@@ -1,7 +1,41 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-export async function PATCH(request: Request) {
+export async function GET() {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+        }
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        if (profile?.role !== 'admin') {
+            return NextResponse.json({ error: 'Se requieren permisos de administrador' }, { status: 403 });
+        }
+
+        const { data, error } = await supabase
+            .from('store_settings')
+            .select('*')
+            .eq('id', 'global')
+            .single();
+
+        if (error && error.code !== 'PGRST116') throw error;
+
+        return NextResponse.json(data || {});
+    } catch (error: any) {
+        console.error('API Admin Settings GET Error:', error.message);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+export async function PUT(request: Request) {
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
