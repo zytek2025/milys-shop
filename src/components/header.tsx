@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, LogIn, Palette, Menu, X } from 'lucide-react';
+import { ShoppingCart, LogIn, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCartTotals, useAddToCart } from '@/hooks/use-cart';
@@ -28,7 +28,6 @@ export function Header({
   const { itemCount } = useCartTotals();
   const { isAuthenticated } = useAuth();
   const [isMounted, setIsMounted] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hasActivePromotions, setHasActivePromotions] = useState(false);
   const addToCart = useAddToCart();
 
@@ -105,6 +104,7 @@ export function Header({
           {/* Navigation Links (Desktop) */}
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-sm font-bold hover:text-primary transition-colors">Tienda</Link>
+            <Link href="/coleccion-legado" className="text-sm font-bold hover:text-primary transition-colors">Colecciones</Link>
             {hasActivePromotions && (
               <Link href="/offers" className="text-sm font-bold hover:text-primary transition-colors animate-in fade-in slide-in-from-left-2 transition-all">
                 Ofertas
@@ -140,16 +140,6 @@ export function Header({
               )
             )}
 
-            {/* Mobile Menu Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden rounded-2xl h-12 w-12 hover:bg-slate-100"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
-
             {/* Cart Button */}
             <Button
               variant="default"
@@ -171,55 +161,6 @@ export function Header({
         <div className="lg:hidden px-6 pb-4">
           <SearchBar onProductClick={handleSearchProductClick} />
         </div>
-
-        {/* Mobile Navigation Drawer */}
-        {isMenuOpen && (
-          <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-md md:hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex flex-col h-full p-8">
-              <div className="flex items-center justify-between mb-12">
-                <span className="text-2xl font-serif font-black tracking-tighter italic">Menu</span>
-                <Button variant="ghost" size="icon" className="rounded-2xl h-12 w-12" onClick={() => setIsMenuOpen(false)}>
-                  <X className="h-6 w-6" />
-                </Button>
-              </div>
-
-              <nav className="flex flex-col gap-8">
-                <Link
-                  href="/"
-                  className="text-3xl font-black uppercase tracking-widest hover:text-primary transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Tienda
-                </Link>
-                {hasActivePromotions && (
-                  <Link
-                    href="/offers"
-                    className="text-3xl font-black uppercase tracking-widest hover:text-primary transition-colors flex items-center gap-4"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Ofertas <Badge className="bg-primary text-white text-[10px]">Hot</Badge>
-                  </Link>
-                )}
-                <button
-                  onClick={() => {
-                    isAuthenticated ? onOrdersClick() : onLoginClick();
-                    setIsMenuOpen(false);
-                  }}
-                  className="text-3xl font-black uppercase tracking-widest hover:text-primary transition-colors text-left"
-                >
-                  Mis Pedidos
-                </button>
-              </nav>
-
-              <div className="mt-auto pt-10 border-t border-border/10">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-4">Mily's Premium Shop</p>
-                <div className="flex gap-4">
-                  {/* Reuse some icons/links if needed */}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </header >
     </>
   );

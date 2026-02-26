@@ -54,6 +54,7 @@ import { es } from 'date-fns/locale';
 export default function AdminPromotionsPage() {
     const [promotions, setPromotions] = useState<Promotion[]>([]);
     const [products, setProducts] = useState<any[]>([]); // To select reward products
+    const [categories, setCategories] = useState<any[]>([]); // To select target categories
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -86,18 +87,21 @@ export default function AdminPromotionsPage() {
 
     const fetchPromotions = async () => {
         try {
-            const [promoRes, prodRes, settingsRes] = await Promise.all([
+            const [promoRes, prodRes, settingsRes, catRes] = await Promise.all([
                 fetch('/api/admin/promotions'),
                 fetch('/api/admin/products'),
-                fetch('/api/settings')
+                fetch('/api/settings'),
+                fetch('/api/admin/categories')
             ]);
 
             const promoData = await promoRes.json();
             const prodData = await prodRes.json();
             const settingsData = await settingsRes.json();
+            const catData = await catRes.json();
 
             if (promoRes.ok) setPromotions(promoData);
             if (prodRes.ok) setProducts(prodData.products || prodData || []);
+            if (catRes.ok) setCategories(catData);
             if (settingsRes.ok) {
                 setVipEnabled(settingsData.vip_enabled ?? false);
                 setVipDescription(settingsData.vip_benefits_desc ?? '');
@@ -535,14 +539,48 @@ export default function AdminPromotionsPage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">ID del Target (Nombre Cat / ID Prod)</Label>
-                                    <Input
-                                        disabled={formData.target_type === 'all'}
-                                        value={formData.target_id}
-                                        onChange={e => setFormData({ ...formData, target_id: e.target.value })}
-                                        className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
-                                        placeholder={formData.target_type === 'category' ? 'Ej: "ropa"' : 'ID Producto'}
-                                    />
+                                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                                        ID del Target ({formData.target_type === 'category' ? 'Categoría' : formData.target_type === 'product' ? 'Producto' : 'Global'})
+                                    </Label>
+                                    {formData.target_type === 'all' ? (
+                                        <Input
+                                            disabled
+                                            value="Toda la Tienda"
+                                            className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none px-4"
+                                        />
+                                    ) : formData.target_type === 'category' ? (
+                                        <Select
+                                            value={formData.target_id}
+                                            onValueChange={val => setFormData({ ...formData, target_id: val })}
+                                        >
+                                            <SelectTrigger className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none shadow-none">
+                                                <SelectValue placeholder="Seleccionar categoría" />
+                                            </SelectTrigger>
+                                            <SelectContent className="max-h-60 rounded-2xl border-none shadow-2xl">
+                                                {categories.map(c => (
+                                                    <SelectItem key={c.id} value={c.name} className="font-medium italic">
+                                                        {c.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <Select
+                                            value={formData.target_id}
+                                            onValueChange={val => setFormData({ ...formData, target_id: val })}
+                                        >
+                                            <SelectTrigger className="h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none shadow-none">
+                                                <SelectValue placeholder="Seleccionar producto" />
+                                            </SelectTrigger>
+                                            <SelectContent className="max-h-60 rounded-2xl border-none shadow-2xl">
+                                                {products.map(p => (
+                                                    <SelectItem key={p.id} value={p.id} className="font-medium italic">
+                                                        {p.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
                                 </div>
 
                                 {/* LOYALTY SECTION */}
